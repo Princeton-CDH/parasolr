@@ -1,31 +1,28 @@
 language: python
-
 python:
-  - "2.7"
-  - "3.5"
-  - "3.6"
-
+- '2.7'
+- '3.5'
+- '3.6'
 env:
-  - DJANGO=1.8
-  - DJANGO=1.9
-  - DJANGO=1.10
-  - DJANGO=1.11
-  - DJANGO=2.0
-  - DJANGO=2.1
-
+- DJANGO=1.8
+- DJANGO=1.9
+- DJANGO=1.10
+- DJANGO=1.11
+- DJANGO=2.0
+- DJANGO=2.1
 before_install:
-  - pip install --upgrade pytest
-
+- pip install --upgrade pytest
 install:
-  - pip install -q Django==$DJANGO
-  - pip install -e .
-  - pip install -e '.[test]'
-  - pip install codecov
-  - cp ci/testsettings.py testsettings.py
-  - python -c "import uuid; print('SECRET_KEY = \'%s\'' % uuid.uuid4())" >> testsettings.py
-
+- pip install -q Django==$DJANGO
+- pip install -e .
+- pip install -e '.[test]'
+- pip install codecov
+- cp ci/testsettings.py testsettings.py
+- python -c "import uuid; print('SECRET_KEY = \'%s\'' % uuid.uuid4())" >> testsettings.py
 script:
-  - pytest --cov=parasol
-
+- pytest --cov=parasol
 after_success:
 - codecov
+notifications:
+  slack:
+    secure: VQzciC3upnIlJPtdEo+z3LletLLsYtM2Ci76aK/ADH1wjEakiU3qNrUgqm7Cp06Hrngx4aBep7nvaRCk4nIAdE7ljGrI1HuoWqig85McIn2dEq1jM+p4rJAQNvqF949GVaJMjJUZi0pGNplDORPSh8c9NI0vzENnnM1yBqsdeA5NOV3HqLiPp49QQ8tUrt4Xy1YfmirnQOHJmwHu/vYlZpDggAaV3+MYVbhaMfHGgvC57QwyvxJjwqYYuCEZy6GDXBl/jayO0kvb0u1ZjeQ31u+JMKeg+kdzcfny8lnnJ4KcMJOAsZ/snwc+AkM6foj6oqC+I8hsVd8Dl5ebPjKU7Kmc8zjH+vBFXF3dtZ0QrtWWahe/p4mtNGDsOEGYQqhnG/ozWAgq14FQwhiJyq411gUbYSrjaeFgbevKzmGC40Diyt0h/BKRI5oeRqcSiqm+yspT8qMyH+3bt/mLpivfn2Enhj2mBSql2HYk9MZv245dUbpEKDsPFNsV2zLl8tnhUzICUPPxCBDzyebg/N3R8Zhz6YQzknDywp9gDWdPlUvzA/ZpnemSiwaedfcfFbvVY276aJO9vo57W+iHJ27OuPLCj5YJqBmQfIIa1LdgADIsGGOeuVEq+drzgoiLalR+0A4xUGw4pPM6gwAcj4/wUm2+kKeMT0QNXgG6J8HL7Ok=
