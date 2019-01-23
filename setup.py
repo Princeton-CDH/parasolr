@@ -20,7 +20,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     license='Apache License, Version 2.0',
-    description='Django application for Solr schema generation and indexing of models.',
+    description='Django application for Apache Solr schema generation and indexing of models.',
     long_description=README,
     url='https://github.com/Princeton-CDH/django-parasol',
     install_requires=REQUIREMENTS,
