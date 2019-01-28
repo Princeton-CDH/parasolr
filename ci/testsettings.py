@@ -13,4 +13,6 @@ INSTALLED_APPS = (
     'parasol',
 )
 
+# Keeping this blank avoids false detections from SECRET_KEY
+# repository checkers.
 # SECRET_KEY = ''
