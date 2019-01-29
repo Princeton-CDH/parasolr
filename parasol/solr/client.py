@@ -7,6 +7,14 @@ from urllib.parse import urljoin
 
 import requests
 
+# Start making Django agnostic from the get-go
+try:
+    from django.settings import settings
+    from django.core.exceptions import ImproperlyConfigured
+except ImportError:
+    settings = {}
+
+
 from parasol import __version__ as parasol_version
 from parasol.solr.schema import Schema
 from parasol.solr.update import Update
@@ -17,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class SolrClient:
     '''Base class for all SolrClient with sane development defaults'''
-    #: Url for solr core instance
+    #: Url for solr base instance
     solr_url = 'http://localhost:8983/solr'
     #: select handler
     select_handler = 'select'
@@ -49,7 +57,7 @@ class SolrClient:
         # First, join the collection/core with a slashes appended
         # just in case so # it doesn't ovewrite the base url
         # (extras cause no issues)
-        collection = urljoin('%s/' % self.solr_url, '%s/' % self.core)
+        collection = urljoin('%s/' % self.solr_url, '%s/' % self.collection)
         # then return the core joined with handler -- without slash per
         # Solr API docs.
         return urljoin(collection, handler)
