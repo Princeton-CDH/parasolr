@@ -19,7 +19,6 @@ from parasol import __version__ as parasol_version
 from parasol.solr.schema import Schema
 from parasol.solr.update import Update
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
