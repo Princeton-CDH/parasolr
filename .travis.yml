@@ -3,11 +3,9 @@ python:
 - '3.5'
 - '3.6'
 env:
-  global:
-    - SOLR_VERSION=6.6.6
-- DJANGO=1.11
-- DJANGO=2.0
-- DJANGO=2.1
+- DJANGO=1.1 SOLR_VERSION=6.6.6
+- DJANGO=2.0 SOLR_VERSION=6.6.6
+- DJANGO=2.1 SOLR_VERSION=6.6.6
 before_install:
 - pip install --upgrade pip
 - pip install --upgrade pytest
