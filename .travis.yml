@@ -3,7 +3,7 @@ python:
 - '3.5'
 - '3.6'
 env:
-- DJANGO="" SOLR_VERSION=6.6.5
+- SOLR_VERSION=6.6.5
 - DJANGO=1.11 SOLR_VERSION=6.6.5
 - DJANGO=2.0 SOLR_VERSION=6.6.5
 - DJANGO=2.1 SOLR_VERSION=6.6.5
@@ -16,7 +16,7 @@ cache:
   directories:
     - downloads
 install:
-- pip install -q Django==$DJANGO
+- if [ ! -z $DJANGO]; then pip install -q Django==$DJANGO; fi
 - pip install -e .
 - pip install -e '.[test]'
 - pip install codecov
