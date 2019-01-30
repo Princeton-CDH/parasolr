@@ -1,4 +1,5 @@
 from urllib.parse import urljoin
+from attrdict import AttrDict
 
 class Schema:
     '''Class for managing Solr schema API.'''
@@ -42,10 +43,13 @@ class Schema:
         }
         if max_chars:
             field_definition.max_chars = max_chars
-        self._post_field('add-copy-field', field_definition)
+        self._post_field('add-copy-field', **field_definition)
 
     def delete_copy_field(self, source, dest):
-        self._post_field('delete-copy-field', {'source': source, 'dest': dest})
+        self._post_field(
+                'delete-copy-field',
+                **{'source': source, 'dest': dest}
+        )
 
     def add_field_type(self, **field_kwargs):
         '''Add a field type to the Solr collection or core.'''
@@ -64,27 +68,27 @@ class Schema:
         '''Get the full schema for a Solr collection or core.'''
         response = self.client.make_request('get', self.url)
         if response:
-            return response.json()
+            response.schema
 
-    def list_fields(self, fields=None, include_dynamic=False):
+    def list_fields(self, fields=None, includeDynamic='false'):
         '''Get a list of field definitions for a Solr Collection or core.'''
         url = urljoin('%s/' % self.url, 'fields')
         params = {}
         if fields:
             params['fields'] = fields
-        params['includeDynamic'] = False
+        params['includeDynamic'] = includeDynamic
         response = self.client.make_request('get', url, params=params)
         if response:
-            return response.json()
+            return response.fields
 
-    def list_field_types(self, show_defaults=False):
+    def list_field_types(self, showDefaults=False):
         '''List all field types in a Solr collection or core.'''
         url = urljoin('%s/' % self.url, 'fieldtypes')
         params = {}
-        params['showDefaults'] = show_defaults
+        params['showDefaults'] = showDefaults
         response = self.client.make_request('get', url, params=params)
         if response:
-            return response.json()
+            response.fieldTypes
 
 
 

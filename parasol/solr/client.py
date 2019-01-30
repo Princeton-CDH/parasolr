@@ -5,6 +5,7 @@ import sys
 import time
 from urllib.parse import urljoin
 
+from attrdict import AttrDict
 import requests
 
 # Start making Django agnostic from the get-go
@@ -18,14 +19,28 @@ except ImportError:
 from parasol import __version__ as parasol_version
 from parasol.solr.schema import Schema
 from parasol.solr.update import Update
+from parasol.solr.admin import CoreAdmin
 
 logger = logging.getLogger(__name__)
+
+
+
+class SolrClientException(Exception):
+    '''Base class for all exceptions in this module'''
+    pass
+
+
+class CoreForTestExists(SolrClientException):
+    '''Raised when default core for running unit tests exists'''
+
 
 
 class SolrClient:
     '''Base class for all SolrClient with sane development defaults'''
     #: Url for solr base instance
     solr_url = 'http://localhost:8983/solr'
+    #: core admin handler
+    core_admin_handler = 'admin/cores'
     #: select handler
     select_handler = 'select'
     #: schema handler
@@ -50,7 +65,8 @@ class SolrClient:
         }
 
         self.schema = Schema(self)
-        self.update = Update(self, commit_within=1000)
+        self.update = Update(self, commitWithin=1000)
+        self.core_admin = CoreAdmin(self)
 
     def build_url(self, handler):
         '''Return a url to a handler based on core and base url'''
@@ -84,19 +100,19 @@ class SolrClient:
         if response.status_code == requests.codes.ok:
             logger.debug(log_string)
             # do further error checking on the response
-            output = response.json()
+            output = AttrDict(response.json())
             if 'responseHeader' in output \
-                    and output['responseHeader']['status'] != 0:
+                    and output.responseHeader.status != 0:
                 log_string = (
                     '%s %s (%d): %s' %
                     meth.upper(),
                     url,
-                    output['responseHeader']['status'],
-                    output['responseHeader']['errors']
+                    output.responseHeader.status,
+                    output.responseHeader.status
                 )
                 logger.debug(log_string)
                 return None
-            return response
+            return AttrDict(response.json())
         logger.error(log_string)
 
     def query(self, **kwargs):
