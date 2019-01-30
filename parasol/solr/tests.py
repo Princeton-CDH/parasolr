@@ -52,6 +52,10 @@ class TestSolrClient:
         assert client.select_handler == 'bazbar'
         assert client.other == 'other'
 
+
+
+class TestSchema:
+
     def test_add_field(self, test_client):
         test_client.schema.add_field(name='A', type='string')
         fields = test_client.schema.list_fields()
