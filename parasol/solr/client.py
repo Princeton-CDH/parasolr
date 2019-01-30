@@ -81,7 +81,7 @@ class SolrClient:
 
     def make_request(self, meth, url, headers={},
                       params={}, data=None, **kwargs):
-        '''Private method for making a request to Solr, wraps session.request.all'''
+        '''Private method for making a request to Solr, wraps session.request'''
         # always add wt=json for JSON api
         if 'wt' not in params:
             params.update({'wt': 'json'})
@@ -99,7 +99,8 @@ class SolrClient:
             (meth.upper(), url, response.status_code, total_time)
         if response.status_code == requests.codes.ok:
             logger.debug(log_string)
-            # do further error checking on the response
+            # do further error checking on the response because Solr
+            # may return 200 but pass along its own error codes and information
             output = AttrDict(response.json())
             if 'responseHeader' in output \
                     and output.responseHeader.status != 0:
@@ -110,7 +111,7 @@ class SolrClient:
                     output.responseHeader.status,
                     output.responseHeader.status
                 )
-                logger.debug(log_string)
+                logger.error(log_string)
                 return None
             return AttrDict(response.json())
         logger.error(log_string)
