@@ -4,17 +4,17 @@ from urllib.parse import urljoin
 
 class Update:
     '''Class for managing the update handler functionality of the Solr API.'''
-    def __init__(self, client, commitWithin=1000):
+    def __init__(self, client, commit_within):
         self.client = client
         self.url = client.build_url(client.update_handler)
         self.headers = {'Content-Type': 'application/json'}
-        self.params = {'commitWithin': commitWithin}
+        self.params = {'commitWithin': commit_within}
 
-    def index(self, docs, commit=False, commitWithin=None):
+    def index(self, docs, commit=False, commit_within=None):
         '''Index a document or documents, by default with a soft commit'''
         params = self.params.copy()
-        if commitWithin:
-            params['commitWithin'] = commitWithin
+        if commit_within:
+            params['commitWithin'] = commit_within
         # perform a hard commit, so remove commitWithin as superfluous
         # and set params.
         if commit:
