@@ -12,7 +12,7 @@ try:
     from django.settings import settings
     from django.core.exceptions import ImproperlyConfigured
 except ImportError:
-    settings = {}
+    pass
 
 
 from parasol import __version__ as parasol_version
@@ -34,6 +34,8 @@ class SolrClient:
     update_handler = 'update'
     #: core or collection
     collection = ''
+    # commitWithin definition
+    commit_within = 1000
 
     def __init__(self, *args, **kwargs):
         # For now, a generous init that will override valuesbut not
@@ -48,7 +50,7 @@ class SolrClient:
         }
 
         self.schema = Schema(self)
-        self.update = Update(self)
+        self.update = Update(self, commit_within=1000)
 
     def build_url(self, handler):
         '''Return a url to a handler based on core and base url'''
