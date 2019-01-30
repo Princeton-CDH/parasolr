@@ -1,4 +1,5 @@
 import pytest
+import time
 
 from parasol.solr.client import SolrClient, CoreForTestExists
 from parasol.solr.schema import Schema
@@ -11,7 +12,7 @@ TEST_SETTINGS = {
     'collection': 'parasol_test'
 }
 
-@pytest.fixture(scope='function')
+@pytest.fixture
 def test_client():
     client = SolrClient(**TEST_SETTINGS)
     response  = client.core_admin.status(core=TEST_SETTINGS['collection'])
@@ -24,11 +25,10 @@ def test_client():
         TEST_SETTINGS['collection'],
         configSet='basic_configs')
     yield client
-    client.core_admin.unload(
+    response = client.core_admin.unload(
         TEST_SETTINGS['collection'],
         deleteInstanceDir='true'
     )
-
 
 class TestSolrClient:
 
@@ -52,9 +52,6 @@ class TestSolrClient:
         assert client.select_handler == 'bazbar'
         assert client.other == 'other'
 
-@pytest.mark.usefixtures("test_client")
-class TestSchema:
-
     def test_add_field(self, test_client):
         test_client.schema.add_field(name='A', type='string')
         fields = test_client.schema.list_fields()
@@ -62,6 +59,29 @@ class TestSchema:
         assert 'A' in names
         assert fields[names.index('A')].type == 'string'
 
+    def test_delete_field(self, test_client):
+        # add field and assert it exists
+        test_client.schema.add_field(name='A', type='string')
+        fields = test_client.schema.list_fields()
+        names = [f.name for f in fields]
+        assert 'A' in names
+        # delete it should not be there
+        test_client.schema.delete_field(name='A')
+        fields = test_client.schema.list_fields()
+        names = [f.name for f in fields]
+        assert 'A' not in names
 
+    def test_replace_fields(self, test_client):
+        # add a field and assert that it exists
+        # add field and assert it exists
+        # NOTE: This is behaving strangely with the pytest core load/unload
+        # So using 'B' so that it does not clash with the other tests.
+        test_client.schema.add_field(name='B', type='string')
+        fields = test_client.schema.list_fields()
+        names = [f.name for f in fields]
+        assert 'B' in names
+        test_client.schema.replace_field(name='B', type='int')
+        fields = test_client.schema.list_fields()
+        assert fields[names.index('B')].type == 'int'
 
 
