@@ -14,11 +14,13 @@ TEST_SETTINGS = {
 
 # Any fields listed here will be cleaned up after every test,
 # as they persist--even across a core being unloaded.
-TEST_FIELDS = ['A']
+TEST_FIELDS = ['A', 'B']
 
 # Copy fields used in tests, with tuples of (source, dest)
 TEST_COPY_FIELDS = [('A', 'B')]
 
+# Field types that need to be cleared after each run
+TEST_FIELD_TYPES = ['test_A', 'test_B']
 
 @pytest.fixture
 def test_client(request):
@@ -32,6 +34,8 @@ def test_client(request):
             client.schema.delete_field(field)
         for source, dest in TEST_COPY_FIELDS:
             client.schema.delete_copy_field(source=source, dest=dest)
+        for ftype in TEST_FIELD_TYPES:
+            client.schema.delete_field_type(name=ftype)
         client.core_admin.unload(
             core,
             deleteInstanceDir='true',
@@ -96,14 +100,20 @@ class TestSchema:
 
     def test_add_copy_field(self, test_client):
         test_client.schema.add_field(name='A', type='string')
+        test_client.schema.add_field(name='B', type='string')
+
         test_client.schema.add_copy_field(source='A', dest='B')
+
         cp_fields = test_client.schema.list_copy_fields()
         assert cp_fields[0].source == 'A'
         assert cp_fields[0].dest == 'B'
 
     def test_delete_copy_field(self, test_client):
         test_client.schema.add_field(name='A', type='string')
+        test_client.schema.add_field(name='B', type='string')
+
         test_client.schema.add_copy_field(source='A', dest='B')
+
         cp_fields = test_client.schema.list_copy_fields()
         assert cp_fields[0].source == 'A'
         assert cp_fields[0].dest == 'B'
@@ -111,3 +121,71 @@ class TestSchema:
         cp_fields = test_client.schema.list_copy_fields()
         # only copy field should be deleted
         assert len(cp_fields) == 0
+
+    def test_add_field_type(self, test_client):
+        test_client.schema.add_field_type(
+            name='test_A',
+            # handle situations where we need class as kwarg
+            klass='solr.TextField'
+        )
+        field_types = test_client.schema.list_field_types()
+        names = [f.name for f in field_types]
+        assert 'test_A' in names
+        assert field_types[names.index('test_A')]['class'] == 'solr.TextField'
+
+    def test_delete_field_type(self, test_client):
+        # create the field type
+        test_client.schema.add_field_type(
+            name='test_A',
+            # handle situations where we need class as kwarg
+            klass='solr.TextField'
+        )
+        field_types = test_client.schema.list_field_types()
+        names = [f.name for f in field_types]
+        assert 'test_A' in names
+        assert field_types[names.index('test_A')]['class'] == 'solr.TextField'
+        # delete the field type
+        test_client.schema.delete_field_type(name='test_A')
+        field_types = test_client.schema.list_field_types()
+        names = [f.name for f in field_types]
+        assert 'test_A' not in names
+
+    def test_replace_field_type(self, test_client):
+        # create the field type
+        test_client.schema.add_field_type(
+            name='test_A',
+            # handle situations where we need class as kwarg
+            klass='solr.TextField'
+        )
+        field_types = test_client.schema.list_field_types()
+        names = [f.name for f in field_types]
+        assert 'test_A' in names
+        assert field_types[names.index('test_A')]['class'] == 'solr.TextField'
+        # replace it and check that the change was made
+        test_client.schema.replace_field_type(
+            name='test_A',
+            klass='solr.StrField'
+        )
+        field_types = test_client.schema.list_field_types()
+        names = [f.name for f in field_types]
+        assert 'test_A' in names
+        assert field_types[names.index('test_A')]['class'] == 'solr.StrField'
+
+    def test_list_field_types(self, test_client):
+        # create two field types
+        test_client.schema.add_field_type(
+            name='test_A',
+            klass='solr.StrField'
+        )
+        test_client.schema.add_field_type(
+            name='test_B',
+            # handle situations where we need class as kwarg
+            klass='solr.TextField'
+        )
+        field_types = test_client.schema.list_field_types()
+        names = [f.name for f in field_types]
+        # check that both are in field types, as defined
+        assert 'test_A' in names
+        assert field_types[names.index('test_A')]['class'] == 'solr.StrField'
+        assert 'test_B' in names
+        assert field_types[names.index('test_B')]['class'] == 'solr.TextField'
