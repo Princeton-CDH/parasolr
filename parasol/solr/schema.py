@@ -13,6 +13,10 @@ class Schema:
 
     def _post_field(self, method, **field_kwargs):
         '''Post a field definition to the schema API'''
+        # Handle situations where we need class as a kwarg
+        if 'klass' in field_kwargs:
+            field_kwargs['class'] = field_kwargs['klass']
+            del field_kwargs['klass']
         data = {
             method: field_kwargs
         }
@@ -42,7 +46,7 @@ class Schema:
             'dest': dest
         }
         if max_chars:
-            field_definition.max_chars = max_chars
+            field_definition['max_chars'] = max_chars
         self._post_field('add-copy-field', **field_definition)
 
     def delete_copy_field(self, source, dest):
@@ -81,14 +85,25 @@ class Schema:
         if response:
             return response.fields
 
-    def list_field_types(self, showDefaults=False):
+    def list_copy_fields(self, source_fl=None, dest_fl=None):
+        url = urljoin('%s/' % self.url, 'copyfields')
+        params = {}
+        if source_fl:
+            params['source.fl'] = ','.join(source_fl)
+        if dest_fl:
+            params['dest.fl'] = ','.join(dest_fl)
+        response = self.client.make_request('get', url, params=params)
+        if response:
+            return response.copyFields
+
+    def list_field_types(self, showDefaults='false'):
         '''List all field types in a Solr collection or core.'''
         url = urljoin('%s/' % self.url, 'fieldtypes')
         params = {}
         params['showDefaults'] = showDefaults
         response = self.client.make_request('get', url, params=params)
         if response:
-            response.fieldTypes
+            return response.fieldTypes
 
 
 
