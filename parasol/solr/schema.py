@@ -81,6 +81,17 @@ class Schema:
         if response:
             return response.fields
 
+    def list_copy_fields(self, source_fl=None, dest_fl=None):
+        url = urljoin('%s/' % self.url, 'copyfields')
+        params = {}
+        if source_fl:
+            params['source.fl'] = ','.join(source_fl)
+        if dest_fl:
+            params['dest.fl'] = ','.join(dest_fl)
+        response = self.client.make_request('get', url, params=params)
+        if response:
+            return response.copyFields
+
     def list_field_types(self, showDefaults=False):
         '''List all field types in a Solr collection or core.'''
         url = urljoin('%s/' % self.url, 'fieldtypes')

@@ -1,5 +1,6 @@
 import pytest
 import time
+import uuid
 
 from parasol.solr.client import SolrClient, CoreForTestExists
 from parasol.solr.schema import Schema
@@ -9,28 +10,40 @@ from parasol.solr.update import Update
 
 TEST_SETTINGS = {
     'solr_url': 'http://localhost:8983/solr/',
-    'collection': 'parasol_test'
 }
 
-@pytest.fixture
-def test_client():
-    client = SolrClient(**TEST_SETTINGS)
-    response  = client.core_admin.status(core=TEST_SETTINGS['collection'])
-    # empty dict means the core does not exist
-    if response.status.parasol_test != {}:
-        raise CoreForTestExists('The test core, parasol_test, already exists, '
-                                'not clearing! Please delete or rename it to '
-                                'continue.')
-    client.core_admin.create(
-        TEST_SETTINGS['collection'],
-        configSet='basic_configs')
-    yield client
-    response = client.core_admin.unload(
-        TEST_SETTINGS['collection'],
-        deleteInstanceDir='true'
-    )
+# Any fields listed here will be cleaned up after every test,
+# as they persist--even across a core being unloaded.
+TEST_FIELDS = ['A']
 
-class TestSolrClient:
+# Copy fields used in tests, with tuples of (source, dest)
+TEST_COPY_FIELDS = [('A', 'B')]
+
+
+@pytest.fixture
+def test_client(request):
+    # create using uuid4, so almost certainly non-clashing
+    core = uuid.uuid4()
+    client = SolrClient(TEST_SETTINGS['solr_url'], collection=core)
+    client.core_admin.create(core, configSet='basic_configs')
+
+    def clean_up():
+        for field in TEST_FIELDS:
+            client.schema.delete_field(field)
+        for source, dest in TEST_COPY_FIELDS:
+            client.schema.delete_copy_field(source=source, dest=dest)
+        client.core_admin.unload(
+            core,
+            deleteInstanceDir='true',
+            deleteIndex='true',
+            deleteDataDir='true'
+        )
+
+    request.addfinalizer(clean_up)
+    return client
+
+
+class TestSolrSchema:
 
     def test_solr_client_init(self):
         client = SolrClient()
@@ -51,8 +64,6 @@ class TestSolrClient:
         assert client.collection == 'foobar'
         assert client.select_handler == 'bazbar'
         assert client.other == 'other'
-
-
 
 class TestSchema:
 
@@ -76,16 +87,27 @@ class TestSchema:
         assert 'A' not in names
 
     def test_replace_fields(self, test_client):
-        # add a field and assert that it exists
-        # add field and assert it exists
-        # NOTE: This is behaving strangely with the pytest core load/unload
-        # So using 'B' so that it does not clash with the other tests.
-        test_client.schema.add_field(name='B', type='string')
+
+        test_client.schema.add_field(name='A', type='string')
+        test_client.schema.replace_field(name='A', type='int')
         fields = test_client.schema.list_fields()
         names = [f.name for f in fields]
-        assert 'B' in names
-        test_client.schema.replace_field(name='B', type='int')
-        fields = test_client.schema.list_fields()
-        assert fields[names.index('B')].type == 'int'
+        assert fields[names.index('A')].type == 'int'
 
+    def test_add_copy_field(self, test_client):
+        test_client.schema.add_field(name='A', type='string')
+        test_client.schema.add_copy_field(source='A', dest='B')
+        cp_fields = test_client.schema.list_copy_fields()
+        assert cp_fields[0].source == 'A'
+        assert cp_fields[0].dest == 'B'
 
+    def test_delete_copy_field(self, test_client):
+        test_client.schema.add_field(name='A', type='string')
+        test_client.schema.add_copy_field(source='A', dest='B')
+        cp_fields = test_client.schema.list_copy_fields()
+        assert cp_fields[0].source == 'A'
+        assert cp_fields[0].dest == 'B'
+        test_client.schema.delete_copy_field(source='A', dest='B')
+        cp_fields = test_client.schema.list_copy_fields()
+        # only copy field should be deleted
+        assert len(cp_fields) == 0
