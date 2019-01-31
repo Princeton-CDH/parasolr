@@ -22,8 +22,8 @@ from parasol.solr.schema import Schema
 from parasol.solr.update import Update
 from parasol.solr.admin import CoreAdmin
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 
 class SolrClientException(Exception):

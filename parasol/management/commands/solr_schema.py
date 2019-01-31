@@ -12,7 +12,7 @@ Example usage::
 
 from django.core.management.base import BaseCommand, CommandError
 
-from parasol.solr import SolrClient
+from parasol.solr import DjangoSolrClient
 from parasol.schema import SolrSchema
 
 
@@ -23,13 +23,13 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         print("***parasol solr_schema")
 
-        # django solrclient still todo
-        solr = SolrClient(url='http://localhost:8983/solr/',
-            collection='parasol-ppa')
+        solr = DjangoSolrClient()
 
-        # find the appropriate subclass
-        # TODO: command error if exception
-        schema_config = SolrSchema.get_configuration()
+        # find the schema configuration; error if not found or too many
+        try:
+            schema_config = SolrSchema.get_configuration()
+        except Exception as err:
+            raise CommandError(err)
 
         try:
             created, updated, removed = schema_config.update_solr_fields(solr)

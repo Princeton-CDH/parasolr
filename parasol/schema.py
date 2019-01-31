@@ -1,5 +1,5 @@
 '''
-Solr schema declaration and management
+Solr schema configuration and management
 
 
 '''
@@ -50,8 +50,12 @@ class SolrSchema:
         '''Find a SolrSchema subclass for use as schema configuration.
         Currently only supports one schema configuration.'''
         subclasses = cls.__subclasses__()
-        if len(subclasses) != 1:
-            raise Exception('Currently only one SolrSchema is supported')
+        if not subclasses:
+            raise Exception('No Solr schema configuration found')
+        elif len(subclasses) > 1:
+            raise Exception('Currently only one Solr schema configuration is supported (found %d)' \
+                             % len(subclasses))
+
         return subclasses[0]
 
     @classmethod
@@ -93,4 +97,3 @@ class SolrSchema:
                 solr.schema.delete_field(field_name)
 
         return (created, updated, removed)
-
