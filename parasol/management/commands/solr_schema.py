@@ -21,7 +21,8 @@ class Command(BaseCommand):
     help = __doc__
 
     def handle(self, *args, **kwargs):
-        print("***parasol solr_schema")
+        '''Load Django solr client and project schema configuration
+        and update schema field types and fields.'''
 
         solr = DjangoSolrClient()
 
@@ -32,22 +33,33 @@ class Command(BaseCommand):
             raise CommandError(err)
 
         try:
-            created, updated, removed = schema_config.update_solr_fields(solr)
+            results = schema_config.configure_solr_fieldtypes(solr)
         except ConnectionError:
             raise CommandError('Error connecting to Solr. ' +
                                'Check your configuration and make sure Solr is running.')
-        # summarize what was done
-        if created:
-            self.stdout.write('Added %d field%s' %
-                              (created, '' if created == 1 else 's'))
-        if updated:
-            self.stdout.write('Updated %d field%s' %
-                              (updated, '' if updated == 1 else 's'))
-        if removed:
-            self.stdout.write('Removed %d field%s' %
-                              (removed, '' if removed == 1 else 's'))
+
+        # report on what was done
+        self.report_changes(results, 'field type')
+
+        try:
+            results = schema_config.configure_solr_fields(solr)
+        except ConnectionError:
+            raise CommandError('Error connecting to Solr. ' +
+                               'Check your configuration and make sure Solr is running.')
+        # report on what was done
+        self.report_changes(results, 'field')
 
         # use solr core admin to trigger reload, so schema
         # changes take effect
         # still TODO
         # solr.core_admin.reload()
+
+    def report_changes(self, results, label):
+        '''Report counts for added, replaced, or deleted items.'''
+        for action in ['added', 'replaced', 'deleted']:
+            # if count is non-zero, report action + count + item label
+            if results[action]:
+                self.stdout.write(
+                    '%s %d %s%s' %
+                    (action.title(), results[action], label,
+                     '' if results[action] == 1 else 's'))
