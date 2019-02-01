@@ -50,7 +50,7 @@ def test_client(request):
 class TestSolrSchema:
 
     def test_solr_client_init(self):
-        client = SolrClient()
+        client = SolrClient(TEST_SETTINGS['solr_url'])
         # check that development defaults are respected
         assert client.solr_url == 'http://localhost:8983/solr'
         assert client.collection == ''
@@ -62,6 +62,7 @@ class TestSolrSchema:
         assert isinstance(client.update, Update)
         # check that kwargs are added as properties and overwritten
         client = SolrClient(
+            url=TEST_SETTINGS['solr_url'],
             collection='foobar',
             select_handler='bazbar',
             other='other')
