@@ -12,7 +12,6 @@ class Update(ClientBase):
         # Go ahead and create a session if one is not passed in
         super().__init__(session=session)
         self.url = self.build_url(solr_url, collection, handler)
-
         self.headers = {'Content-Type': 'application/json'}
         self.params = {'commitWithin': commitWithin}
 
