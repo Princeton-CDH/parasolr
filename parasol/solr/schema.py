@@ -1,12 +1,15 @@
 from urllib.parse import urljoin
 from attrdict import AttrDict
 
-class Schema:
-    '''Class for managing Solr schema API.'''
-    def __init__(self, client):
+from parasol.solr.client import ClientBase
 
-        self.client = client
-        self.url = self.client.build_url(client.schema_handler)
+class Schema(ClientBase):
+    '''Class for managing Solr schema API.'''
+    def __init__(self, solr_url, collection, handler, session=None):
+
+        # Go ahead and create a session if one is not passed in
+        super().__init__(session=session)
+        self.url = self.build_url(solr_url, collection, handler)
         self.headers = {
             'Content-type': 'application/json'
         }
@@ -20,7 +23,7 @@ class Schema:
         data = {
             method: field_kwargs
         }
-        self.client.make_request(
+        self.make_request(
             'post',
             self.url,
             headers=self.headers,
@@ -70,7 +73,7 @@ class Schema:
 
     def get_schema(self):
         '''Get the full schema for a Solr collection or core.'''
-        response = self.client.make_request('get', self.url)
+        response = self.make_request('get', self.url)
         if response:
             response.schema
 
@@ -81,7 +84,7 @@ class Schema:
         if fields:
             params['fields'] = fields
         params['includeDynamic'] = includeDynamic
-        response = self.client.make_request('get', url, params=params)
+        response = self.make_request('get', url, params=params)
         if response:
             return response.fields
 
@@ -92,7 +95,7 @@ class Schema:
             params['source.fl'] = ','.join(source_fl)
         if dest_fl:
             params['dest.fl'] = ','.join(dest_fl)
-        response = self.client.make_request('get', url, params=params)
+        response = self.make_request('get', url, params=params)
         if response:
             return response.copyFields
 
@@ -101,7 +104,7 @@ class Schema:
         url = urljoin('%s/' % self.url, 'fieldtypes')
         params = {}
         params['showDefaults'] = showDefaults
-        response = self.client.make_request('get', url, params=params)
+        response = self.make_request('get', url, params=params)
         if response:
             return response.fieldTypes
 

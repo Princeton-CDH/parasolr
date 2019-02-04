@@ -1,12 +1,18 @@
 import json
 from urllib.parse import urljoin
 
+from parasol.solr.client import ClientBase
 
-class Update:
-    '''Class for managing the update handler functionality of the Solr API.'''
-    def __init__(self, client, commitWithin):
-        self.client = client
-        self.url = client.build_url(client.update_handler)
+
+class Update(ClientBase):
+    '''API client for Solr update functionality.'''
+    def __init__(self, solr_url, collection, handler, commitWithin,
+                 session=None):
+
+        # Go ahead and create a session if one is not passed in
+        super().__init__(session=session)
+        self.url = self.build_url(solr_url, collection, handler)
+
         self.headers = {'Content-Type': 'application/json'}
         self.params = {'commitWithin': commitWithin}
 
@@ -21,7 +27,7 @@ class Update:
             del params['commitWithin']
             params['commit'] = 'true'
         url = urljoin('%s/' % self.url, 'json/docs')
-        self.client.make_request(
+        self.make_request(
             'post',
             url,
             data=docs,
@@ -32,7 +38,7 @@ class Update:
     def _delete(self, del_obj):
         '''Private method to pass a delete object to the update handler.'''
         data = {'delete': del_obj}
-        self.client.make_request(
+        self.make_request(
             'post',
             self.url,
             data=data,

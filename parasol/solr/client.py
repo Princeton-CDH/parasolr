@@ -17,6 +17,7 @@ except ImportError:
 
 
 from parasol import __version__ as parasol_version
+from parasol.solr.base import ClientBase
 from parasol.solr.schema import Schema
 from parasol.solr.update import Update
 from parasol.solr.admin import CoreAdmin
@@ -24,21 +25,9 @@ from parasol.solr.admin import CoreAdmin
 logger = logging.getLogger(__name__)
 
 
+class SolrClient(ClientBase):
+    '''Class to aggregate all of the other Solr APIs and settings.'''
 
-class SolrClientException(Exception):
-    '''Base class for all exceptions in this module'''
-    pass
-
-
-class CoreForTestExists(SolrClientException):
-    '''Raised when default core for running unit tests exists'''
-
-
-
-class SolrClient:
-    '''Base class for all SolrClient with sane development defaults'''
-    #: Url for solr base instance
-    solr_url = 'http://localhost:8983/solr'
     #: core admin handler
     core_admin_handler = 'admin/cores'
     #: select handler
@@ -50,76 +39,43 @@ class SolrClient:
     #: core or collection
     collection = ''
     # commitWithin definition
-    commit_within = 1000
+    commitWithin = 1000
 
-    def __init__(self, *args, **kwargs):
-        # For now, a generous init that will override valuesbut not
-        # choke on an unexpected one.
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+    def __init__(self, solr_url, collection, session=None):
 
-        # Don't allow session configuration to be so easily overwritten
-        self.session = requests.Session()
+        # Go ahead and create a session if one is not passed in
+        super().__init__(session=session)
+
+        self.solr_url = solr_url
+        self.collection = collection
         self.session.headers = {
             'User-Agent': 'Parasol/%s' % parasol_version
         }
 
-        self.schema = Schema(self)
-        self.update = Update(self, commitWithin=1000)
-        self.core_admin = CoreAdmin(self)
-
-    def build_url(self, handler):
-        '''Return a url to a handler based on core and base url'''
-        # Two step proecess to avoid quirks in urljoin behavior
-        # First, join the collection/core with a slashes appended
-        # just in case so # it doesn't ovewrite the base url
-        # (extras cause no issues)
-        collection = urljoin('%s/' % self.solr_url, '%s/' % self.collection)
-        # then return the core joined with handler -- without slash per
-        # Solr API docs.
-        return urljoin(collection, handler)
-
-    def make_request(self, meth, url, headers={},
-                      params={}, data=None, **kwargs):
-        '''Private method for making a request to Solr, wraps session.request'''
-        # always add wt=json for JSON api
-        if 'wt' not in params:
-            params.update({'wt': 'json'})
-        start = time.time()
-        response = self.session.request(
-            meth,
-            url,
-            params=params,
-            headers=headers,
-            data=json.dumps(data),
-            **kwargs)
-        # log the time as needed
-        total_time = time.time() - start
-        log_string = '%s %s=>%d: %f sec' % \
-            (meth.upper(), url, response.status_code, total_time)
-        if response.status_code == requests.codes.ok:
-            logger.debug(log_string)
-            # do further error checking on the response because Solr
-            # may return 200 but pass along its own error codes and information
-            output = AttrDict(response.json())
-            if 'responseHeader' in output \
-                    and output.responseHeader.status != 0:
-                log_string = (
-                    '%s %s (%d): %s' %
-                    meth.upper(),
-                    url,
-                    output.responseHeader.status,
-                    output.responseHeader.status
-                )
-                logger.error(log_string)
-                return None
-            return AttrDict(response.json())
-        logger.error(log_string)
+        # attach remainder of API using a common session
+        # and common settings
+        self.schema = Schema(
+                self.solr_url,
+                self.collection,
+                self.schema_handler,
+                self.session
+            )
+        self.update = Update(
+            self.solr_url,
+            self.collection,
+            self.update_handler,
+            self.commitWithin
+        )
+        self.core_admin = CoreAdmin(
+            self.solr_url,
+            self.core_admin_handler,
+            self.session)
 
     def query(self, **kwargs):
         '''Perform a query with the specified kwargs and return a response or
         None on error.'''
-        url = self.build_url(self.select_handler)
+        url = self.build_url(self.solr_url, self.collection,
+                             self.select_handler)
         # use POST for efficiency and send as x-www-form-urlencoded
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         response = self.make_request(
@@ -127,5 +83,5 @@ class SolrClient:
             url,
             headers=headers, params=kwargs)
         if response:
-            return response.json()
+            return response
         return None

@@ -1,15 +1,18 @@
 import pytest
 import time
-import uuid
 
-from parasol.solr.client import SolrClient, CoreForTestExists
+
+from parasol.solr.base import CoreExists
+from parasol.solr.client import SolrClient
 from parasol.solr.schema import Schema
 from parasol.solr.update import Update
+from parasol.solr.admin import CoreAdmin
 
 
 
 TEST_SETTINGS = {
     'solr_url': 'http://localhost:8983/solr/',
+    'collection': 'parasol_test'
 }
 
 # Any fields listed here will be cleaned up after every test,
@@ -25,9 +28,13 @@ TEST_FIELD_TYPES = ['test_A', 'test_B']
 @pytest.fixture
 def test_client(request):
     # create using uuid4, so almost certainly non-clashing
-    core = uuid.uuid4()
-    client = SolrClient(TEST_SETTINGS['solr_url'], collection=core)
-    client.core_admin.create(core, configSet='basic_configs')
+    client = SolrClient(**TEST_SETTINGS)
+
+    response = client.core_admin.status(core=TEST_SETTINGS['collection'])
+    if response.status.parasol_test:
+        raise CoreExists('Test core "parasol_test" exists, aborting!')
+    client.core_admin.create(TEST_SETTINGS['collection'],
+                             configSet='basic_configs')
 
     def clean_up():
         for field in TEST_FIELDS:
@@ -37,7 +44,7 @@ def test_client(request):
         for ftype in TEST_FIELD_TYPES:
             client.schema.delete_field_type(name=ftype)
         client.core_admin.unload(
-            core,
+            TEST_SETTINGS['collection'],
             deleteInstanceDir='true',
             deleteIndex='true',
             deleteDataDir='true'
@@ -50,24 +57,20 @@ def test_client(request):
 class TestSolrSchema:
 
     def test_solr_client_init(self):
-        client = SolrClient()
+        solr_url = 'http://localhost:8983/solr'
+        collection = 'testcoll'
+        client = SolrClient(solr_url, collection)
         # check that development defaults are respected
         assert client.solr_url == 'http://localhost:8983/solr'
-        assert client.collection == ''
+        assert client.collection == 'testcoll'
         assert client.schema_handler == 'schema'
         assert client.select_handler == 'select'
         assert client.update_handler == 'update'
         # check that api objects are set on the object as expected
         assert isinstance(client.schema, Schema)
         assert isinstance(client.update, Update)
-        # check that kwargs are added as properties and overwritten
-        client = SolrClient(
-            collection='foobar',
-            select_handler='bazbar',
-            other='other')
-        assert client.collection == 'foobar'
-        assert client.select_handler == 'bazbar'
-        assert client.other == 'other'
+        assert isinstance(client.core_admin, CoreAdmin)
+
 
 class TestSchema:
 
