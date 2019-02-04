@@ -99,4 +99,3 @@ class SolrClient(ClientBase):
         if response:
             # queries return the search response for now
             return QueryReponse(response)
-        return None

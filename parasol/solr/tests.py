@@ -1,10 +1,10 @@
 import pytest
 import time
+import uuid
 from unittest.mock import patch, Mock
 
-
+from attrdict import AttrDict
 import requests
-
 
 from parasol.solr.base import CoreExists, ClientBase
 from parasol.solr.client import SolrClient
@@ -17,7 +17,7 @@ TEST_SETTINGS = {
     'solr_url': 'http://localhost:8983/solr/',
     'collection': 'parasol_test',
     # aggressive commitWithin for test only
-    'commitWithin': 500
+    'commitWithin': 750
 }
 
 # Any fields listed here will be cleaned up after every test,
@@ -100,6 +100,55 @@ class TestClientBase:
         assert prep.headers['foo'] == 'bar'
         assert prep.headers['baz'] == 'bar'
         assert prep.body == '"foo"'
+
+        # test that error handling works for bad status_codes
+        # and for solr sending an error
+        # correct run returns an attrDict
+        mockresp = Mock()
+        mockresp.status_code = 200
+        mockresp.json.return_value = {
+            'responseHeader': {
+                'status': 0,
+                'QTime': 0
+            }
+        }
+        mocksend.return_value = mockresp
+        response = client_base.make_request(
+            'post',
+            'http://localhost/',
+            params={'a': 1, 'b': 'true'},
+            headers={'baz': 'bar'},
+            data='foo'
+        )
+        assert response.responseHeader.status == 0
+        assert response.responseHeader.QTime == 0
+        # an incorrect run by status code returns None
+        mockresp.status_code = 400
+        response = client_base.make_request(
+            'post',
+            'http://localhost/',
+            params={'a': 1, 'b': 'true'},
+            headers={'baz': 'bar'},
+            data='foo'
+        )
+        assert response is None
+        # an incorrect run by Solr status code also returns None
+        mockresp.status_code = 200
+        mockresp.json.return_value['responseHeader']['status'] = 12
+        mockresp.json.return_value['responseHeader']['errors'] = \
+            {'something': 'went wrong'}
+        response = client_base.make_request(
+            'post',
+            'http://localhost/',
+            params={'a': 1, 'b': 'true'},
+            headers={'baz': 'bar'},
+            data='foo'
+        )
+        assert response is None
+
+
+
+
 
 
 class TestSolrClient:
@@ -191,7 +240,7 @@ class TestUpdate:
         test_client.update.index(docs, commit='true')
         # all three should be there, and
         # this should be basically synchronous
-        time.sleep(0.75)
+        time.sleep(0.6)
         resp = test_client.query(q='*:*')
         assert resp.numFound == 3
         # check that a quicker commit is passed along
@@ -199,7 +248,7 @@ class TestUpdate:
         time.sleep(1)
         test_client.update.index(docs, commitWithin=10)
         # this will fail with default commmit times
-        time.sleep(0.75)
+        time.sleep(0.5)
         resp = test_client.query(q='*:*')
         assert resp.numFound == 3
 
@@ -223,7 +272,7 @@ class TestUpdate:
         a_list = list(map(lambda x: x.A, resp.docs))
         assert 'foo' not in a_list
 
-    def delete_by_query(self, test_client):
+    def test_delete_by_query(self, test_client):
         # add a field and index some documents
         test_client.schema.add_field(name='A', type='string')
         docs = [
@@ -361,3 +410,41 @@ class TestSchema:
         assert field_types[names.index('test_A')]['class'] == 'solr.StrField'
         assert 'test_B' in names
         assert field_types[names.index('test_B')]['class'] == 'solr.TextField'
+
+
+class TestCoreAdmin:
+
+    def test_init(self):
+
+        adm = CoreAdmin('http://foo/', 'admin')
+        assert adm.url == 'http://foo/admin'
+
+        mocksession = Mock()
+        adm = CoreAdmin('http://foo/', 'admin', session=mocksession)
+        assert adm.session == mocksession
+
+    def test_create_unload(self, test_client):
+        core = str(uuid.uuid4())
+        test_client.core_admin.create(core, configSet='basic_configs')
+        resp = test_client.core_admin.status(core=core)
+        assert not resp.initFailures
+        # core has a start time
+        assert resp.status[core]['startTime']
+        # clean up the core
+        test_client.core_admin.unload(
+            core,
+            deleteInstanceDir='true',
+            deleteIndex='true',
+            deleteDataDir='true'
+        )
+        # check that additional params (for the rest of the API)
+        # can be used
+        with patch('parasol.solr.admin.ClientBase.make_request') as mockrequest:
+            test_client.core_admin.create(core, configSet='basic_configs',
+                                          dataDir='foo')
+            assert mockrequest.called
+            params = mockrequest.call_args[1]['params']
+            assert params['name'] == core
+            assert params['action'] == 'CREATE'
+            assert params['dataDir'] == 'foo'
+            assert params['configSet'] == 'basic_configs'
