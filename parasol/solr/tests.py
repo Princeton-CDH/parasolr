@@ -52,9 +52,9 @@ def test_client(request):
             client.schema.delete_field_type(name=ftype)
         client.core_admin.unload(
             TEST_SETTINGS['collection'],
-            deleteInstanceDir='true',
-            deleteIndex='true',
-            deleteDataDir='true'
+            deleteInstanceDir=True,
+            deleteIndex=True,
+            deleteDataDir=True
         )
 
     request.addfinalizer(clean_up)
@@ -88,7 +88,7 @@ class TestClientBase:
         client_base.make_request(
             'post',
             'http://localhost/',
-            params={'a': 1, 'b': 'true'},
+            params={'a': 1, 'b': True},
             headers={'baz': 'bar'},
             data='foo'
         )
@@ -118,7 +118,7 @@ class TestClientBase:
         response = client_base.make_request(
             'post',
             'http://localhost/',
-            params={'a': 1, 'b': 'true'},
+            params={'a': 1, 'b': True},
             headers={'baz': 'bar'},
             data='foo'
         )
@@ -129,7 +129,7 @@ class TestClientBase:
         response = client_base.make_request(
             'post',
             'http://localhost/',
-            params={'a': 1, 'b': 'true'},
+            params={'a': 1, 'b': True},
             headers={'baz': 'bar'},
             data='foo'
         )
@@ -142,7 +142,7 @@ class TestClientBase:
         response = client_base.make_request(
             'post',
             'http://localhost/',
-            params={'a': 1, 'b': 'true'},
+            params={'a': 1, 'b': True},
             headers={'baz': 'bar'},
             data='foo'
         )
@@ -235,7 +235,7 @@ class TestUpdate:
 
         test_client.update.delete_by_query('*:*')
         time.sleep(1)
-        test_client.update.index(docs, commit='true')
+        test_client.update.index(docs, commit=True)
         time.sleep(1)
         resp = test_client.query(q='*:*')
         assert resp.numFound == 3
@@ -326,7 +326,7 @@ class TestSchema:
         fields = test_client.schema.list_fields(fields=['A'])
         names = [f.name for f in fields]
         assert 'B' not in names
-        fields = test_client.schema.list_fields(includeDynamic='true')
+        fields = test_client.schema.list_fields(includeDynamic=True)
         names = [f.name for f in fields]
         # check that a stock dynamic field exists
         assert '*_txt_en' in names
@@ -475,9 +475,9 @@ class TestCoreAdmin:
         # clean up the core
         test_client.core_admin.unload(
             core,
-            deleteInstanceDir='true',
-            deleteIndex='true',
-            deleteDataDir='true'
+            deleteInstanceDir=True,
+            deleteIndex=True,
+            deleteDataDir=True
         )
         # check that additional params (for the rest of the API)
         # can be used

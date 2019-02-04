@@ -48,6 +48,13 @@ class ClientBase:
             params = dict()
             # always add wt=json for JSON api
         params['wt'] = 'json'
+        # convert True and False to their appropriate string values for
+        # query string to Solr
+        for key, value in params.items():
+            if value is True:
+                params[key] = 'true'
+            if value is False:
+                params[key] = 'false'
         start = time.time()
         response = self.session.request(
             meth,

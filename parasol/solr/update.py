@@ -15,7 +15,7 @@ class Update(ClientBase):
         self.headers = {'Content-Type': 'application/json'}
         self.params = {'commitWithin': commitWithin}
 
-    def index(self, docs, commit='', commitWithin=None):
+    def index(self, docs, commit=False, commitWithin=None):
         '''Index a document or documents, by default with a soft commit'''
         params = self.params.copy()
         if commitWithin:
@@ -24,7 +24,7 @@ class Update(ClientBase):
         # and set params.
         if commit:
             del params['commitWithin']
-            params['commit'] = 'true'
+            params['commit'] = True
         url = urljoin('%s/' % self.url, 'json/docs')
         self.make_request(
             'post',

@@ -77,7 +77,7 @@ class Schema(ClientBase):
         if response:
             return response.schema
 
-    def list_fields(self, fields=None, includeDynamic='false', showDefaults='false'):
+    def list_fields(self, fields=None, includeDynamic=False, showDefaults=False):
         '''Get a list of field definitions for a Solr Collection or core.'''
         url = urljoin('%s/' % self.url, 'fields')
         params = {}
@@ -100,7 +100,7 @@ class Schema(ClientBase):
         if response:
             return response.copyFields
 
-    def list_field_types(self, showDefaults='false'):
+    def list_field_types(self, showDefaults=True):
         '''List all field types in a Solr collection or core.'''
         url = urljoin('%s/' % self.url, 'fieldtypes')
         params = {}
