@@ -96,8 +96,9 @@ class TestClientBase:
         prep = mocksend.call_args[0][0]
         assert prep.method == 'POST'
         # params joined and json header added
-        # we should be able to count on dict order here.
-        assert prep.url == 'http://localhost/?a=1&b=true&wt=json'
+        assert 'http://localhost/' in prep.url
+        assert 'a=1' in prep.url
+        assert 'b=true' in prep.url
         # headers concatenated from session
         assert prep.headers['foo'] == 'bar'
         assert prep.headers['baz'] == 'bar'
