@@ -22,10 +22,12 @@ TEST_SETTINGS = {
 
 # Any fields listed here will be cleaned up after every test,
 # as they persist--even across a core being unloaded.
-TEST_FIELDS = ['A', 'B']
+# If you add fields and don't update this list, unexpected behavior
+# will almost certainly result.
+TEST_FIELDS = ['A', 'B', 'C', 'D']
 
 # Copy fields used in tests, with tuples of (source, dest)
-TEST_COPY_FIELDS = [('A', 'B')]
+TEST_COPY_FIELDS = [('A', 'B'), ('C', 'D')]
 
 # Field types that need to be cleared after each run
 TEST_FIELD_TYPES = ['test_A', 'test_B']
@@ -147,10 +149,6 @@ class TestClientBase:
         assert response is None
 
 
-
-
-
-
 class TestSolrClient:
 
     def test_solr_client_init(self):
@@ -238,9 +236,7 @@ class TestUpdate:
         test_client.update.delete_by_query('*:*')
         time.sleep(1)
         test_client.update.index(docs, commit='true')
-        # all three should be there, and
-        # this should be basically synchronous
-        time.sleep(0.6)
+        time.sleep(1)
         resp = test_client.query(q='*:*')
         assert resp.numFound == 3
         # check that a quicker commit is passed along
@@ -248,10 +244,9 @@ class TestUpdate:
         time.sleep(1)
         test_client.update.index(docs, commitWithin=10)
         # this will fail with default commmit times
-        time.sleep(0.5)
+        time.sleep(0.8)
         resp = test_client.query(q='*:*')
         assert resp.numFound == 3
-
 
     def test_delete_by_id(self, test_client):
         # add a field and index some documents
@@ -319,15 +314,34 @@ class TestSchema:
         names = [f.name for f in fields]
         assert fields[names.index('A')].type == 'int'
 
+
+    def test_list_fields(self, test_client):
+        test_client.schema.add_field(name='A', type='string')
+        test_client.schema.add_field(name='B', type='int')
+        fields = test_client.schema.list_fields()
+        names = [f.name for f in fields]
+        assert fields[names.index('A')].type == 'string'
+        assert fields[names.index('B')].type == 'int'
+        # check that we can look for a subset of fields
+        fields = test_client.schema.list_fields(fields=['A'])
+        names = [f.name for f in fields]
+        assert 'B' not in names
+        fields = test_client.schema.list_fields(includeDynamic='true')
+        names = [f.name for f in fields]
+        # check that a stock dynamic field exists
+        assert '*_txt_en' in names
+
+
     def test_add_copy_field(self, test_client):
         test_client.schema.add_field(name='A', type='string')
         test_client.schema.add_field(name='B', type='string')
 
-        test_client.schema.add_copy_field(source='A', dest='B')
+        test_client.schema.add_copy_field(source='A', dest='B', maxChars=80)
 
         cp_fields = test_client.schema.list_copy_fields()
         assert cp_fields[0].source == 'A'
         assert cp_fields[0].dest == 'B'
+        assert cp_fields[0].maxChars == 80
 
     def test_delete_copy_field(self, test_client):
         test_client.schema.add_field(name='A', type='string')
@@ -342,6 +356,30 @@ class TestSchema:
         cp_fields = test_client.schema.list_copy_fields()
         # only copy field should be deleted
         assert len(cp_fields) == 0
+
+    def test_list_copy_fields(self, test_client):
+        test_client.schema.add_field(name='A', type='string')
+        test_client.schema.add_field(name='B', type='string')
+        test_client.schema.add_field(name='C', type='int')
+        test_client.schema.add_field(name='D', type='int')
+
+        test_client.schema.add_copy_field(source='A', dest='B')
+        test_client.schema.add_copy_field(source='C', dest='D')
+        cp_fields = test_client.schema.list_copy_fields()
+        assert cp_fields[0].source == 'A'
+        assert cp_fields[0].dest == 'B'
+        assert cp_fields[1].source == 'C'
+        assert cp_fields[1].dest == 'D'
+        # filter by source field
+        ab = test_client.schema.list_copy_fields(source_fl=['A'])
+        assert len(ab) == 1
+        assert ab[0].source == 'A'
+        assert ab[0].dest == 'B'
+        # filter by dest field
+        cd = test_client.schema.list_copy_fields(dest_fl=['D'])
+        assert len(cd) == 1
+        assert cd[0].source == 'C'
+        assert cd[0].dest == 'D'
 
     def test_add_field_type(self, test_client):
         test_client.schema.add_field_type(
@@ -411,6 +449,10 @@ class TestSchema:
         assert 'test_B' in names
         assert field_types[names.index('test_B')]['class'] == 'solr.TextField'
 
+    def test_get_schema(self, test_client):
+        schema = test_client.schema.get_schema()
+        # check that we have the basic_configs schema
+        assert schema.name == 'example-basic'
 
 class TestCoreAdmin:
 

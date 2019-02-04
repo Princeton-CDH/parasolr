@@ -43,13 +43,13 @@ class Schema(ClientBase):
         # NOTE: Requires a full field definition, no partial updates
         self._post_field('replace-field', **field_kwargs)
 
-    def add_copy_field(self, source, dest, max_chars=None):
+    def add_copy_field(self, source, dest, maxChars=None):
         field_definition = {
             'source': source,
             'dest': dest
         }
-        if max_chars:
-            field_definition['max_chars'] = max_chars
+        if maxChars:
+            field_definition['maxChars'] = maxChars
         self._post_field('add-copy-field', **field_definition)
 
     def delete_copy_field(self, source, dest):
@@ -75,15 +75,16 @@ class Schema(ClientBase):
         '''Get the full schema for a Solr collection or core.'''
         response = self.make_request('get', self.url)
         if response:
-            response.schema
+            return response.schema
 
-    def list_fields(self, fields=None, includeDynamic='false'):
+    def list_fields(self, fields=None, includeDynamic='false', showDefaults='false'):
         '''Get a list of field definitions for a Solr Collection or core.'''
         url = urljoin('%s/' % self.url, 'fields')
         params = {}
         if fields:
-            params['fields'] = fields
+            params['fl'] = ','.join(fields)
         params['includeDynamic'] = includeDynamic
+        params['showDefaults'] = showDefaults
         response = self.make_request('get', url, params=params)
         if response:
             return response.fields
