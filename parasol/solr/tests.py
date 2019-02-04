@@ -1,18 +1,17 @@
 import pytest
 import time
+from unittest.mock import patch, Mock
 
 
 import requests
 
 
-from parasol.solr.base import CoreExists
+from parasol.solr.base import CoreExists, ClientBase
 from parasol.solr.client import SolrClient
 from parasol.solr.schema import Schema
 from parasol.solr.update import Update
 from parasol.solr.admin import CoreAdmin
 from parasol import __version__ as parasol_ver
-
-
 
 TEST_SETTINGS = {
     'solr_url': 'http://localhost:8983/solr/',
@@ -60,6 +59,49 @@ def test_client(request):
     return client
 
 
+class TestClientBase:
+
+    def test_init(self):
+        client_base = ClientBase()
+        assert isinstance(client_base.session, requests.Session)
+
+        # passing in a session causes that one to be set
+        mocksession = Mock()
+        client_base = ClientBase(session=mocksession)
+        assert client_base.session == mocksession
+
+    def test_build_url(self):
+        client_base = ClientBase()
+        url1 = client_base.build_url('http://foo/', 'bar', 'baz')
+        assert url1 == 'http://foo/bar/baz'
+
+    # patch so that we can intercept the request and get the
+    # prepared request object
+    @patch('parasol.solr.base.requests.sessions.Session.send')
+    def test_make_request(self, mocksend):
+        client_base = ClientBase()
+        client_base.session.headers = {
+            'foo': 'bar'
+        }
+        client_base.make_request(
+            'post',
+            'http://localhost/',
+            params={'a': 1, 'b': 'true'},
+            headers={'baz': 'bar'},
+            data='foo'
+        )
+        # first arg of first call = PrepareRequest
+        prep = mocksend.call_args[0][0]
+        assert prep.method == 'POST'
+        # params joined and json header added
+        # we should be able to count on dict order here.
+        assert prep.url == 'http://localhost/?a=1&b=true&wt=json'
+        # headers concatenated from session
+        assert prep.headers['foo'] == 'bar'
+        assert prep.headers['baz'] == 'bar'
+        assert prep.body == '"foo"'
+
+
 class TestSolrClient:
 
     def test_solr_client_init(self):
@@ -85,7 +127,6 @@ class TestSolrClient:
         assert client.session.headers['User-Agent'] == \
             'parasol/%s (python-requests/%s)' % (parasol_ver,
                                                  requests.__version__)
-
 
     def test_query(self, test_client):
         # query of empty core produces the expected results
