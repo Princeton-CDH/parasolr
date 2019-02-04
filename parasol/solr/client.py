@@ -61,7 +61,7 @@ class SolrClient(ClientBase):
             self.commitWithin = commitWithin
         self.session.headers = {
             'User-Agent': 'parasol/%s (python-requests/%s)' % \
-                (parasol_version, requests.__version__
+                (parasol_version, requests.__version__)
         }
 
         # attach remainder of API using a common session

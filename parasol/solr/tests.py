@@ -2,11 +2,15 @@ import pytest
 import time
 
 
+import requests
+
+
 from parasol.solr.base import CoreExists
 from parasol.solr.client import SolrClient
 from parasol.solr.schema import Schema
 from parasol.solr.update import Update
 from parasol.solr.admin import CoreAdmin
+from parasol import __version__ as parasol_ver
 
 
 
@@ -62,16 +66,26 @@ class TestSolrClient:
         solr_url = 'http://localhost:8983/solr'
         collection = 'testcoll'
         client = SolrClient(solr_url, collection)
-        # check that development defaults are respected
+        # check that development defaults and args are respected
         assert client.solr_url == 'http://localhost:8983/solr'
         assert client.collection == 'testcoll'
         assert client.schema_handler == 'schema'
         assert client.select_handler == 'select'
         assert client.update_handler == 'update'
+
         # check that api objects are set on the object as expected
         assert isinstance(client.schema, Schema)
         assert isinstance(client.update, Update)
         assert isinstance(client.core_admin, CoreAdmin)
+
+        # test that sessions is a Session object
+        assert isinstance(client.session, requests.Session)
+
+        # test that session headers include the version name
+        assert client.session.headers['User-Agent'] == \
+            'parasol/%s (python-requests/%s)' % (parasol_ver,
+                                                 requests.__version__)
+
 
     def test_query(self, test_client):
         # query of empty core produces the expected results
