@@ -12,7 +12,9 @@ from parasol.solr.admin import CoreAdmin
 
 TEST_SETTINGS = {
     'solr_url': 'http://localhost:8983/solr/',
-    'collection': 'parasol_test'
+    'collection': 'parasol_test',
+    # aggressive commitWithin for test only
+    'commitWithin': 500
 }
 
 # Any fields listed here will be cleaned up after every test,
@@ -54,7 +56,7 @@ def test_client(request):
     return client
 
 
-class TestSolrSchema:
+class TestSolrClient:
 
     def test_solr_client_init(self):
         solr_url = 'http://localhost:8983/solr'
@@ -70,6 +72,32 @@ class TestSolrSchema:
         assert isinstance(client.schema, Schema)
         assert isinstance(client.update, Update)
         assert isinstance(client.core_admin, CoreAdmin)
+
+    def test_query(self, test_client):
+        # query of empty core produces the expected results
+        # of no docs and no items
+        response = test_client.query(q='*:*')
+        assert response.numFound == 0
+        assert response.start == 0
+        assert not response.docs
+        assert response.params['q'] == '*:*'
+        assert response.params['wt'] == 'json'
+        # add a field and index some documents
+        test_client.schema.add_field(name='A', type='string')
+        test_client.update.index([
+            {'A': 'foo', 'id': 1},
+            {'A': 'bar', 'id': 2},
+            {'A': 'baz', 'id': 3}
+        ])
+        time.sleep(1)
+        # get back two
+        response = test_client.query(q='A:(bar OR baz)')
+        assert response.numFound == 2
+        # not paginated so should be starting at 0
+        assert response.start == 0
+        # should be the two expected documents
+        {'A': 'bar', id: 2} in response.docs
+        {'A': 'baz', id: 3} in response.docs
 
 
 class TestSchema:

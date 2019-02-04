@@ -25,6 +25,15 @@ from parasol.solr.admin import CoreAdmin
 logger = logging.getLogger(__name__)
 
 
+class QueryReponse:
+    '''Thin wrapper to give access to Solr select responses.'''
+    def __init__(self, response):
+        self.numFound = response.response.numFound
+        self.start = response.response.start
+        self.docs = response.response.docs
+        self.params = response.responseHeader.params
+
+
 class SolrClient(ClientBase):
     '''Class to aggregate all of the other Solr APIs and settings.'''
 
@@ -41,15 +50,18 @@ class SolrClient(ClientBase):
     # commitWithin definition
     commitWithin = 1000
 
-    def __init__(self, solr_url, collection, session=None):
+    def __init__(self, solr_url, collection, commitWithin=None, session=None):
 
         # Go ahead and create a session if one is not passed in
         super().__init__(session=session)
 
         self.solr_url = solr_url
         self.collection = collection
+        if commitWithin:
+            self.commitWithin = commitWithin
         self.session.headers = {
-            'User-Agent': 'Parasol/%s' % parasol_version
+            'User-Agent': 'parasol/%s (python-requests/%s)' % \
+                (parasol_version, requests.__version__
         }
 
         # attach remainder of API using a common session
@@ -81,7 +93,10 @@ class SolrClient(ClientBase):
         response = self.make_request(
             'post',
             url,
-            headers=headers, params=kwargs)
+            headers=headers,
+            params=kwargs
+        )
         if response:
-            return response
+            # queries return the search response for now
+            return QueryReponse(response)
         return None
