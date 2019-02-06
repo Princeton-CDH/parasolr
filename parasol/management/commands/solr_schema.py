@@ -11,7 +11,7 @@ Example usage::
 '''
 
 from django.core.management.base import BaseCommand, CommandError
-from requests.exceptions import ConnectionError
+import requests
 
 from parasol.solr import DjangoSolrClient
 from parasol.schema import SolrSchema
@@ -38,7 +38,7 @@ class Command(BaseCommand):
         # check Solr connection and core exists
         try:
             core_exists = solr.core_admin.ping(solr.collection)
-        except ConnectionError:
+        except requests.exceptions.ConnectionError:
             raise CommandError('Error connecting to Solr. ' +
                                'Check your configuration and make sure Solr is running.')
 

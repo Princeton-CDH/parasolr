@@ -45,12 +45,17 @@ class SolrStringField(SolrTypedField):
 
 
 class SolrAnalyzer:
+    '''Class to declare a solr field analyzer with tokenizer and filters,
+    for use with :class:`SolrFieldType`.'''
 
+    #: string name of the tokenizer to use
     tokenizer = None
+    #: list of the filters to apply
     filters = None
 
     @classmethod
     def as_solr_config(cls):
+        '''Return analyzer information for use in solr configuration'''
         return {
             'tokenizer': {
                 'class': cls.tokenizer
@@ -68,6 +73,7 @@ class SolrFieldType:
         self.analyzer = analyzer
 
     def __get__(self, obj, objtype):
+        # return format neded for declaring field type
         return {
             'class': self.field_class,
             'analyzer': self.analyzer.as_solr_config()
@@ -234,7 +240,6 @@ class SolrSchema:
                 stats.added += 1
                 logger.debug('Adding field type %s with options %s', field_type, field_type_opts)
                 solr.schema.add_field_type(**field_type_opts)
-                # self.solr.schema.create_field_type(self.solr_collection, field_type)
 
             # NOTE: currently no deletion support; would need to keep
             # a list of predefined Solr field types to check against,
