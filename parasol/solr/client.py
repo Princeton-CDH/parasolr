@@ -24,6 +24,9 @@ from parasol.solr.admin import CoreAdmin
 
 logger = logging.getLogger(__name__)
 
+## NOTE: As a rule, Solr parameters that are camelcased are retained that way
+# despite not being hugely Pythonic, for consistency with Solr's responses
+# and API documentation.
 
 class QueryReponse:
     '''Thin wrapper to give access to Solr select responses.'''
