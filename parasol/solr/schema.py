@@ -43,13 +43,13 @@ class Schema(ClientBase):
         # NOTE: Requires a full field definition, no partial updates
         self._post_field('replace-field', **field_kwargs)
 
-    def add_copy_field(self, source, dest, max_chars=None):
+    def add_copy_field(self, source, dest, maxChars=None):
         field_definition = {
             'source': source,
             'dest': dest
         }
-        if max_chars:
-            field_definition['maxChars'] = max_chars
+        if maxChars:
+            field_definition['maxChars'] = maxChars
         self._post_field('add-copy-field', **field_definition)
 
     def delete_copy_field(self, source, dest):
