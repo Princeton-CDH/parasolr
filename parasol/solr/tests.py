@@ -491,3 +491,13 @@ class TestCoreAdmin:
             assert params['action'] == 'CREATE'
             assert params['dataDir'] == 'foo'
             assert params['configSet'] == 'basic_configs'
+
+    def test_ping(self, test_client):
+        # ping should return false for non-existent core
+        core = str(uuid.uuid4())
+        assert not test_client.core_admin.ping(core)
+        # create the core and ping again - should return status ok
+        test_client.core_admin.create(core, configSet='basic_configs')
+        assert test_client.core_admin.ping(core)
+
+
