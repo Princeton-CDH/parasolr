@@ -506,3 +506,16 @@ class TestCoreAdmin:
             assert params['action'] == 'CREATE'
             assert params['dataDir'] == 'foo'
             assert params['configSet'] == 'basic_configs'
+
+    def test_status(self, test_client):
+
+        response = test_client.core_admin.\
+                status(core=TEST_SETTINGS['collection'])
+        # no init failures happened
+        assert not response.initFailures
+        # status is not empty, and therefore has core info
+        assert response.status.parasol_test
+        # check a few core traits to make sure a valid
+        # response came back
+        assert response.status.parasol_test.name == 'parasol_test'
+        assert response.status.parasol_test.startTime
