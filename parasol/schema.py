@@ -81,6 +81,10 @@ class SolrFieldType:
 class SolrSchema:
     '''Solr schema configuration'''
 
+    #: dictionary of copy fields to be configured
+    #: key is source field, value is destination field or list of fields
+    copy_fields = {}
+
     @classmethod
     def get_configuration(cls):
         '''Find a SolrSchema subclass for use as schema configuration.
@@ -111,13 +115,20 @@ class SolrSchema:
     @classmethod
     def configure_solr_fields(cls, solr):
         '''Update the configured Solr instance schema to match
-        the configured fields.  Returns a tuple with the number of fields
-        created and updated.'''
+        the configured fields.
+
+        Calls :meth:`configure_copy_fields` after
+        new fields have been created and before old fields are removed,
+        since an outdated copy field could prevent removal.
+
+        returns: :class:`attrdict.AttrDefault` with counts for added,
+        updated, and deleted fields.
+        '''
 
         current_fields = [field.name for field in solr.schema.list_fields()]
         configured_field_names = cls.get_field_names()
 
-        # use attrdict instead of defaultdict since we have attrmap installed
+        # use attrdict instead of defaultdict since we have attrmap
         stats = AttrDefault(int, {})
 
         for field_name in configured_field_names:
@@ -132,6 +143,11 @@ class SolrSchema:
                 solr.schema.replace_field(name=field_name, **field_opts)
                 stats.replaced += 1
 
+        # copy fields need to be configured *after* fields are added
+        # but before old fields are removed, because a copy field
+        # that references an outdated field will prevent removal
+        cls.configure_copy_fields(solr)
+
         # remove previously defined fields that are no longer current
         for field_name in current_fields:
             # don't remove special fields!
@@ -145,11 +161,42 @@ class SolrSchema:
         return stats
 
     @classmethod
+    def configure_copy_fields(cls, solr):
+        '''Update configured Solr instance schema with copy fields'''
+
+        # get list of currently configured copy fields
+        solr_copy_fields = solr.schema.list_copy_fields()
+        # create a dictionary lookup of existing copy fields from Solr
+        # source field -> list of destination fields
+        cp_fields = AttrDefault(list, {})
+        for copyfield in solr_copy_fields:
+            cp_fields[copyfield.source].append(copyfield.dest)
+
+        # add copy fields that are not already defined
+        for source, dest in cls.copy_fields.items():
+            if source not in cp_fields or dest not in cp_fields[source]:
+                logger.debug('Adding copy field %s %s', source, dest)
+                solr.schema.add_copy_field(source, dest)
+
+        # delete previous copy fields that are no longer wanted
+        for cp_field in solr_copy_fields:
+            # if source field is not in copy fields config,
+            # or if dest is not equal to source field value o
+            # or in source field list
+            if cp_field.source not in cls.copy_fields or \
+              cp_field.dest != cls.copy_fields[cp_field.source] or \
+              cp_field.dest not in cls.copy_fields[cp_field.source]:
+
+                logger.debug('Deleting copy field %(source)s %(dest)s', cp_field)
+                solr.schema.delete_copy_field(cp_field.source, cp_field.dest)
+
+    @classmethod
     def configure_solr_fieldtypes(cls, solr):
         '''Update the configured Solr instance so the schema includes
         the configured field types, if any.
-        Returns a tuple with the number of fields
-        created and updated.'''
+
+        returns: :class:`attrdict.AttrDefault` with counts for updated
+        and added field types.'''
 
         configured_field_types = cls.get_field_types()
 

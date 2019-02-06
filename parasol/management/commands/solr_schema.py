@@ -39,8 +39,8 @@ class Command(BaseCommand):
         try:
             core_exists = solr.core_admin.ping(solr.collection)
         except ConnectionError:
-            raise CommandError("Error connecting to Solr. Check your " +
-                               "configuration and make sure Solr is running")
+            raise CommandError('Error connecting to Solr. ' +
+                               'Check your configuration and make sure Solr is running.')
 
         # if core does not exist, create it
         if not core_exists:
@@ -64,27 +64,19 @@ class Command(BaseCommand):
         except Exception as err:
             raise CommandError(err)
 
-        try:
-            results = schema_config.configure_solr_fieldtypes(solr)
-        except ConnectionError:
-            raise CommandError('Error connecting to Solr. ' +
-                               'Check your configuration and make sure Solr is running.')
-
+        # -- configure field types
+        results = schema_config.configure_solr_fieldtypes(solr)
         # report on what was done
         self.report_changes(results, 'field type')
 
-        try:
-            results = schema_config.configure_solr_fields(solr)
-        except ConnectionError:
-            raise CommandError('Error connecting to Solr. ' +
-                               'Check your configuration and make sure Solr is running.')
-        # report on what was done
+        # -- configure fields (includes copy fields)
+        results = schema_config.configure_solr_fields(solr)
+        # report on what was done (copy fields not summarized)
         self.report_changes(results, 'field')
 
         # use solr core admin to trigger reload, so schema
         # changes take effect
-        # still TODO
-        # solr.core_admin.reload()
+        solr.core_admin.reload(solr.collection)
 
     def report_changes(self, results, label):
         '''Report counts for added, replaced, or deleted items.'''
