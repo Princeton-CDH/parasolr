@@ -11,20 +11,52 @@ Example usage::
 '''
 
 from django.core.management.base import BaseCommand, CommandError
+from requests.exceptions import ConnectionError
 
 from parasol.solr import DjangoSolrClient
 from parasol.schema import SolrSchema
 
 
 class Command(BaseCommand):
-    '''Configure Solr schema fields'''
+    '''Configure Solr schema fields and field types.'''
     help = __doc__
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--noinput',
+            action='store_true',
+            help='Do NOT prompt for user input'
+        )
 
     def handle(self, *args, **kwargs):
         '''Load Django solr client and project schema configuration
         and update schema field types and fields.'''
 
         solr = DjangoSolrClient()
+        noinput = kwargs.get('noinput', False)
+
+        # check Solr connection and core exists
+        try:
+            core_exists = solr.core_admin.ping(solr.collection)
+        except ConnectionError:
+            raise CommandError("Error connecting to Solr. Check your " +
+                               "configuration and make sure Solr is running")
+
+        # if core does not exist, create it
+        if not core_exists:
+            # in no input mode, automatically create the core
+            if noinput:
+                create = True
+            # otherwise, prompt the user to confirm
+            else:
+                create = input('Solr core %s does not exist. Create it? (y/n)' %
+                               solr.collection).lower() == 'y'
+            if create:
+                solr.core_admin.create(solr.collection,
+                                       configSet='basic_configs')
+            else:
+                # if core was not created, bail out
+                return
 
         # find the schema configuration; error if not found or too many
         try:
