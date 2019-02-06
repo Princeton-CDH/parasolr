@@ -25,6 +25,11 @@ class CoreAdmin(ClientBase):
         params.update(kwargs)
         self.make_request('get', self.url, params=params)
 
+    def reload(self, core):
+        '''Reload a core'''
+        params = {'core': core, 'action': 'RELOAD'}
+        return self.make_request('get', self.url, params=params)
+
     def status(self, core=''):
         '''Get the status of all cores or one core.'''
         params = {}

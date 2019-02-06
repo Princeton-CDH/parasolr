@@ -491,6 +491,10 @@ class TestCoreAdmin:
             assert params['dataDir'] == 'foo'
             assert params['configSet'] == 'basic_configs'
 
+    def test_reload(self, test_client):
+        assert test_client.core_admin.reload(test_client.collection)
+        assert not test_client.core_admin.reload('foo')
+
     def test_ping(self, test_client):
         # ping should return false for non-existent core
         core = str(uuid.uuid4())
