@@ -137,7 +137,7 @@ class TestSchema:
             assert result.added == 3
             assert result.replaced == 0
             assert result.deleted == 0
-            mock_config_cp_fields.assert_called()
+            assert mock_config_cp_fields.call_count == 1
 
             # add field with field config options should be called for each
             for field in ['name', 'title', 'date']:
