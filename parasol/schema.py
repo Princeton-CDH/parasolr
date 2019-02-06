@@ -119,7 +119,7 @@ class SolrSchema:
                 if isinstance(attr_type, SolrFieldType)]
 
     @classmethod
-    def configure_solr_fields(cls, solr):
+    def configure_fields(cls, solr):
         '''Update the configured Solr instance schema to match
         the configured fields.
 
@@ -186,18 +186,26 @@ class SolrSchema:
 
         # delete previous copy fields that are no longer wanted
         for cp_field in solr_copy_fields:
-            # if source field is not in copy fields config,
-            # or if dest is not equal to source field value o
-            # or in source field list
-            if cp_field.source not in cls.copy_fields or \
-              cp_field.dest != cls.copy_fields[cp_field.source] or \
-              cp_field.dest not in cls.copy_fields[cp_field.source]:
+            dest = cls.copy_fields.get(cp_field.source, None)
+            # check multiple conditions for copy field deletion
+            delete = False
+            # - source field is not in configured copy fields at all
+            if cp_field.source not in cls.copy_fields:
+                delete = True
+            # - configured destination is a list and value is not present
+            elif isinstance(dest, list):
+                if cp_field.dest not in dest:
+                    delete = True
+            # - not a list and value does not match
+            elif cp_field.dest != dest:
+                delete = True
 
+            if delete:
                 logger.debug('Deleting copy field %(source)s %(dest)s', cp_field)
                 solr.schema.delete_copy_field(cp_field.source, cp_field.dest)
 
     @classmethod
-    def configure_solr_fieldtypes(cls, solr):
+    def configure_fieldtypes(cls, solr):
         '''Update the configured Solr instance so the schema includes
         the configured field types, if any.
 
@@ -221,19 +229,14 @@ class SolrSchema:
             # add name for comparison with current config
             field_type_opts['name'] = field_type
             if field_type in current_field_types:
-                # remove name for comparing field type configuration
-                current_field_type_opts = current_field_types[field_type]
-                del current_field_type_opts['name']
-
-                # if field exists but definition has changed, replace it
-                stats.updated += 1
-                logger.debug('Updating field type %s with options %s', field_type, field_type_opts)
-                solr.schema.replace_field_type(**field_type_opts)
-
+                # if field exists [but definition has changed, ] replace it
                 # NOTE: could add logic to only update when the field type
                 # configuration has changed, but simple dict comparison
                 # does not recognize as equal even when the config has
                 # not changed
+                stats.updated += 1
+                logger.debug('Updating field type %s with options %s', field_type, field_type_opts)
+                solr.schema.replace_field_type(**field_type_opts)
 
             # otherwise, create as a new field type
             else:

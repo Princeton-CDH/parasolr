@@ -63,8 +63,8 @@ class Schema(ClientBase):
         self._post_field('add-field-type', **field_kwargs)
 
     def delete_field_type(self, name):
-       '''Delete a field type from the Solr collection or core'''
-       self._post_field('delete-field-type', name=name)
+        '''Delete a field type from the Solr collection or core'''
+        self._post_field('delete-field-type', name=name)
 
     def replace_field_type(self, **field_kwargs):
         '''Provide a full definition to replace a field'''

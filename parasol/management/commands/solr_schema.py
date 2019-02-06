@@ -65,12 +65,12 @@ class Command(BaseCommand):
             raise CommandError(err)
 
         # -- configure field types
-        results = schema_config.configure_solr_fieldtypes(solr)
+        results = schema_config.configure_fieldtypes(solr)
         # report on what was done
         self.report_changes(results, 'field type')
 
         # -- configure fields (includes copy fields)
-        results = schema_config.configure_solr_fields(solr)
+        results = schema_config.configure_fields(solr)
         # report on what was done (copy fields not summarized)
         self.report_changes(results, 'field')
 
