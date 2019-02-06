@@ -34,7 +34,6 @@ TEST_FIELD_TYPES = ['test_A', 'test_B']
 
 @pytest.fixture
 def test_client(request):
-    # create using uuid4, so almost certainly non-clashing
     client = SolrClient(**TEST_SETTINGS)
 
     response = client.core_admin.status(core=TEST_SETTINGS['collection'])
@@ -60,6 +59,22 @@ def test_client(request):
     request.addfinalizer(clean_up)
     return client
 
+@pytest.fixture
+def core_test_client(request):
+    client = SolrClient(**TEST_SETTINGS)
+    core_name = str(uuid.uuid4())
+
+    def clean_up():
+
+        client.core_admin.unload(
+           core_name,
+           deleteInstanceDir=True,
+           deleteIndex=True,
+           deleteDataDir=True
+        )
+
+    request.addfinalizer(clean_up)
+    return (client, core_name)
 
 class TestClientBase:
 
@@ -466,8 +481,8 @@ class TestCoreAdmin:
         adm = CoreAdmin('http://foo/', 'admin', session=mocksession)
         assert adm.session == mocksession
 
-    def test_create_unload(self, test_client):
-        core = str(uuid.uuid4())
+    def test_create_unload(self, core_test_client):
+        test_client, core = core_test_client
         test_client.core_admin.create(core, configSet='basic_configs')
         resp = test_client.core_admin.status(core=core)
         assert not resp.initFailures
