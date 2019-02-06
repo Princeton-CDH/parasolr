@@ -1,9 +1,8 @@
-import pytest
 import time
 import uuid
 from unittest.mock import patch, Mock
 
-from attrdict import AttrDict
+import pytest
 import requests
 
 from parasol.solr.base import CoreExists, ClientBase
@@ -13,12 +12,14 @@ from parasol.solr.update import Update
 from parasol.solr.admin import CoreAdmin
 from parasol import __version__ as parasol_ver
 
+
 TEST_SETTINGS = {
     'solr_url': 'http://localhost:8983/solr/',
     'collection': 'parasol_test',
     # aggressive commitWithin for test only
     'commitWithin': 750
 }
+
 
 # Any fields listed here will be cleaned up after every test,
 # as they persist--even across a core being unloaded.
@@ -332,12 +333,11 @@ class TestSchema:
         # check that a stock dynamic field exists
         assert '*_txt_en' in names
 
-
     def test_add_copy_field(self, test_client):
         test_client.schema.add_field(name='A', type='string')
         test_client.schema.add_field(name='B', type='string')
 
-        test_client.schema.add_copy_field(source='A', dest='B', maxChars=80)
+        test_client.schema.add_copy_field(source='A', dest='B', max_chars=80)
 
         cp_fields = test_client.schema.list_copy_fields()
         assert cp_fields[0].source == 'A'
@@ -354,9 +354,8 @@ class TestSchema:
         assert cp_fields[0].source == 'A'
         assert cp_fields[0].dest == 'B'
         test_client.schema.delete_copy_field(source='A', dest='B')
-        cp_fields = test_client.schema.list_copy_fields()
         # only copy field should be deleted
-        assert len(cp_fields) == 0
+        assert len(test_client.schema.list_copy_fields()) == 0
 
     def test_list_copy_fields(self, test_client):
         test_client.schema.add_field(name='A', type='string')
@@ -500,4 +499,11 @@ class TestCoreAdmin:
         test_client.core_admin.create(core, configSet='basic_configs')
         assert test_client.core_admin.ping(core)
 
+        # clean up the core
+        test_client.core_admin.unload(
+            core,
+            deleteInstanceDir=True,
+            deleteIndex=True,
+            deleteDataDir=True
+        )
 
