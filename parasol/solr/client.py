@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import inspect
 import json
 import logging
@@ -33,8 +34,29 @@ class QueryReponse:
     def __init__(self, response):
         self.numFound = response.response.numFound
         self.start = response.response.start
-        self.docs = response.response.docs
         self.params = response.responseHeader.params
+        self.docs = []
+        self.facet_counts = {}
+        if 'docs' in response.response:
+            self.docs = response.response.docs
+        if 'facet_counts' in response:
+            self.facet_counts = \
+                self._process_facet_counts(response.facet_counts)
+        # NOTE: To access facet_counts.facet_fields or facet_counts.facet_ranges
+        # as OrderedDicts, you must use dict notation (or AttrDict *will*
+        # convert.
+
+    def _process_facet_counts(self, facet_counts):
+        '''Convert facet_fields and facet_ranges to OrderDict'''
+        if 'facet_fields' in facet_counts:
+            for k, v in facet_counts.facet_fields.items():
+                facet_counts['facet_fields'][k] = \
+                    OrderedDict(zip(v[::2], v[1::2]))
+        if 'facet_ranges' in facet_counts:
+            for k,v in facet_counts.facet_ranges.items():
+               facet_counts['facet_ranges'][k]['counts'] = \
+                   OrderedDict(zip(v['counts'][::2], v['counts'][1::2]))
+        return facet_counts
 
 
 class SolrClient(ClientBase):

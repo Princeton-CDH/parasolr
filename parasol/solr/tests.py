@@ -1,13 +1,14 @@
-import pytest
+from collections import OrderedDict
 import time
 import uuid
 from unittest.mock import patch, Mock
 
 from attrdict import AttrDict
+import pytest
 import requests
 
 from parasol.solr.base import CoreExists, ClientBase
-from parasol.solr.client import SolrClient
+from parasol.solr.client import SolrClient, QueryReponse
 from parasol.solr.schema import Schema
 from parasol.solr.update import Update
 from parasol.solr.admin import CoreAdmin
@@ -165,6 +166,50 @@ class TestClientBase:
         assert response is None
 
 
+class TestQueryResponse:
+
+    def test_init(self):
+
+        response = AttrDict({
+            'responseHeader': {
+                'params': {'foo': 'bar'}
+            },
+            'response': {
+                'numFound': 2,
+                'start': 0,
+                'docs': [
+                    {'A': 5},
+                    {'A': 2},
+                    {'A': 3},
+                ],
+            },
+            'facet_counts': {
+                    'facet_fields': {
+                        'A': ['5', 1, '2', 1, '3', 1]
+                    },
+                    'facet_ranges': {
+                        'A': {
+                            'counts': ['1', 1, '2', 2, '7', 1]
+                        }
+                    }
+            },
+        })
+        qr = QueryReponse(response)
+        assert qr.params == response.responseHeader.params
+        assert qr.start == response.response.start
+        assert qr.docs == response.response.docs
+        assert qr.numFound == response.response.numFound
+        assert isinstance(qr.facet_counts['facet_fields']['A'],
+                          OrderedDict)
+        assert isinstance(qr.facet_counts['facet_ranges']['A']['counts'],
+                          OrderedDict)
+        assert qr.facet_counts['facet_fields']['A']['5'] == 1
+        assert qr.facet_counts['facet_ranges']['A']['counts']['2'] == 2
+
+
+
+
+
 class TestSolrClient:
 
     def test_solr_client_init(self):
@@ -202,21 +247,46 @@ class TestSolrClient:
         assert response.params['wt'] == 'json'
         # add a field and index some documents
         test_client.schema.add_field(name='A', type='string')
+        test_client.schema.add_field(name='B', type='int')
         test_client.update.index([
-            {'A': 'foo', 'id': 1},
-            {'A': 'bar', 'id': 2},
-            {'A': 'baz', 'id': 3}
+            {'A': 'foo', 'B': 5, 'id': 1},
+            {'A': 'bar', 'B': 20, 'id': 2},
+            {'A': 'baz', 'B': 25, 'id': 3},
+            {'A': 'baz', 'B': 30, 'id': 4},
         ])
         time.sleep(1)
         # get back two
         response = test_client.query(q='A:(bar OR baz)')
-        assert response.numFound == 2
+        assert response.numFound == 3
         # not paginated so should be starting at 0
         assert response.start == 0
         # should be the two expected documents
-        {'A': 'bar', id: 2} in response.docs
-        {'A': 'baz', id: 3} in response.docs
-
+        {'A': 'bar', 'B': 20, 'id': 2}
+        {'A': 'baz', 'B': 25, 'id': 3} in response.docs
+        {'A': 'baz', 'B': 30, 'id': 4} in response.docs
+        # test faceting in response
+        response = test_client.query(
+            q='*:*',
+            facet='on',
+            **{
+                'facet.field': 'A',
+                'facet.range': 'B',
+                'f.B.facet.range.start': 1,
+                'f.B.facet.range.end': 25,
+                'f.B.facet.range.gap': 10
+            }
+        )
+        assert response.facet_counts
+        assert response.facet_counts.facet_fields
+        # must access using dict notation to get the OrderedDict as presented
+        assert isinstance(response.facet_counts.facet_fields['A'], OrderedDict)
+        assert response.facet_counts.facet_fields.A['bar'] == 1
+        assert response.facet_counts.facet_fields.A['baz'] == 2
+        assert isinstance(response.facet_counts.facet_ranges['B']['counts'],
+                          OrderedDict)
+        # check that the gaps are generated as expected
+        assert response.facet_counts.facet_ranges['B']['counts']['1'] == 1
+        assert response.facet_counts.facet_ranges['B']['counts']['11'] == 1
 
 class TestUpdate:
 
