@@ -9,10 +9,9 @@ with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
-REQUIREMENTS = ['django>=1.8', 'SolrClient @ git+https://github.com/rlskoeser/SolrClient.git@schema-field-type-support']
+REQUIREMENTS = ['django>=1.11', 'requests', 'attrdict']
 TEST_REQUIREMENTS = ['pytest', 'pytest-django', 'pytest-cov']
-if sys.version_info < (3, 0):
-    TEST_REQUIREMENTS.append('mock')
+DEV_REQUIREMENTS = ['sphinx']
 
 setup(
     name='parasol',
@@ -28,6 +27,7 @@ setup(
     tests_require=TEST_REQUIREMENTS,
     extras_require={
         'test': TEST_REQUIREMENTS,
+        'dev': TEST_REQUIREMENTS + DEV_REQUIREMENTS
     },
     author='CDH @ Princeton',
     author_email='digitalhumanities@princeton.edu',

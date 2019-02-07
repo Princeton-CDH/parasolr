@@ -1,5 +1,7 @@
-django-parasol
+parasol
 ==============
+
+.. sphinx-start-marker-do-not-remove
 
 **django-parasol** is a reusable `Django`_ application to simplify interacting
 with `Apache Solr`_ by providing functionality to build a Solr schema and to index Django 
