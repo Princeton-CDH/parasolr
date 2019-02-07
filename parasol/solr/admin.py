@@ -7,7 +7,7 @@ from parasol.solr.client import ClientBase
 
 
 class CoreAdmin(ClientBase):
-    '''API client for Solr core admin.'''
+    """API client for Solr core admin."""
     def __init__(self, solr_url, handler, session=None):
 
         super().__init__(session=session)
@@ -15,13 +15,13 @@ class CoreAdmin(ClientBase):
         self.url = urljoin('%s/' % solr_url, handler)
 
     def create(self, name, **kwargs):
-        '''Create a new core and register it.'''
+        """Create a new core and register it."""
         params = {'name': name, 'action': 'CREATE'}
         params.update(kwargs)
         self.make_request('get', self.url, params=params)
 
     def unload(self, core, **kwargs):
-        '''Unload a core, without defaults to remove data dir or index.'''
+        """Unload a core, without defaults to remove data dir or index."""
         params = {'core': core, 'action': 'UNLOAD'}
         params.update(kwargs)
         self.make_request('get', self.url, params=params)
@@ -32,7 +32,7 @@ class CoreAdmin(ClientBase):
         return self.make_request('get', self.url, params=params)
 
     def status(self, core='', **kwargs):
-        '''Get the status of all cores or one core.'''
+        """Get the status of all cores or one core."""
         params = {}
         if core:
             params['core'] = core
