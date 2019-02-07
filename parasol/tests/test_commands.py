@@ -36,12 +36,10 @@ class TestSolrSchemaCommand:
             solr_schema.Command().handle()
 
     @patch('parasol.management.commands.solr_schema.SolrClient')
+    @patch('parasol.management.commands.solr_schema.SolrSchema')
     @patch('parasol.management.commands.solr_schema.input')
-    def test_handle_no_core(self, mockinput, mocksolrclient):
-
-        # dummy solr schema to avoid error
-        class MyTestSchema(schema.SolrSchema):
-            pass
+    def test_handle_no_core(self, mockinput, mocksolrschema, mocksolrclient):
+        # using mock SolrSchema to avoid exception on get_configuration
 
         mocksolr = mocksolrclient.return_value
         mocksolr.collection = 'test-coll'

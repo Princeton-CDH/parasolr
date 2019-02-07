@@ -192,10 +192,16 @@ class TestSchema:
         # simulate some to not be added, some to remove
         mocksolr.reset_mock()
         mocksolr.schema.list_copy_fields.return_value = [
+            # valid source and destination in list
             AttrDict({'source': 'author', 'dest': 'text'}),
+            # valid source, destination not in list
             AttrDict({'source': 'author', 'dest': 'foobar'}),
+            # valid source & destination
             AttrDict({'source': 'collections', 'dest': 'collections_s'}),
+            # invalid source
             AttrDict({'source': 'foo', 'dest': 'bar'}),
+            # valid source, destination not == value
+            AttrDict({'source': 'subtitle', 'dest': 'baz'}),
         ]
 
         LocalTestSchema.configure_copy_fields(mocksolr)
@@ -206,7 +212,8 @@ class TestSchema:
         mocksolr.schema.delete_copy_field.assert_any_call('author', 'foobar')
         # extra source/dest should be removed
         mocksolr.schema.delete_copy_field.assert_any_call('foo', 'bar')
-        assert mocksolr.schema.delete_copy_field.call_count == 2
+        mocksolr.schema.delete_copy_field.assert_any_call('subtitle', 'baz')
+        assert mocksolr.schema.delete_copy_field.call_count == 3
 
     def test_configure_field_types(self):
         mocksolr = Mock()
@@ -242,3 +249,6 @@ class TestSchema:
         mocksolr.schema.replace_field_type.assert_called_with(
             name='text_en', **LocalTestSchema.text_en)
         mocksolr.schema.add_field_type.assert_not_called()
+
+        # no field types defined - shoud not error, do nothing
+        assert not schema.SolrSchema.configure_fieldtypes(mocksolr)
