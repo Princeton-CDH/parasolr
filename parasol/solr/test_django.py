@@ -11,10 +11,13 @@ except ImportError:
     django = None
 
 
-requires_django = pytest.mark.skipif(django is None,
-                                     reason="requires Django")
+skipif_no_django = pytest.mark.skipif(django is None,
+                                      reason="requires Django")
 
-@requires_django
+skipif_django = pytest.mark.skipif(django,
+                                   reason="requires no Django")
+
+@skipif_no_django
 def test_django_solrclient():
 
     # check error handling
@@ -50,3 +53,13 @@ def test_django_solrclient():
         solr = SolrClient()
         assert solr.solr_url == config['URL']
         assert solr.collection == config['COLLECTION']
+
+
+@skipif_django
+def test_no_django_solrclient():
+    # should not be defined when django is not installed
+    with pytest.raises(ImportError):
+        from parasol.solr.django import SolrClient
+
+
+
