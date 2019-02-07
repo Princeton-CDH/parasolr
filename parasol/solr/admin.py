@@ -5,6 +5,7 @@ import requests
 
 from parasol.solr.client import ClientBase
 
+
 class CoreAdmin(ClientBase):
     '''API client for Solr core admin.'''
     def __init__(self, solr_url, handler, session=None):
@@ -30,7 +31,7 @@ class CoreAdmin(ClientBase):
         params = {'core': core, 'action': 'RELOAD'}
         return self.make_request('get', self.url, params=params)
 
-    def status(self, core=''):
+    def status(self, core='', **kwargs):
         '''Get the status of all cores or one core.'''
         params = {}
         if core:

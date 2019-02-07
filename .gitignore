@@ -1,3 +1,6 @@
+# Sphinx doc build artifacts
+_build/
+
 # top level test settings
 /testsettings.py
 

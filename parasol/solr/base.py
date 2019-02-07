@@ -3,8 +3,8 @@ import logging
 import time
 from urllib.parse import urljoin
 
-from attrdict import AttrDict
 import requests
+from attrdict import AttrDict
 
 
 logger = logging.getLogger(__name__)
@@ -82,6 +82,7 @@ class ClientBase:
             )
             # return None for failure
             return
+
         # do further error checking on the response because Solr
         # may return 200 but pass along its own error codes and information
         output = AttrDict(response.json())

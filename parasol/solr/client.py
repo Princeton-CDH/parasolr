@@ -1,12 +1,8 @@
-import inspect
-import json
+from collections import OrderedDict
 import logging
-import sys
-import time
-from urllib.parse import urljoin
 
-from attrdict import AttrDict
 import requests
+from attrdict import AttrDict
 
 # provide Django integration Django if installed
 try:
@@ -15,7 +11,6 @@ try:
     from django.core.exceptions import ImproperlyConfigured
 except ImportError:
     django = None
-
 
 from parasol import __version__ as parasol_version
 from parasol.solr.base import ClientBase
@@ -26,6 +21,11 @@ from parasol.solr.admin import CoreAdmin
 
 logger = logging.getLogger(__name__)
 
+
+## NOTE: As a rule, Solr parameters that are camelcased are retained that way
+# despite not being hugely Pythonic, for consistency with Solr's responses
+# and API documentation.
+
 class QueryReponse:
     '''Thin wrapper to give access to Solr select responses.'''
     def __init__(self, response):
@@ -33,6 +33,27 @@ class QueryReponse:
         self.start = response.response.start
         self.docs = response.response.docs
         self.params = response.responseHeader.params
+        self.facet_counts = {}
+        if 'docs' in response.response:
+            self.docs = response.response.docs
+        if 'facet_counts' in response:
+            self.facet_counts = \
+                self._process_facet_counts(response.facet_counts)
+        # NOTE: To access facet_counts.facet_fields or facet_counts.facet_ranges
+        # as OrderedDicts, you must use dict notation (or AttrDict *will*
+        # convert.
+
+    def _process_facet_counts(self, facet_counts):
+        '''Convert facet_fields and facet_ranges to OrderDict'''
+        if 'facet_fields' in facet_counts:
+            for k, v in facet_counts.facet_fields.items():
+                facet_counts['facet_fields'][k] = \
+                    OrderedDict(zip(v[::2], v[1::2]))
+        if 'facet_ranges' in facet_counts:
+            for k,v in facet_counts.facet_ranges.items():
+               facet_counts['facet_ranges'][k]['counts'] = \
+                   OrderedDict(zip(v['counts'][::2], v['counts'][1::2]))
+        return facet_counts
 
 
 class SolrClient(ClientBase):
@@ -67,11 +88,11 @@ class SolrClient(ClientBase):
         # attach remainder of API using a common session
         # and common settings
         self.schema = Schema(
-                self.solr_url,
-                self.collection,
-                self.schema_handler,
-                self.session
-            )
+            self.solr_url,
+            self.collection,
+            self.schema_handler,
+            self.session
+        )
         self.update = Update(
             self.solr_url,
             self.collection,

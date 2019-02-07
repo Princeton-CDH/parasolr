@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import pytest
 import time
 import uuid
@@ -7,11 +8,12 @@ from attrdict import AttrDict
 import requests
 
 from parasol.solr.base import CoreExists, ClientBase
-from parasol.solr.client import SolrClient
+from parasol.solr.client import SolrClient, QueryReponse
 from parasol.solr.schema import Schema
 from parasol.solr.update import Update
 from parasol.solr.admin import CoreAdmin
 from parasol import __version__ as parasol_ver
+
 
 TEST_SETTINGS = {
     'solr_url': 'http://localhost:8983/solr/',
@@ -34,7 +36,6 @@ TEST_FIELD_TYPES = ['test_A', 'test_B']
 
 @pytest.fixture
 def test_client(request):
-    # create using uuid4, so almost certainly non-clashing
     client = SolrClient(**TEST_SETTINGS)
 
     response = client.core_admin.status(core=TEST_SETTINGS['collection'])
@@ -60,6 +61,22 @@ def test_client(request):
     request.addfinalizer(clean_up)
     return client
 
+@pytest.fixture
+def core_test_client(request):
+    client = SolrClient(**TEST_SETTINGS)
+    core_name = str(uuid.uuid4())
+
+    def clean_up():
+
+        client.core_admin.unload(
+            core_name,
+            deleteInstanceDir=True,
+            deleteIndex=True,
+            deleteDataDir=True
+        )
+
+    request.addfinalizer(clean_up)
+    return (client, core_name)
 
 class TestClientBase:
 
@@ -150,13 +167,54 @@ class TestClientBase:
         assert response is None
 
 
+class TestQueryResponse:
+
+    def test_init(self):
+
+        response = AttrDict({
+            'responseHeader': {
+                'params': {'foo': 'bar'}
+            },
+            'response': {
+                'numFound': 2,
+                'start': 0,
+                'docs': [
+                    {'A': 5},
+                    {'A': 2},
+                    {'A': 3},
+                ],
+            },
+            'facet_counts': {
+                    'facet_fields': {
+                        'A': ['5', 1, '2', 1, '3', 1]
+                    },
+                    'facet_ranges': {
+                        'A': {
+                            'counts': ['1', 1, '2', 2, '7', 1]
+                        }
+                    }
+            },
+        })
+        qr = QueryReponse(response)
+        assert qr.params == response.responseHeader.params
+        assert qr.start == response.response.start
+        assert qr.docs == response.response.docs
+        assert qr.numFound == response.response.numFound
+        assert isinstance(qr.facet_counts['facet_fields']['A'],
+                          OrderedDict)
+        assert isinstance(qr.facet_counts['facet_ranges']['A']['counts'],
+                          OrderedDict)
+        assert qr.facet_counts['facet_fields']['A']['5'] == 1
+        assert qr.facet_counts['facet_ranges']['A']['counts']['2'] == 2
+
+
 class TestSolrClient:
 
     def test_solr_client_init(self):
         solr_url = 'http://localhost:8983/solr'
         collection = 'testcoll'
         client = SolrClient(solr_url, collection)
-        # check that development defaults are respected
+        # check that args are respected
         assert client.solr_url == 'http://localhost:8983/solr'
         assert client.collection == 'testcoll'
         assert client.schema_handler == 'schema'
@@ -187,21 +245,46 @@ class TestSolrClient:
         assert response.params['wt'] == 'json'
         # add a field and index some documents
         test_client.schema.add_field(name='A', type='string')
+        test_client.schema.add_field(name='B', type='int')
         test_client.update.index([
-            {'A': 'foo', 'id': 1},
-            {'A': 'bar', 'id': 2},
-            {'A': 'baz', 'id': 3}
+            {'A': 'foo', 'B': 5, 'id': 1},
+            {'A': 'bar', 'B': 20, 'id': 2},
+            {'A': 'baz', 'B': 25, 'id': 3},
+            {'A': 'baz', 'B': 30, 'id': 4},
         ])
         time.sleep(1)
         # get back two
         response = test_client.query(q='A:(bar OR baz)')
-        assert response.numFound == 2
+        assert response.numFound == 3
         # not paginated so should be starting at 0
         assert response.start == 0
         # should be the two expected documents
-        {'A': 'bar', id: 2} in response.docs
-        {'A': 'baz', id: 3} in response.docs
-
+        {'A': 'bar', 'B': 20, 'id': 2}
+        {'A': 'baz', 'B': 25, 'id': 3} in response.docs
+        {'A': 'baz', 'B': 30, 'id': 4} in response.docs
+        # test faceting in response
+        response = test_client.query(
+            q='*:*',
+            facet='on',
+            **{
+                'facet.field': 'A',
+                'facet.range': 'B',
+                'f.B.facet.range.start': 1,
+                'f.B.facet.range.end': 25,
+                'f.B.facet.range.gap': 10
+            }
+        )
+        assert response.facet_counts
+        assert response.facet_counts.facet_fields
+        # must access using dict notation to get the OrderedDict as presented
+        assert isinstance(response.facet_counts.facet_fields['A'], OrderedDict)
+        assert response.facet_counts.facet_fields.A['bar'] == 1
+        assert response.facet_counts.facet_fields.A['baz'] == 2
+        assert isinstance(response.facet_counts.facet_ranges['B']['counts'],
+                          OrderedDict)
+        # check that the gaps are generated as expected
+        assert response.facet_counts.facet_ranges['B']['counts']['1'] == 1
+        assert response.facet_counts.facet_ranges['B']['counts']['11'] == 1
 
 class TestUpdate:
 
@@ -466,8 +549,8 @@ class TestCoreAdmin:
         adm = CoreAdmin('http://foo/', 'admin', session=mocksession)
         assert adm.session == mocksession
 
-    def test_create_unload(self, test_client):
-        core = str(uuid.uuid4())
+    def test_create_unload(self, core_test_client):
+        test_client, core = core_test_client
         test_client.core_admin.create(core, configSet='basic_configs')
         resp = test_client.core_admin.status(core=core)
         assert not resp.initFailures
@@ -496,12 +579,23 @@ class TestCoreAdmin:
         assert test_client.core_admin.reload(test_client.collection)
         assert not test_client.core_admin.reload('foo')
 
-    def test_ping(self, test_client):
+    def test_ping(self, core_test_client):
         # ping should return false for non-existent core
-        core = str(uuid.uuid4())
-        assert not test_client.core_admin.ping(core)
-        # create the core and ping again - should return status ok
-        test_client.core_admin.create(core, configSet='basic_configs')
-        assert test_client.core_admin.ping(core)
+        solrclient, core = core_test_client
+        assert not solrclient.core_admin.ping(core)
+        # create the core and then check it
+        solrclient.core_admin.create(core, configSet='basic_configs',
+                                      dataDir='foo')
+        assert solrclient.core_admin.ping(core)
 
-
+    def test_status(self, test_client):
+        response = test_client.core_admin.\
+                status(core=TEST_SETTINGS['collection'])
+        # no init failures happened
+        assert not response.initFailures
+        # status is not empty, and therefore has core info
+        assert response.status.parasol_test
+        # check a few core traits to make sure a valid
+        # response came back
+        assert response.status.parasol_test.name == 'parasol_test'
+        assert response.status.parasol_test.startTime
