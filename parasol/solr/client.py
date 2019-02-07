@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # and API documentation.
 
 class QueryReponse:
-    '''Thin wrapper to give access to Solr select responses.'''
+    """Thin wrapper to give access to Solr select responses."""
     def __init__(self, response):
         self.numFound = response.response.numFound
         self.start = response.response.start
@@ -47,7 +47,7 @@ class QueryReponse:
         # convert.
 
     def _process_facet_counts(self, facet_counts):
-        '''Convert facet_fields and facet_ranges to OrderDict'''
+        """Convert facet_fields and facet_ranges to OrderDict"""
         if 'facet_fields' in facet_counts:
             for k, v in facet_counts.facet_fields.items():
                 facet_counts['facet_fields'][k] = \
@@ -60,7 +60,7 @@ class QueryReponse:
 
 
 class SolrClient(ClientBase):
-    '''Class to aggregate all of the other Solr APIs and settings.'''
+    """Class to aggregate all of the other Solr APIs and settings."""
 
     #: core admin handler
     core_admin_handler = 'admin/cores'
@@ -109,8 +109,8 @@ class SolrClient(ClientBase):
             self.session)
 
     def query(self, **kwargs):
-        '''Perform a query with the specified kwargs and return a response or
-        None on error.'''
+        """Perform a query with the specified kwargs and return a response or
+        None on error."""
         url = self.build_url(self.solr_url, self.collection,
                              self.select_handler)
         # use POST for efficiency and send as x-www-form-urlencoded

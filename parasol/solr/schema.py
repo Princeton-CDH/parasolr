@@ -4,7 +4,7 @@ from attrdict import AttrDict
 from parasol.solr.client import ClientBase
 
 class Schema(ClientBase):
-    '''Class for managing Solr schema API.'''
+    """Class for managing Solr schema API."""
     def __init__(self, solr_url, collection, handler, session=None):
 
         # Go ahead and create a session if one is not passed in
@@ -15,7 +15,7 @@ class Schema(ClientBase):
         }
 
     def _post_field(self, method, **field_kwargs):
-        '''Post a field definition to the schema API'''
+        """Post a field definition to the schema API"""
         # Handle situations where we need class as a kwarg
         if 'klass' in field_kwargs:
             field_kwargs['class'] = field_kwargs['klass']
@@ -31,15 +31,15 @@ class Schema(ClientBase):
         )
 
     def add_field(self, **field_kwargs):
-        '''Add a field with the supplied kwargs (or dict as kwargs)'''
+        """Add a field with the supplied kwargs (or dict as kwargs)"""
         self._post_field('add-field', **field_kwargs)
 
     def delete_field(self, name):
-        '''Delete a field with the supplied kwargs (or dict as kwargs)'''
+        """Delete a field with the supplied kwargs (or dict as kwargs)"""
         self._post_field('delete-field', name=name)
 
     def replace_field(self, **field_kwargs):
-        '''Replace a field with the supplied kwargs (or dict as kwargs)'''
+        """Replace a field with the supplied kwargs (or dict as kwargs)"""
         # NOTE: Requires a full field definition, no partial updates
         self._post_field('replace-field', **field_kwargs)
 
@@ -59,26 +59,26 @@ class Schema(ClientBase):
         )
 
     def add_field_type(self, **field_kwargs):
-        '''Add a field type to the Solr collection or core.'''
+        """Add a field type to the Solr collection or core."""
         self._post_field('add-field-type', **field_kwargs)
 
     def delete_field_type(self, name):
-       '''Delete a field type from the Solr collection or core'''
+       """Delete a field type from the Solr collection or core"""
        self._post_field('delete-field-type', name=name)
 
     def replace_field_type(self, **field_kwargs):
-        '''Provide a full definition to replace a field'''
+        """Provide a full definition to replace a field"""
         # NOTE: Requires a full field-type definition, no partial updates
         self._post_field('replace-field-type', **field_kwargs)
 
     def get_schema(self):
-        '''Get the full schema for a Solr collection or core.'''
+        """Get the full schema for a Solr collection or core."""
         response = self.make_request('get', self.url)
         if response:
             return response.schema
 
     def list_fields(self, fields=None, includeDynamic=False, showDefaults=False):
-        '''Get a list of field definitions for a Solr Collection or core.'''
+        """Get a list of field definitions for a Solr Collection or core."""
         url = urljoin('%s/' % self.url, 'fields')
         params = {}
         if fields:
@@ -101,7 +101,7 @@ class Schema(ClientBase):
             return response.copyFields
 
     def list_field_types(self, showDefaults=True):
-        '''List all field types in a Solr collection or core.'''
+        """List all field types in a Solr collection or core."""
         url = urljoin('%s/' % self.url, 'fieldtypes')
         params = {}
         params['showDefaults'] = showDefaults

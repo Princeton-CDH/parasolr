@@ -11,17 +11,17 @@ logger = logging.getLogger(__name__)
 
 
 class SolrClientException(Exception):
-    '''Base class for all exceptions in this module'''
+    """Base class for all exceptions in this module"""
     pass
 
 
 class CoreExists(SolrClientException):
-    '''Raised when default core for running unit tests exists'''
+    """Raised when default core for running unit tests exists"""
     pass
 
 
 class ClientBase:
-    '''Base object with common communication methods for talking to Solr API.'''
+    """Base object with common communication methods for talking to Solr API."""
 
     def __init__(self, session=None):
         if session is None:
@@ -31,7 +31,7 @@ class ClientBase:
 
 
     def build_url(self, solr_url, collection, handler):
-        '''Return a url to a handler based on core and base url'''
+        """Return a url to a handler based on core and base url"""
         # Two step proecess to avoid quirks in urljoin behavior
         # First, join the collection/core with a slashes appended
         # just in case so # it doesn't ovewrite the base url
@@ -43,7 +43,7 @@ class ClientBase:
 
     def make_request(self, meth, url, headers=None,
                       params=None, data=None, **kwargs):
-        '''Private method for making a request to Solr, wraps session.request'''
+        """Private method for making a request to Solr, wraps session.request"""
         if params is None:
             params = dict()
             # always add wt=json for JSON api
