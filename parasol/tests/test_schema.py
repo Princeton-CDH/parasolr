@@ -3,12 +3,11 @@ from unittest.mock import patch, Mock
 from attrdict import AttrDict
 import pytest
 
-from parasol.solr import SolrClient
 from parasol import schema
 
 
 def test_solr_fields():
-    '''unit test for solr field descriptor'''
+    """unit test for solr field descriptor"""
 
     # create a class with fields to test field descriptors
     class TestySolrFields:
@@ -32,7 +31,7 @@ def test_solr_fields():
         TestySolrFields().mystring = 'foo'
 
 class TestAnalyzer(schema.SolrAnalyzer):
-    ''' test analyzer for checking analyzer and field type logic'''
+    """ test analyzer for checking analyzer and field type logic"""
     tokenizer = 'solr.StandardTokenizerFactory'
     filters = [
         {"class": "solr.StopFilterFactory", "ignoreCase": True,
@@ -48,7 +47,7 @@ def test_analyzer():
 
 
 def test_solr_field_types():
-    '''unit test for solr field type descriptor and analyzer'''
+    """unit test for solr field type descriptor and analyzer"""
 
     # create a class with fields to test field descriptors
     class TestSchema:

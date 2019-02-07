@@ -27,11 +27,11 @@ class CoreAdmin(ClientBase):
         self.make_request('get', self.url, params=params)
 
     def reload(self, core):
-        '''Reload a core'''
+        """Reload a core"""
         params = {'core': core, 'action': 'RELOAD'}
         return self.make_request('get', self.url, params=params)
 
-    def status(self, core='', **kwargs):
+    def status(self, core=''):
         """Get the status of all cores or one core."""
         params = {}
         if core:
@@ -43,10 +43,10 @@ class CoreAdmin(ClientBase):
         )
 
     def ping(self, core):
-        '''Ping a core to check status.
+        """Ping a core to check status.
 
         returns: True if core status is OK, otherwise False.
-        '''
+        """
         ping_url = '/'.join([self.solr_url.rstrip('/'), core, 'admin', 'ping'])
         response = self.make_request('get', ping_url)
         # ping returns 404 if core does not exist (make request returns None)

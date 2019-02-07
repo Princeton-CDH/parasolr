@@ -1,4 +1,4 @@
-'''
+"""
 **solr_schema** is a custom manage command to update the configured
 schema definition for the configured Solr instance.  Reports on the
 number of fields that are added or updated, and any that are out of
@@ -8,7 +8,7 @@ Example usage::
 
     python manage.py solr_schema
 
-'''
+"""
 
 from django.core.management.base import BaseCommand, CommandError
 import requests
@@ -18,7 +18,7 @@ from parasol.schema import SolrSchema
 
 
 class Command(BaseCommand):
-    '''Configure Solr schema fields and field types.'''
+    """Configure Solr schema fields and field types."""
     help = __doc__
 
     def add_arguments(self, parser):
@@ -29,8 +29,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        '''Load Django solr client and project schema configuration
-        and update schema field types and fields.'''
+        """Load Django solr client and project schema configuration
+        and update schema field types and fields."""
 
         solr = SolrClient()
         noinput = kwargs.get('noinput', False)
@@ -79,7 +79,7 @@ class Command(BaseCommand):
         solr.core_admin.reload(solr.collection)
 
     def report_changes(self, results, label):
-        '''Report counts for added, replaced, or deleted items.'''
+        """Report counts for added, replaced, or deleted items."""
         for action in ['added', 'replaced', 'deleted']:
             # if count is non-zero, report action + count + item label
             if results[action]:

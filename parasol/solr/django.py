@@ -34,9 +34,9 @@ logger = logging.getLogger(__name__)
 if django:
 
     class SolrClient(client.SolrClient):
-        ''':class:`SolrClient` subclass that automatically pulls configuration
+        """:class:`SolrClient` subclass that automatically pulls configuration
         from django settings.
-        '''
+        """
 
         def __init__(self, *args, **kwargs):
             solr_opts = getattr(settings, 'SOLR_CONNECTIONS', None)
