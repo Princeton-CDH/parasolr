@@ -9,7 +9,8 @@ with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
-REQUIREMENTS = ['django>=1.11', 'requests', 'attrdict']
+REQUIREMENTS = ['django>=1.11', 'requests', 'attrdict', 'progressbar2']
+# NOTE: progressbar only needed for index script; make optional?
 TEST_REQUIREMENTS = ['pytest', 'pytest-django', 'pytest-cov']
 DEV_REQUIREMENTS = ['sphinx']
 
