@@ -2,15 +2,6 @@ from collections import OrderedDict
 import logging
 
 import requests
-from attrdict import AttrDict
-
-# provide Django integration Django if installed
-try:
-    import django
-    from django.conf import settings
-    from django.core.exceptions import ImproperlyConfigured
-except ImportError:
-    django = None
 
 from parasol import __version__ as parasol_version
 from parasol.solr.base import ClientBase
@@ -50,7 +41,7 @@ class QueryReponse:
                 facet_counts['facet_fields'][k] = \
                     OrderedDict(zip(v[::2], v[1::2]))
         if 'facet_ranges' in facet_counts:
-            for k,v in facet_counts.facet_ranges.items():
+            for k, v in facet_counts.facet_ranges.items():
                facet_counts['facet_ranges'][k]['counts'] = \
                    OrderedDict(zip(v['counts'][::2], v['counts'][1::2]))
         return facet_counts
@@ -120,42 +111,3 @@ class SolrClient(ClientBase):
         if response:
             # queries return the search response for now
             return QueryReponse(response)
-
-
-if django:
-
-    class DjangoSolrClient(SolrClient):
-        ''':class:`SolrClient` subclass that automatically pulls configuration
-        from django settings.  Expected configuration format:
-
-            SOLR_CONNECTIONS = {
-                'default': {
-                    'URL': 'http://localhost:8983/solr/',
-                    'COLLECTION': 'mycore'
-                }
-            }
-
-        Collection can be omitted when connecting to a single-core Solr
-        instance.
-        '''
-
-        def __init__(self, *args, **kwargs):
-            solr_opts = getattr(settings, 'SOLR_CONNECTIONS', None)
-            # no solr connection section at all
-            if not solr_opts:
-                raise ImproperlyConfigured('DjangoSolrClient requires SOLR_CONNECTIONS in settings')
-
-            default_solr = solr_opts.get('default', None)
-            # no default config
-            if not default_solr:
-                raise ImproperlyConfigured('No "default" in SOLR_CONNECTIONS configuration')
-
-            url = default_solr.get('URL', None)
-            # URL is required
-            if not url:
-                raise ImproperlyConfigured('No URL in default SOLR_CONNECTIONS configuration')
-
-            collection = default_solr.get('COLLECTION', '')
-            logger.debug('Connecting to default Solr %s%s', url, collection)
-            super().__init__(url, collection)
-

@@ -13,7 +13,7 @@ Example usage::
 from django.core.management.base import BaseCommand, CommandError
 import requests
 
-from parasol.solr import DjangoSolrClient
+from parasol.solr.django import SolrClient
 from parasol.schema import SolrSchema
 
 
@@ -32,7 +32,7 @@ class Command(BaseCommand):
         '''Load Django solr client and project schema configuration
         and update schema field types and fields.'''
 
-        solr = DjangoSolrClient()
+        solr = SolrClient()
         noinput = kwargs.get('noinput', False)
 
         # check Solr connection and core exists
