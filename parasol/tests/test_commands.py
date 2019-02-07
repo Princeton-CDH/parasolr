@@ -1,14 +1,21 @@
 from unittest.mock import Mock, patch
 
-from django.core.management import call_command
-from django.core.management.base import CommandError
 import pytest
 import requests
 
-from parasol import schema
-from parasol.management.commands import solr_schema
+try:
+    import django
+    from django.core.management import call_command
+    from django.core.management.base import CommandError
+
+    from parasol.management.commands import solr_schema
+except ImportError:
+    django = None
+
+from parasol.solr.test_django import skipif_no_django
 
 
+@skipif_no_django
 class TestSolrSchemaCommand:
 
     def test_report_changes(self):
