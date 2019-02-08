@@ -22,6 +22,9 @@ class Indexable:
     #: solr connection
     solr = None
 
+    #: id separator for auto-generated index ids
+    ID_SEPARATOR = '.'
+
     def __init__(self):
         # initialize connection to solr on first instance initialization
         Indexable._init_solr()
@@ -47,8 +50,9 @@ class Indexable:
 
     def index_id(self):
         '''Solr identifier. By default, combines :meth:`index item_type`
-        and :attr:`id`.'''
-        return '{}.{}'.format(self.index_item_type(), self.id)
+        and :attr:`id` with :attr:ID_SEPARATOR`.'''
+        return '{}{}{}'.format(self.index_item_type(), self.ID_SEPARATOR,
+                               self.id)
 
     def index_data(self):
         '''Dictionary of data to index in Solr for this item.

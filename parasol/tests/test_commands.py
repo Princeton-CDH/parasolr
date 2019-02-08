@@ -181,6 +181,13 @@ class TestIndexCommand:
         cmd.clear('all')
         assert cmd.stdout.getvalue() == 'Clearing everything from the index'
 
+        # should also work from the command line
+        with patch('parasol.management.commands.index.SolrClient'):
+            cmd.stdout.seek(0)
+            call_command('index', index='none', clear='all', stdout=cmd.stdout)
+            assert 'Clearing everything from the index' in cmd.stdout.getvalue()
+            assert 'Indexed 0 items' in cmd.stdout.getvalue()
+
     @patch('parasol.management.commands.index.Indexable')
     @patch('parasol.management.commands.index.SolrClient')
     def test_handle_index_by_id(self, mocksolr, mockindexable):
@@ -191,6 +198,7 @@ class TestIndexCommand:
         mockindexable.all_indexables.return_value = [
             mock_indexable_model
         ]
+        mockindexable.ID_SEPARATOR = '.'
 
         # patch the method that actually does the indexing (tested elsewhere)
         with patch.object(index.Command, 'index') as mock_index_meth:

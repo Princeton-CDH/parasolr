@@ -105,10 +105,10 @@ class Command(BaseCommand):
                 # relies on default format of index_id in indexable
                 unrecognized_err = "Unrecognized index id '{}'".format(index_id)
                 # error if id can not be split
-                if '.' not in index_id:
+                if Indexable.ID_SEPARATOR not in index_id:
                     raise CommandError(unrecognized_err)
 
-                index_type, item_id = index_id.split('.')
+                index_type, item_id = index_id.split(Indexable.ID_SEPARATOR)
                 # error if split but index type is not found
                 if index_type not in self.indexables:
                     raise CommandError(unrecognized_err)
