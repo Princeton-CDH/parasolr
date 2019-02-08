@@ -1,10 +1,10 @@
 from collections import OrderedDict
+import pytest
 import time
 import uuid
 from unittest.mock import patch, Mock
 
 from attrdict import AttrDict
-import pytest
 import requests
 
 from parasol.solr.base import CoreExists, ClientBase
@@ -13,6 +13,7 @@ from parasol.solr.schema import Schema
 from parasol.solr.update import Update
 from parasol.solr.admin import CoreAdmin
 from parasol import __version__ as parasol_ver
+
 
 TEST_SETTINGS = {
     'solr_url': 'http://localhost:8983/solr/',
@@ -68,10 +69,10 @@ def core_test_client(request):
     def clean_up():
 
         client.core_admin.unload(
-           core_name,
-           deleteInstanceDir=True,
-           deleteIndex=True,
-           deleteDataDir=True
+            core_name,
+            deleteInstanceDir=True,
+            deleteIndex=True,
+            deleteDataDir=True
         )
 
     request.addfinalizer(clean_up)
@@ -207,16 +208,13 @@ class TestQueryResponse:
         assert qr.facet_counts['facet_ranges']['A']['counts']['2'] == 2
 
 
-
-
-
 class TestSolrClient:
 
     def test_solr_client_init(self):
         solr_url = 'http://localhost:8983/solr'
         collection = 'testcoll'
         client = SolrClient(solr_url, collection)
-        # check that development defaults and args are respected
+        # check that args are respected
         assert client.solr_url == 'http://localhost:8983/solr'
         assert client.collection == 'testcoll'
         assert client.schema_handler == 'schema'
@@ -577,8 +575,20 @@ class TestCoreAdmin:
             assert params['dataDir'] == 'foo'
             assert params['configSet'] == 'basic_configs'
 
-    def test_status(self, test_client):
+    def test_reload(self, test_client):
+        assert test_client.core_admin.reload(test_client.collection)
+        assert not test_client.core_admin.reload('foo')
 
+    def test_ping(self, core_test_client):
+        # ping should return false for non-existent core
+        solrclient, core = core_test_client
+        assert not solrclient.core_admin.ping(core)
+        # create the core and then check it
+        solrclient.core_admin.create(core, configSet='basic_configs',
+                                      dataDir='foo')
+        assert solrclient.core_admin.ping(core)
+
+    def test_status(self, test_client):
         response = test_client.core_admin.\
                 status(core=TEST_SETTINGS['collection'])
         # no init failures happened

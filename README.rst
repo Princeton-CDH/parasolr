@@ -4,7 +4,7 @@ parasol
 .. sphinx-start-marker-do-not-remove
 
 **django-parasol** is a reusable `Django`_ application to simplify interacting
-with `Apache Solr`_ by providing functionality to build a Solr schema and to index Django 
+with `Apache Solr`_ by providing functionality to build a Solr schema and to index Django
 models and other data as Solr documents, as well as management command
 functionality for interacting with a Solr core.
 
@@ -16,7 +16,29 @@ Installation
 
 To install before an official pypa release::
 
-   pip install git+https://github.com/Princeton-CDH/django-parasol/tree/develop#egg=django-parasol
+   pip install git+https://github.com/Princeton-CDH/django-parasol@develop#egg=parasol
+
+
+To use with Django:
+
+    * Add `parasol` to **INSTALLED_APPS*
+    * Configure **SOLR_CONNECTIONS** in your django settings::
+
+        SOLR_CONNECTIONS = {
+            'default': {
+            'URL': 'http://localhost:8983/solr/',
+            'COLLECTION': 'name',
+            }
+        }
+
+    * Define a `SolrSchema` with fields and field types for your project.
+    * Run ``solr_schema`` manage command to configure your schema; it will
+      prompt to create the Solr core if it does not exist.
+
+      .. Note::
+         The `SolrSchema` must be imported somewhere for it to be
+         found automatically.
+
 
 Development instructions
 ------------------------
@@ -37,7 +59,7 @@ Initial setup and installation:
 Unit testing
 ------------
 
-Unit tests are written with `pytest`_ but use some Django 
+Unit tests are written with `pytest`_ but use some Django
 test classes for compatibility with Django test suites. Running the tests
 requires a minimal settings file for Django-required configurations.
 
@@ -49,11 +71,11 @@ requires a minimal settings file for Django-required configurations.
    python -c "import uuid; print('\nSECRET_KEY = \'%s\'' % uuid.uuid4())" >> testsettings.py
 
 - To run the test, either use the configured setup.py test command::
-   
+
    python setup.py test
 
 - Or install test requirements in and use pytest directly::
-   
+
    pip install -e '.[test]'
    pytest
 

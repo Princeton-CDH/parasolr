@@ -1,5 +1,4 @@
 from urllib.parse import urljoin
-from attrdict import AttrDict
 
 from parasol.solr.client import ClientBase
 
@@ -54,8 +53,8 @@ class Schema(ClientBase):
 
     def delete_copy_field(self, source, dest):
         self._post_field(
-                'delete-copy-field',
-                **{'source': source, 'dest': dest}
+            'delete-copy-field',
+            **{'source': source, 'dest': dest}
         )
 
     def add_field_type(self, **field_kwargs):
@@ -108,7 +107,3 @@ class Schema(ClientBase):
         response = self.make_request('get', url, params=params)
         if response:
             return response.fieldTypes
-
-
-
-

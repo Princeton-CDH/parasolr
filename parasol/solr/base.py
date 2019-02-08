@@ -3,8 +3,8 @@ import logging
 import time
 from urllib.parse import urljoin
 
-from attrdict import AttrDict
 import requests
+from attrdict import AttrDict
 
 
 logger = logging.getLogger(__name__)
@@ -63,27 +63,26 @@ class ClientBase:
             headers=headers,
             data=json.dumps(data),
             **kwargs)
-        # log the time as needed
-        total_time = time.time() - start
         # log the url call and speed regardless
         logger.debug(
-            '%s %s=>%d: %f sec',
+            '%s %s => %d: %f sec',
             meth.upper(),
             url,
             response.status_code,
-            total_time
+            time.time() - start
         )
         if response.status_code != requests.codes.ok:
-                # Add the content of the response on the off chance
-                # it's helpful
-                logger.error(
-                    '%s %s=> err: %s',
-                    meth.upper(),
-                    url,
-                    response.content,
-                )
-                # return None for failure
-                return
+            # Add the content of the response on the off chance
+            # it's helpful
+            logger.error(
+                '%s %s=> err: %s',
+                meth.upper(),
+                url,
+                response.content,
+            )
+            # return None for failure
+            return
+
         # do further error checking on the response because Solr
         # may return 200 but pass along its own error codes and information
         output = AttrDict(response.json())
