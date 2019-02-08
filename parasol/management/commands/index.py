@@ -57,18 +57,16 @@ class Command(BaseCommand):
     v_normal = 1
     verbosity = v_normal
 
-    #: solr params for index call; currently set to commit within 5 seconds
-    solr_index_opts = {"commitWithin": 5000}
-    # NOTE: not sure what is reasonable here, but without some kind of commit,
-    # Solr seems to quickly run out of memory
-
     indexables = {}
 
-    def add_arguments(self, parser):
+    def init_indexables(self):
         # find all indexable models and create a dictionary
-        # keyed on verbose name
-        self.indexables = {model._meta.verbose_name: model
+        # keyed on index item type
+        self.indexables = {model.index_item_type(): model
                            for model in Indexable.all_indexables()}
+
+    def add_arguments(self, parser):
+        self.init_indexables()
         # indexing choices: all, none, and all indexable model names
         choices = ['all'] + list(self.indexables.keys())
         # allow indexing none so you can clear without indexing
@@ -102,11 +100,19 @@ class Command(BaseCommand):
         # index specific items by id
         if self.options['index_ids']:
             # NOTE: could probably query more efficiently, but this is
-            # for manual id selection so should never be very many at once
+            # for manual id entry so should never be very many at once
             for index_id in self.options['index_ids']:
                 # relies on default format of index_id in indexable
+                unrecognized_err = "Unrecognized index id '{}'".format(index_id)
+                # error if id can not be split
+                if '.' not in index_id:
+                    raise CommandError(unrecognized_err)
+
                 index_type, item_id = index_id.split('.')
-                to_index.append(self.indexables[index_type].objects.get(pk=item_id))
+                # error if split but index type is not found
+                if index_type not in self.indexables:
+                    raise CommandError(unrecognized_err)
+                to_index.append(self.indexables[index_type].objects .get(pk=item_id))
             total_to_index = len(to_index)
 
         else:
@@ -175,7 +181,9 @@ class Command(BaseCommand):
             del_query = 'item_type:{}'.format(mode)
 
         if self.verbosity >= self.v_normal:
-            self.stdout.write('Clearing %s from the index' % mode)
+            # pluralize indexable names but not all
+            label = 'everything' if mode == 'all' else '%s' % mode
+            self.stdout.write('Clearing %s from the index' % label)
 
         # return value doesn't tell us anything useful, so nothing
         # to return here

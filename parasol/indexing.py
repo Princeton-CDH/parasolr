@@ -37,12 +37,13 @@ class Indexable:
         '''Find all :class:`Indexable` subclasses for indexing.'''
         return cls.__subclasses__()
 
-    def index_item_type(self):
+    @classmethod
+    def index_item_type(cls):
         '''Label for this kind of indexable item. Must be unique
         across all Indexable items in an application. By default, uses
         Django model verbose name. Used in default index id and
         in index manage command. '''
-        return self._meta.verbose_name
+        return cls._meta.verbose_name
 
     def index_id(self):
         '''Solr identifier. By default, combines :meth:`index item_type`

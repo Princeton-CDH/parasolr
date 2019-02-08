@@ -11,14 +11,23 @@ from parasol.indexing import Indexable
 from parasol.tests.utils import skipif_no_django
 
 
-# DefineIndexable subclasses for testing
+# Define Indexable subclasses for testing
+# Used for both Indexable and index manage command
 
 class SimpleIndexable(Indexable):
     """simple indexable subclass"""
     id = 'a'
 
-    def index_item_type(self):
-        return 'thing'
+    @classmethod
+    def index_item_type(cls):
+        return 'simple'
+
+    # nededed for index manage command (assumes django model)
+    class objects:
+        def count():
+            return 5
+        def all():
+            return [SimpleIndexable() for i in range(5)]
 
 
 class ModelIndexable(Indexable):
@@ -27,6 +36,13 @@ class ModelIndexable(Indexable):
 
     class _meta:
         verbose_name = 'model'
+
+    # nededed for index manage command
+    class objects:
+        def count():
+            return 1
+        def all():
+            return [ModelIndexable()]
 
 
 @skipif_no_django
@@ -43,7 +59,7 @@ class TestIndexable:
         assert ModelIndexable().index_item_type() == 'model'
 
     def test_index_id(self, mocksolr):
-        assert SimpleIndexable().index_id() == 'thing.a'
+        assert SimpleIndexable().index_id() == 'simple.a'
         assert ModelIndexable().index_id() == 'model.1'
 
     def test_index_data(self, mocksolr):
