@@ -5,7 +5,7 @@ from parasol.solr.client import ClientBase
 
 
 class Update(ClientBase):
-    '''API client for Solr update functionality.'''
+    """API client for Solr update functionality."""
     def __init__(self, solr_url, collection, handler, commitWithin,
                  session=None):
 
@@ -16,7 +16,7 @@ class Update(ClientBase):
         self.params = {'commitWithin': commitWithin}
 
     def index(self, docs, commit=False, commitWithin=None):
-        '''Index a document or documents, by default with a soft commit'''
+        """Index a document or documents, by default with a soft commit"""
         params = self.params.copy()
         if commitWithin:
             params['commitWithin'] = commitWithin
@@ -35,7 +35,7 @@ class Update(ClientBase):
         )
 
     def _delete(self, del_obj):
-        '''Private method to pass a delete object to the update handler.'''
+        """Private method to pass a delete object to the update handler."""
         data = {'delete': del_obj}
         self.make_request(
             'post',

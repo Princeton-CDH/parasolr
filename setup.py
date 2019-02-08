@@ -9,10 +9,12 @@ with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
-REQUIREMENTS = ['django>=1.11', 'requests', 'attrdict', 'progressbar2']
-# NOTE: progressbar only needed for index script; make optional?
-TEST_REQUIREMENTS = ['pytest', 'pytest-django', 'pytest-cov']
+REQUIREMENTS = ['requests', 'attrdict', 'progressbar2']
+# NOTE: progressbar only needed for django index script; make optional?
+TEST_REQUIREMENTS = ['pytest', 'pytest-cov']
 DEV_REQUIREMENTS = ['sphinx']
+# django integration is optional
+DJANGO_REQUIREMENTS = ['django>=1.11', 'pytest-django']
 
 setup(
     name='parasol',
@@ -20,24 +22,24 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     license='Apache License, Version 2.0',
-    description='Django application for Apache Solr schema generation and indexing of models.',
+    description='Lightweight python library for Solr indexing, searching' +
+        ' and schema management with optional Django integration.',
     long_description=README,
-    url='https://github.com/Princeton-CDH/django-parasol',
+    url='https://github.com/Princeton-CDH/parasol',
     install_requires=REQUIREMENTS,
     setup_requires=['pytest-runner'],
     tests_require=TEST_REQUIREMENTS,
     extras_require={
         'test': TEST_REQUIREMENTS,
-        'dev': TEST_REQUIREMENTS + DEV_REQUIREMENTS
+        'django': DJANGO_REQUIREMENTS,
+        'dev': TEST_REQUIREMENTS + DEV_REQUIREMENTS + DJANGO_REQUIREMENTS,
     },
-    author='CDH @ Princeton',
-    author_email='digitalhumanities@princeton.edu',
+    author='The Center for Digital Humanities at Princeton',
+    author_email='cdhdevteam@princeton.edu',
     classifiers=[
         'Environment :: Web Environment',
+        'Development Status :: 2 - Pre-Alpha',
         'Framework :: Django',
-        'Framework :: Django :: 1.8',
-        'Framework :: Django :: 1.9',
-        'Framework :: Django :: 1.10',
         'Framework :: Django :: 1.11',
         'Framework :: Django :: 2.0',
         'Framework :: Django :: 2.1',
@@ -45,8 +47,6 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6'

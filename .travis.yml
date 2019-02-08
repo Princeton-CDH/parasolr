@@ -16,7 +16,7 @@ cache:
   directories:
     - downloads
 install:
-- if [ ! -z $DJANGO]; then pip install -q Django==$DJANGO; fi
+- if [ ! -z $DJANGO ]; then pip install -q Django==$DJANGO pytest-django; fi
 - pip install -e .
 - pip install -e '.[test]'
 - pip install codecov
