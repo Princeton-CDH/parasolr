@@ -3,10 +3,11 @@ parasol
 
 .. sphinx-start-marker-do-not-remove
 
-**django-parasol** is a reusable `Django`_ application to simplify interacting
-with `Apache Solr`_ by providing functionality to build a Solr schema and to index Django
-models and other data as Solr documents, as well as management command
-functionality for interacting with a Solr core.
+**parasol** is a lightweight python library for `Apache Solr`_ indexing,
+searching and schema management with optional `Django`_ integration.
+It includes a Solr client (`parasol.solr.SolrClient`). When used with
+Django, it provides management commands for updating your Solr schema
+configuration and indexing content.
 
 .. _Django: https://www.djangoproject.com/
 .. _Apache Solr: http://lucene.apache.org/solr/
@@ -14,14 +15,14 @@ functionality for interacting with a Solr core.
 Installation
 ------------
 
-To install before an official pypa release::
+To install before an official pypi release::
 
    pip install git+https://github.com/Princeton-CDH/parasol@develop#egg=parasol
 
 To use with Django:
 
-* Add `parasol` to **INSTALLED_APPS**
-* Configure **SOLR_CONNECTIONS** in your django settings::
+    * Add `parasol` to **INSTALLED_APPS**
+    * Configure **SOLR_CONNECTIONS** in your django settings::
 
     SOLR_CONNECTIONS = {
         'default': {
@@ -46,14 +47,16 @@ This git repository uses git flow branching conventions.
 
 Initial setup and installation:
 
-- recommmended: create and activate a Python 3.6 virtualenv::
+- *Recommmended*: create and activate a Python 3.6 virtualenv::
 
    virtualenv parasol -p python3.6
    source parasol/bin/activate
 
-- pip install the package with its dependencies::
+- Install the package with its dependencies as well as development
+  dependencies::
 
    pip install -e .
+   pip install -e '.[dev]''
 
 Unit testing
 ------------
