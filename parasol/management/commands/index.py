@@ -4,9 +4,9 @@ should only be run *after* your schema has been configured via
 **solr_schema**.
 
 By default, indexes _all_ indexable content.
-TODO
-You can optionally specify ***, or index specific items
-by index id.
+
+You can optionally index specific items by type or by index id.  Default
+index types are generated based on model verbose names.
 
 A progress bar will be displayed by default if there are more than 5
 items to process.  This can be suppressed via script options.
@@ -20,19 +20,15 @@ Example usage::
     # index everything
     python manage.py index
     # index specific items
-    python manage.py index htid1 htid2 htid3
-    # index works only (skip pages)
-    python manage.py index -i works
-    python manage.py index --works
-    # index pages only (skip works)
-    python manage.py index -i pages
-    python manage.py index ---pages
+    python manage.py index person:1 person:1 location:2
+    # index one kind of item only
+    python manage.py index -i person
     # suppress progressbar
     python manage.py index --no-progress
     # clear everything, then index everything
     python manage.py index --clear all
-    # clear works only, then index works
-    python manage.py index --clear works --index works
+    # clear and then index one kind of item
+    python manage.py index --clear person --index person
     # clear everything, index nothing
     python manage.py index --clear all --index none
 
@@ -40,6 +36,7 @@ Example usage::
 
 from django.core.management.base import BaseCommand, CommandError
 from django.template.defaultfilters import pluralize
+import requests
 import progressbar
 
 from parasol.solr.django import SolrClient
@@ -47,7 +44,7 @@ from parasol.indexing import Indexable
 
 
 class Command(BaseCommand):
-    '''Index content in Solr'''
+    """Index content in Solr"""
     help = __doc__
 
     solr = None
@@ -60,8 +57,8 @@ class Command(BaseCommand):
     indexables = {}
 
     def init_indexables(self):
-        # find all indexable models and create a dictionary
-        # keyed on index item type
+        """Find all indexable models and create a dictionary
+        keyed on index item type"""
         self.indexables = {model.index_item_type(): model
                            for model in Indexable.all_indexables()}
 
@@ -152,23 +149,12 @@ class Command(BaseCommand):
                 count, pluralize(count)))
 
     def index(self, index_data, progbar=None):
-        '''index an iterable into the configured solr instance
-        and solr collection'''
-
-        # NOTE: currently no good way to catch a connection
-        # error when Solr is not running because we get multiple
-        # connections during handling of exceptions.
+        """Index an iterable into the configured solr"""
         try:
             # index in chunks and update progress bar if there is one
             return Indexable.index_items(index_data, progbar=progbar)
-        except Exception as err:
-            # TODO: test with new SolrClient code
-        # except (ConnectionError, RequestException) as err:
-            # NOTE: this is fairly ugly, and catching the more specific errors
-            # doesn't work because there are multiple exceptions
-            # thrown when a connection error occurs; however, this will
-            # at least stop the script instead of repeatedly throwing
-            # connection errors
+        except requests.exceptions.ConnectionError as err:
+            # bail out if we error connecting to Solr
             raise CommandError(err)
 
     def clear(self, mode):

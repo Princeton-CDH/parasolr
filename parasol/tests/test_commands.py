@@ -153,7 +153,7 @@ class TestIndexCommand:
 
         # solr connection exception should raise a command error
         with pytest.raises(CommandError):
-            mockindexable.index_items.side_effect = Exception
+            mockindexable.index_items.side_effect = requests.exceptions.ConnectionError
             cmd.index(test_index_data)
 
     def test_clear(self):
