@@ -1,6 +1,8 @@
 from collections import OrderedDict
 import logging
+from typing import Any, Optional
 
+import attrdict
 import requests
 
 from parasol import __version__ as parasol_version
@@ -18,13 +20,12 @@ logger = logging.getLogger(__name__)
 # and API documentation.
 
 class QueryReponse:
-    """Thin wrapper to give access to Solr select responses. """
-    def __init__(self, response):
-        """
-        :param response: A Solr query response.
-        :type response: :class:`attrdict.AttrDict`
-        """
+    """Thin wrapper to give access to Solr select responses.
 
+    Args:
+        response: A Solr query response
+    """
+    def __init__(self, response: attrdict.AttrDict):
         self.numFound = response.response.numFound
         self.start = response.response.start
         self.docs = response.response.docs
@@ -39,14 +40,15 @@ class QueryReponse:
         # as OrderedDicts, you must use dict notation (or AttrDict *will*
         # convert.
 
-    def _process_facet_counts(self, facet_counts):
+    def _process_facet_counts(self, facet_counts: attrdict.AttrDict) \
+            -> attrdict.AttrDict:
         """Convert facet_fields and facet_ranges to OrderedDict.
 
-        :param facet_counts: Solr facet_counts field.
-        :type facet_counts: :class:`attrdict.AttrDict`
+        Args:
+          facet_counts: Solr facet_counts field.
 
-        :return: Solr facet_counts field
-        :rtype: :class:`attrdict.AttrDict`
+        Returns:
+          Solr facet_counts field
         """
         if 'facet_fields' in facet_counts:
             for k, v in facet_counts.facet_fields.items():
@@ -60,7 +62,14 @@ class QueryReponse:
 
 
 class SolrClient(ClientBase):
-    """Class to aggregate all of the other Solr APIs and settings."""
+    """Class to aggregate all of the other Solr APIs and settings.
+
+    Args:
+        solr_url: Base url for solr.
+        collection: Name of Solr collection or core.
+        commitWithin: Time in ms for soft commits to happen.
+        session: A python-requests :class:`requests.Session`.
+    """
 
     #: CoreAdmin API handler
     core_admin_handler = 'admin/cores'
@@ -75,17 +84,9 @@ class SolrClient(ClientBase):
     # commitWithin time in ms
     commitWithin = 1000
 
-    def __init__(self, solr_url, collection, commitWithin=None, session=None):
-        """
-        :param solr_url: Base url for Solr.
-        :type solr_url: str
-        :param collection: Name of a Solr collection or core.
-        :type collection: str
-        :param commitWithin: Time in ms for soft commits to happen.
-        :type collection: int
-        :param session: A python-requests Session.
-        :type session: :class:`requests.Session`
-        """
+    def __init__(self, solr_url: str, collection: str,
+                 commitWithin: Optional[int]=None,
+                 session: Optional[requests.Session]=None):
         # Go ahead and create a session if one is not passed in
         super().__init__(session=session)
 
@@ -117,12 +118,14 @@ class SolrClient(ClientBase):
             self.core_admin_handler,
             self.session)
 
-    def query(self, **kwargs):
+    def query(self, **kwargs: Any) -> Optional[QueryReponse]:
         """Perform a query with the specified kwargs.
 
-        :param kwargs: Any valid Solr search parameters.
-        :return: A search response wrapped in QueryResponse
-        :rtype: :class:`parasol.solr.client.QueryResponse`.
+        Args:
+            **kwargs: Any valid Solr search parameters.
+
+        Returns:
+            A search QueryResponse.
         """
         url = self.build_url(self.solr_url, self.collection,
                              self.select_handler)
