@@ -74,6 +74,13 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
+# specify the use of the init method's docstring for classes
+autoclass_content = 'both'
+
+# Autodoc configuration, right now to ensure private members are covered
+autodoc_default_options = {
+    'private-members': None
+}
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -188,5 +195,6 @@ epub_exclude_files = ['search.html']
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'https://docs.python.org/': None,
-    'django': ('http://django.readthedocs.org/en/latest/', None)
+    'django': ('http://django.readthedocs.org/en/latest/', None),
+    'requests': ('http://docs.python-requests.org/en/master/', None),
     }
