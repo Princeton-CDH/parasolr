@@ -17,6 +17,14 @@ class SolrField:
     """
 
     def __init__(self, fieldtype, required=False, multivalued=False):
+        """
+        :param fieldtype: The type of Solr field.
+        :type fieldtype: str
+        :param required: Whether the field is required.
+        :type required: bool
+        :param multivalued: Whether the field is multi-valued.
+        :type multivalued: bool
+        """
         self.type = fieldtype
         self.required = required
         self.multivalued = multivalued
@@ -40,7 +48,7 @@ class SolrTypedField(SolrField):
 
 
 class SolrStringField(SolrTypedField):
-    """Solr string field"""
+    """Solr string field."""
     field_type = 'string'
 
 
@@ -55,7 +63,7 @@ class SolrAnalyzer:
 
     @classmethod
     def as_solr_config(cls):
-        """Return analyzer information for use in solr configuration"""
+        """Return analyzer information for use in solr configuration."""
         return {
             'tokenizer': {
                 'class': cls.tokenizer
@@ -69,6 +77,12 @@ class SolrFieldType:
     a :class:`SolrSchema`instance.
     """
     def __init__(self, field_class, analyzer):
+        """
+        :param field_class: The class of the Solr field
+        :type field_class: str
+        :param analyzer: The name of the Solr analyzer to use on the field.
+        :type analyzer: str
+        """
         self.field_class = field_class
         self.analyzer = analyzer
 
@@ -85,7 +99,7 @@ class SolrFieldType:
 
 
 class SolrSchema:
-    """Solr schema configuration"""
+    """Solr schema configuration."""
 
     #: dictionary of copy fields to be configured
     #: key is source field, value is destination field or list of fields
@@ -127,7 +141,7 @@ class SolrSchema:
         new fields have been created and before old fields are removed,
         since an outdated copy field could prevent removal.
 
-        returns: :class:`attrdict.AttrDefault` with counts for added,
+        :return: :class:`attrdict.AttrDefault` with counts for added,
         updated, and deleted fields.
         """
 
@@ -168,7 +182,7 @@ class SolrSchema:
 
     @classmethod
     def configure_copy_fields(cls, solr):
-        """Update configured Solr instance schema with copy fields"""
+        """Update configured Solr instance schema with copy fields."""
 
         # get list of currently configured copy fields
         solr_copy_fields = solr.schema.list_copy_fields()

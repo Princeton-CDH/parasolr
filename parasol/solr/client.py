@@ -18,8 +18,13 @@ logger = logging.getLogger(__name__)
 # and API documentation.
 
 class QueryReponse:
-    """Thin wrapper to give access to Solr select responses."""
+    """Thin wrapper to give access to Solr select responses. """
     def __init__(self, response):
+        """
+        :param response: A Solr query response.
+        :type response: :class:`attrdict.AttrDict`
+        """
+
         self.numFound = response.response.numFound
         self.start = response.response.start
         self.docs = response.response.docs
@@ -35,7 +40,14 @@ class QueryReponse:
         # convert.
 
     def _process_facet_counts(self, facet_counts):
-        """Convert facet_fields and facet_ranges to OrderDict"""
+        """Convert facet_fields and facet_ranges to OrderedDict.
+
+        :param facet_counts: Solr facet_counts field.
+        :type facet_counts: :class:`attrdict.AttrDict`
+
+        :return: Solr facet_counts field
+        :rtype: :class:`attrdict.AttrDict`
+        """
         if 'facet_fields' in facet_counts:
             for k, v in facet_counts.facet_fields.items():
                 facet_counts['facet_fields'][k] = \
@@ -50,20 +62,30 @@ class QueryReponse:
 class SolrClient(ClientBase):
     """Class to aggregate all of the other Solr APIs and settings."""
 
-    #: core admin handler
+    #: CoreAdmin API handler
     core_admin_handler = 'admin/cores'
-    #: select handler
+    #: Select handler
     select_handler = 'select'
-    #: schema handler
+    #: Schema API handler
     schema_handler = 'schema'
-    # update handler
+    #  Update API handler
     update_handler = 'update'
-    #: core or collection
+    #: core or collection name
     collection = ''
-    # commitWithin definition
+    # commitWithin time in ms
     commitWithin = 1000
 
     def __init__(self, solr_url, collection, commitWithin=None, session=None):
+        """
+        :param solr_url: Base url for Solr.
+        :type solr_url: str
+        :param collection: Name of a Solr collection or core.
+        :type collection: str
+        :param commitWithin: Time in ms for soft commits to happen.
+        :type collection: int
+        :param session: A python-requests Session.
+        :type session: :class:`requests.Session`
+        """
         # Go ahead and create a session if one is not passed in
         super().__init__(session=session)
 
@@ -96,8 +118,12 @@ class SolrClient(ClientBase):
             self.session)
 
     def query(self, **kwargs):
-        """Perform a query with the specified kwargs and return a response or
-        None on error."""
+        """Perform a query with the specified kwargs.
+
+        :param kwargs: Any valid Solr search parameters.
+        :return: A search response wrapped in QueryResponse
+        :rtype: :class:`parasol.solr.client.QueryResponse`.
+        """
         url = self.build_url(self.solr_url, self.collection,
                              self.select_handler)
         # use POST for efficiency and send as x-www-form-urlencoded

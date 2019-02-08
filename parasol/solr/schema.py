@@ -18,7 +18,7 @@ class Schema(ClientBase):
         :param handler: Handler name for Solr Schema API.
         :type handler: str
         :param session: A python-requests Session.
-        :type session: :class:`requests.Session` .
+        :type session: :class:`requests.Session`.
         """
         # Go ahead and create a session if one is not passed in
         super().__init__(session=session)
@@ -54,19 +54,40 @@ class Schema(ClientBase):
         )
 
     def add_field(self, **field_kwargs):
-        """Add a field with the supplied kwargs (or dict as kwargs)"""
+        """Add a field with the supplied definition.
+
+        :param field_kwargs: Any valid Solr field definition values.
+        """
         self._post_field('add-field', **field_kwargs)
 
     def delete_field(self, name):
-        """Delete a field with the supplied kwargs (or dict as kwargs)"""
+        """Delete a field with the supplied name.
+
+        :param name: Name of field to delete.
+        :type name: str
+        """
         self._post_field('delete-field', name=name)
 
     def replace_field(self, **field_kwargs):
-        """Replace a field with the supplied kwargs (or dict as kwargs)"""
-        # NOTE: Requires a full field definition, no partial updates
+        """Replace a field with the supplied definition
+
+        :param field_kwargs: Any valid Solr field definition values.
+
+        :Note:
+            This must be a full redefinition, not a partial update.
+        """
         self._post_field('replace-field', **field_kwargs)
 
     def add_copy_field(self, source, dest, maxChars=None):
+        """Add a copy field between two existing fields.
+
+        :param source: Source Solr field.
+        :type source: str
+        :param dest: Destination Solr field.
+        :type dest: str
+        :param maxChars: Maximum characters to copy.
+        :type maxChars: int
+        """
         field_definition = {
             'source': source,
             'dest': dest
@@ -76,32 +97,65 @@ class Schema(ClientBase):
         self._post_field('add-copy-field', **field_definition)
 
     def delete_copy_field(self, source, dest):
+        """Delete a Solr copy field.
+
+        :param source: Source Solr field.
+        :type source: str
+        :param dest: Destination Solr field.
+        """
         self._post_field(
             'delete-copy-field',
             **{'source': source, 'dest': dest}
         )
 
     def add_field_type(self, **field_kwargs):
-        """Add a field type to the Solr collection or core."""
+        """Add a field type to a Solr collection or core.
+
+        :param field_kwargs: Any valid Solr field definition values.
+        """
         self._post_field('add-field-type', **field_kwargs)
 
     def delete_field_type(self, name):
-       """Delete a field type from the Solr collection or core"""
+       """Delete a field type from a Solr collection or core.
+
+       :param name: Name of Solr field type to delete.
+       :type name: str
+       """
        self._post_field('delete-field-type', name=name)
 
     def replace_field_type(self, **field_kwargs):
-        """Provide a full definition to replace a field"""
-        # NOTE: Requires a full field-type definition, no partial updates
+        """Replace a field type from a Solr collection or core.
+
+        :param field_kwargs: Any valid Solr field definition values.
+
+        :Note:
+            This must be a full redefinition, not a partial update.
+        """
         self._post_field('replace-field-type', **field_kwargs)
 
     def get_schema(self):
-        """Get the full schema for a Solr collection or core."""
+        """Get the full schema for a Solr collection or core.
+
+        :return: Schema as returned by Solr.
+        :rtype: :class:`attrdict.AttrDict`
+        """
         response = self.make_request('get', self.url)
         if response:
             return response.schema
 
     def list_fields(self, fields=None, includeDynamic=False, showDefaults=False):
-        """Get a list of field definitions for a Solr Collection or core."""
+        """Get a list of field definitions for a Solr Collection or core.
+
+        :param fields: A list of fields to filter by.
+        :type fields: list
+        :param includeDynamic: Include Solr dynamic fields in search.
+        :type includeDynamic: bool
+        :param showDefaults: Show default Solr fields.
+        :type showDefaults: bool
+
+        :return: list of fields as returned by Solr.
+        :rtype: list
+        """
         url = urljoin('%s/' % self.url, 'fields')
         params = {}
         if fields:
@@ -113,6 +167,15 @@ class Schema(ClientBase):
             return response.fields
 
     def list_copy_fields(self, source_fl=None, dest_fl=None):
+        """Return a list of copy fields from Solr.
+        :param source_fl: Source field to filter by.
+        :type source_fl: str
+        :param dest_fl: Destination field to filter by.
+        :type dest_fl: str
+
+        :return: list of copy fields as returned by Solr.
+        :rtype: list
+        """
         url = urljoin('%s/' % self.url, 'copyfields')
         params = {}
         if source_fl:
@@ -124,7 +187,13 @@ class Schema(ClientBase):
             return response.copyFields
 
     def list_field_types(self, showDefaults=True):
-        """List all field types in a Solr collection or core."""
+        """List all field types in a Solr collection or core.
+        :param showDefaults: Show default fields (defaults to True).
+        :type showDefaults: bool:
+
+        :return: list of copy fields as returned by Solr.
+        :rtype: list
+        """
         url = urljoin('%s/' % self.url, 'fieldtypes')
         params = {}
         params['showDefaults'] = showDefaults

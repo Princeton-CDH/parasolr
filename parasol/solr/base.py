@@ -24,6 +24,10 @@ class ClientBase:
     """Base object with common communication methods for talking to Solr API."""
 
     def __init__(self, session=None):
+        """
+        :param session: A python-requests :class:`requests.Session`.
+        :type session: :class:`requests.Session`
+        """
         if session is None:
             self.session = requests.Session()
         else:
@@ -31,7 +35,18 @@ class ClientBase:
 
 
     def build_url(self, solr_url, collection, handler):
-        """Return a url to a handler based on core and base url"""
+        """Return a url to a handler based on core and base url.
+
+        :param solr_url: Base url for Solr.
+        :type solr_url: str
+        :param collection: Collection or core name.
+        :type collection: str
+        :param handler: Handler URL for construction.
+        :type handler: str
+
+        :return: A full-qualified URL.
+        :rtype: str
+        """
         # Two step proecess to avoid quirks in urljoin behavior
         # First, join the collection/core with a slashes appended
         # just in case so # it doesn't ovewrite the base url
@@ -43,7 +58,15 @@ class ClientBase:
 
     def make_request(self, meth, url, headers=None,
                       params=None, data=None, **kwargs):
-        """Private method for making a request to Solr, wraps session.request"""
+        """Make an HTTP request to Solr.
+
+        :param meth: HTTP method to use.
+        :param url: URL to make request to.
+        :param headers: HTTP headers.
+        :param params: Params to use as form-fields or query-string params.
+        :param data: Data for a POST request.
+        :return: None or respone wrapped as :class:`attrdict.AttrDict`.
+        """
         if params is None:
             params = dict()
             # always add wt=json for JSON api
