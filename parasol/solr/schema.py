@@ -1,11 +1,25 @@
+"""
+Module with class and methods for the Solr Schema API.
+"""
+
+
 from urllib.parse import urljoin
 
 from parasol.solr.client import ClientBase
 
 class Schema(ClientBase):
-    """Class for managing Solr schema API."""
+    """Class for managing Solr Schema API"""
     def __init__(self, solr_url, collection, handler, session=None):
-
+        """
+        :param solr_url: Base url for Solr.
+        :type name: str
+        :param collection: Name of the collection or core.
+        :type collection: str
+        :param handler: Handler name for Solr Schema API.
+        :type handler: str
+        :param session: A python-requests Session.
+        :type session: :class:`requests.Session` .
+        """
         # Go ahead and create a session if one is not passed in
         super().__init__(session=session)
         self.url = self.build_url(solr_url, collection, handler)
@@ -14,7 +28,17 @@ class Schema(ClientBase):
         }
 
     def _post_field(self, method, **field_kwargs):
-        """Post a field definition to the schema API"""
+        """Post a field definition to the schema API.
+
+        :param method: Solr field method to use.
+        :type method: str
+        :param field_kwargs: Field arguments to use in definition.
+
+        :Field kwargs:
+            Note: Any valid schema definition may be used; if passed as
+            ``kwargs``, rather than :class:`dict`, ``klass`` may be used
+            instead of ``class``.
+        """
         # Handle situations where we need class as a kwarg
         if 'klass' in field_kwargs:
             field_kwargs['class'] = field_kwargs['klass']
