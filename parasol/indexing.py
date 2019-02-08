@@ -1,20 +1,41 @@
+"""
+Model-based indexing with Solr.
+
+Items to be indexed in Solr should extend :class:`Indexable`. The
+default implementation should work for most Django models; at a minimum
+you should extend :meth:`Indexable.index_data` to include the information
+to be indexed in Solr. You may also customize :meth:`Indexable.index_item_type`
+and :meth:`Indexable.index_item_id`.
+
+To manually index content in Solr, see
+:mod:`~parasol.management.commands.index` manage command documentation.
+
+-------------------------
+
+"""
+
 import itertools
 import logging
 
 try:
-    import django
     from django.db.models.query import QuerySet
+
     from parasol.solr.django import SolrClient
 except ImportError:
-    django = QuerySet = SolrClient = None
+    QuerySet = SolrClient = None
 
 
 logger = logging.getLogger(__name__)
 
+
 class Indexable:
-    '''Mixin for objects that are indexed in Solr.  Subclasses must implement
+    """Mixin for objects that are indexed in Solr.  Subclasses must implement
     `index_id` and `index` methods.
-    '''
+    """
+
+    # NOTE: current implementation is Django-specific, intended for
+    # use with django models. Should be possible to generalize once
+    # we have other use cases.
 
     #: number of items to index at once when indexing a large number of items
     index_chunk_size = 150
@@ -37,45 +58,52 @@ class Indexable:
 
     @classmethod
     def all_indexables(cls):
-        '''Find all :class:`Indexable` subclasses for indexing.'''
+        """Find all :class:`Indexable` subclasses for indexing."""
         return cls.__subclasses__()
 
     @classmethod
     def index_item_type(cls):
-        '''Label for this kind of indexable item. Must be unique
+        """Label for this kind of indexable item. Must be unique
         across all Indexable items in an application. By default, uses
         Django model verbose name. Used in default index id and
-        in index manage command. '''
+        in index manage command. """
         return cls._meta.verbose_name
 
     def index_id(self):
-        '''Solr identifier. By default, combines :meth:`index item_type`
-        and :attr:`id` with :attr:ID_SEPARATOR`.'''
+        """Solr identifier. By default, combines :meth:`index item_type`
+        and :attr:`id` with :attr:ID_SEPARATOR`."""
         return '{}{}{}'.format(self.index_item_type(), self.ID_SEPARATOR,
                                self.id)
 
     def index_data(self):
-        '''Dictionary of data to index in Solr for this item.
-        Default implementation  adds  :meth:`index_id` and
-        :meth:`index_item_type'''
+        """Dictionary of data to index in Solr for this item.
+        Default implementation adds  :meth:`index_id` and
+        :meth:`index_item_type` """
         return {
             'id': self.index_id(),
             'item_type': self.index_item_type()
         }
 
     def index(self):
-        '''Index the current object in Solr.  Allows passing in
+        """Index the current object in Solr.  Allows passing in
         parameter, e.g. to set a `commitWithin` value.
-        '''
+        """
         self.solr.update.index([self.index_data()])
 
     @classmethod
     def index_items(cls, items, progbar=None):
-        '''Indexable class method to index multiple items at once.  Takes a
+        """Indexable class method to index multiple items at once.  Takes a
         list, queryset, or generator of Indexable items or dictionaries.
         Items are indexed in chunks, based on :attr:`Indexable.index_chunk_size`.
-        Takes an optional progressbar object to update when indexing items
-        in chunks. Returns a count of the number of items indexed.'''
+
+        Args:
+            items: list, queryset, or generator of indexable objects or dictionaries
+            progbar: optional :class:`progressbar.Progressbar` object to
+            update when indexing items in chunks.
+
+        Returns:
+            Total number of items indexed
+        """
 
         # make sure solr client is initialized
         Indexable._init_solr()
@@ -109,8 +137,8 @@ class Indexable:
         return count
 
     def remove_from_index(self):
-        '''Remove the current object from Solr by identifier using
-        :meth:`index_id`'''
+        """Remove the current object from Solr by identifier using
+        :meth:`index_id`"""
         # NOTE: using quotes on id to handle ids that include colons or other
         # characters that have meaning in Solr/lucene queries
         logger.debug('Deleting document from index with id %s', self.index_id())

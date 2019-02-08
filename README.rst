@@ -20,8 +20,8 @@ To install before an official pypa release::
 
 To use with Django:
 
-* Add `parasol` to **INSTALLED_APPS*
-* Configure **SOLR_CONNECTIONS** in your django settings:
+* Add `parasol` to **INSTALLED_APPS**
+* Configure **SOLR_CONNECTIONS** in your django settings::
 
     SOLR_CONNECTIONS = {
         'default': {

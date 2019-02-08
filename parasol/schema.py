@@ -1,6 +1,77 @@
 """
-Solr schema configuration and management
+Solr schema configuration and management.
 
+Extend :class:`SolrSchema` for your project and configure
+the fields, field types, and copy fields you want defined in Solr.
+Fields should be defined using :class:`SolrField` and field types
+with :class:`SolrAnalyzer` and :class:`SolrFieldType`.
+For example::
+
+    from parasol import schema
+
+    class MySolrSchema(schema.SolrSchema):
+        '''Project Solr schema configuration'''
+
+        # field declarations
+        author = schema.SolrField('text_en')
+        author_exact = schema.SolrStringField()
+        title = schema.SolrField('text_en')
+        title_nostem = schema.SolrStringField()
+        subtitle = schema.SolrField('text_en')
+        collections = schema.SolrField('text_en', multivalued=True)
+
+        #: copy fields, for facets and variant search options
+        copy_fields = {
+            'author': 'author_exact',
+            'collections': 'collections_s',
+            'title': ['title_nostem', 'title_s'],
+            'subtitle': 'subtitle_s',
+        }
+
+Copy fields should be a dictionary of source and destination fields; both single
+value and list are supported for destination.
+
+If you want to define a custom field type, you can define an
+analyzer for use in one or more field type declarations::
+
+    class UnicodeTextAnalyzer(schema.SolrAnalyzer):
+        '''Solr text field analyzer with unicode folding. Includes all standard
+        text field analyzers (stopword filters, lower case, possessive, keyword
+        marker, porter stemming) and adds ICU folding filter factory.
+        '''
+        tokenizer = 'solr.StandardTokenizerFactory'
+        filters = [
+            {"class": "solr.StopFilterFactory", "ignoreCase": True,
+             "words": "lang/stopwords_en.txt"},
+            {"class": "solr.LowerCaseFilterFactory"},
+            {"class": "solr.EnglishPossessiveFilterFactory"},
+            {"class": "solr.KeywordMarkerFilterFactory"},
+            {"class": "solr.PorterStemFilterFactory"},
+            {"class": "solr.ICUFoldingFilterFactory"},
+        ]
+
+
+    class SolrTextField(schema.SolrTypedField):
+        field_type = 'text_en'
+
+    class MySolrSchema(schema.SolrSchema):
+        '''Schema configuration with custom field types'''
+
+        text_en = schema.SolrFieldType('solr.TextField',
+                                   analyzer=UnicodeFoldingTextAnalyzer)
+
+        content = SolrTextField()
+
+
+To update your configured solr core with your schema, run::
+
+    python manage.py solr_schema
+
+This will automatically find your :class:`SolrSchema` subclass and
+apply changes.  See :mod:`~parasol.management.commands.solr_schema`
+manage command documentation for more details.
+
+-------------------------
 
 """
 
@@ -46,8 +117,8 @@ class SolrStringField(SolrTypedField):
 
 
 class SolrAnalyzer:
-    """Class to declare a solr field analyzer with tokenizer and filters,
-    for use with :class:`SolrFieldType`."""
+    """Base class for declaring  solr field analyzers with tokenizer and
+    filters. Extend and use with :class:`SolrFieldType`."""
 
     #: string name of the tokenizer to use
     tokenizer = None
@@ -67,7 +138,7 @@ class SolrAnalyzer:
 
 class SolrFieldType:
     """A descriptor for declaring and configure a solr field type on
-    a :class:`SolrSchema`instance.
+    a :class:`SolrSchema` instance.
     """
     def __init__(self, field_class, analyzer):
         self.field_class = field_class
