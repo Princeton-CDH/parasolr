@@ -1,17 +1,17 @@
 from unittest.mock import patch, Mock, MagicMock
 
 import pytest
+
 try:
-    import django
     from django.db.models.query import QuerySet
 except ImportError:
-    django = None
     QuerySet = None
 
 from parasol.indexing import Indexable
+from parasol.tests.utils import skipif_no_django
 
 
-  # Indexable subclasses for testing
+# DefineIndexable subclasses for testing
 
 class SimpleIndexable(Indexable):
     """simple indexable subclass"""
@@ -29,6 +29,7 @@ class ModelIndexable(Indexable):
         verbose_name = 'model'
 
 
+@skipif_no_django
 @patch('parasol.indexing.SolrClient')
 class TestIndexable:
 
@@ -97,4 +98,3 @@ class TestIndexable:
         mockqueryset = MagicMock(spec=QuerySet)
         Indexable.index_items(mockqueryset)
         mockqueryset.iterator.assert_called_with()
-

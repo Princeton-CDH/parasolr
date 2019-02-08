@@ -4,15 +4,12 @@ import logging
 try:
     import django
     from django.db.models.query import QuerySet
+    from parasol.solr.django import SolrClient
 except ImportError:
-    django = None
-    QuerySet = None
-
-from parasol.solr.django import SolrClient
+    django = QuerySet = SolrClient = None
 
 
 logger = logging.getLogger(__name__)
-
 
 class Indexable:
     '''Mixin for objects that are indexed in Solr.  Subclasses must implement
