@@ -36,3 +36,32 @@ Core Admin API
 
 .. automodule:: parasol.solr.admin
    :members:
+
+
+Schema
+------
+
+.. automodule:: parasol.schema
+   :members:
+
+
+Indexing
+--------
+
+.. automodule:: parasol.indexing
+   :members:
+
+
+Manage Commands
+---------------
+
+Solr schema
+^^^^^^^^^^^
+
+.. automodule:: parasol.management.commands.solr_schema
+
+Index
+^^^^^
+
+.. automodule:: parasol.management.commands.index
+

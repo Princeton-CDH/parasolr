@@ -3,6 +3,7 @@ from unittest.mock import patch, Mock
 from attrdict import AttrDict
 import pytest
 
+from parasol.solr import SolrClient
 from parasol import schema
 
 
@@ -249,5 +250,5 @@ class TestSchema:
             name='text_en', **LocalTestSchema.text_en)
         mocksolr.schema.add_field_type.assert_not_called()
 
-        # no field types defined - shoud not error, do nothing
+        # no field types defined - should not error, do nothing
         assert not schema.SolrSchema.configure_fieldtypes(mocksolr)

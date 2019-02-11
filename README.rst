@@ -17,27 +17,27 @@ Installation
 
 To install before an official pypi release::
 
-   pip install git+https://github.com/Princeton-CDH/django-parasol@develop#egg=parasol
+   pip install git+https://github.com/Princeton-CDH/parasol@develop#egg=parasol
 
 To use with Django:
 
     * Add `parasol` to **INSTALLED_APPS**
     * Configure **SOLR_CONNECTIONS** in your django settings::
 
-        SOLR_CONNECTIONS = {
-            'default': {
-            'URL': 'http://localhost:8983/solr/',
-            'COLLECTION': 'name',
-            }
+    SOLR_CONNECTIONS = {
+        'default': {
+        'URL': 'http://localhost:8983/solr/',
+        'COLLECTION': 'name',
         }
+    }
 
-    * Define a `SolrSchema` with fields and field types for your project.
-    * Run ``solr_schema`` manage command to configure your schema; it will
-      prompt to create the Solr core if it does not exist.
+* Define a `SolrSchema` with fields and field types for your project.
+* Run ``solr_schema`` manage command to configure your schema; it will
+  prompt to create the Solr core if it does not exist.
 
-      .. Note::
-         The `SolrSchema` must be imported somewhere for it to be
-         found automatically.
+.. Note::
+   The `SolrSchema` must be imported somewhere for it to be
+   found automatically.
 
 
 Development instructions

@@ -10,12 +10,8 @@ try:
 except ImportError:
     django = None
 
+from parasol.tests.utils import skipif_no_django, skipif_django
 
-skipif_no_django = pytest.mark.skipif(django is None,
-                                      reason="requires Django")
-
-skipif_django = pytest.mark.skipif(django,
-                                   reason="requires no Django")
 
 @skipif_no_django
 def test_django_solrclient():
