@@ -72,8 +72,8 @@ class Indexable:
     def index_id(self):
         """Solr identifier. By default, combines :meth:`index item_type`
         and :attr:`id` with :attr:ID_SEPARATOR`."""
-        return ''.join([self.index_item_type(), self.ID_SEPARATOR,
-                               self.id])
+        return '%s%s%s' % (self.index_item_type(), self.ID_SEPARATOR,
+                           self.id)
 
     def index_data(self):
         """Dictionary of data to index in Solr for this item.
