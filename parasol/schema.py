@@ -76,8 +76,11 @@ manage command documentation for more details.
 """
 
 import logging
+from typing import Any, Optional
 
 from attrdict import AttrDefault
+
+from parasol.solr.client import SolrClient
 
 
 logger = logging.getLogger(__name__)
@@ -86,9 +89,18 @@ logger = logging.getLogger(__name__)
 class SolrField:
     """A descriptor for declaring a solr field on a :class:`SolrSchema`
     instance.
+
+    Args:
+        fieldtype: The type of Solr field.
+        required: Whether the field is required.
+        multivalues: Whether the field is multi-valued.
+
+    Raises:
+        AttributeError: If ``__set__`` is called.
     """
 
-    def __init__(self, fieldtype, required=False, multivalued=False):
+    def __init__(self, fieldtype: str, required: bool=False,
+                 multivalued: bool=False):
         self.type = fieldtype
         self.required = required
         self.multivalued = multivalued
@@ -104,21 +116,27 @@ class SolrField:
 
 class SolrTypedField(SolrField):
     """Base class for typed solr field descriptor. For use with your own
-    field types, extend and set :attr:`field_type`."""
+    field types, extend and set :attr:`field_type`.
+
+    Args:
+        *args: Arguments as passsed to :class:`SolrField`.
+        **kwargs: Keyword arguments as passed to :class:`SolrField`.
+    """
     field_type = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(self.field_type, *args, **kwargs)
 
 
 class SolrStringField(SolrTypedField):
-    """Solr string field"""
+    """Solr string field."""
     field_type = 'string'
 
 
 class SolrAnalyzer:
-    """Base class for declaring  solr field analyzers with tokenizer and
-    filters. Extend and use with :class:`SolrFieldType`."""
+    """Class to declare a solr field analyzer with tokenizer and filters,
+    for use with :class:`SolrFieldType`.
+    """
 
     #: string name of the tokenizer to use
     tokenizer = None
@@ -127,7 +145,7 @@ class SolrAnalyzer:
 
     @classmethod
     def as_solr_config(cls):
-        """Return analyzer information for use in solr configuration"""
+        """ """
         return {
             'tokenizer': {
                 'class': cls.tokenizer
@@ -138,9 +156,15 @@ class SolrAnalyzer:
 
 class SolrFieldType:
     """A descriptor for declaring and configure a solr field type on
-    a :class:`SolrSchema` instance.
+
+    Args:
+        field_class: The class of the SolrField
+        analyzer: The name of the Solr analyzer to use on the field.
+
+    Raises:
+        AttributeError: If __set__ is called.
     """
-    def __init__(self, field_class, analyzer):
+    def __init__(self, field_class: str, analyzer: str):
         self.field_class = field_class
         self.analyzer = analyzer
 
@@ -157,7 +181,7 @@ class SolrFieldType:
 
 
 class SolrSchema:
-    """Solr schema configuration"""
+    """Solr schema configuration."""
 
     #: dictionary of copy fields to be configured
     #: key is source field, value is destination field or list of fields
@@ -166,7 +190,8 @@ class SolrSchema:
     @classmethod
     def get_configuration(cls):
         """Find a SolrSchema subclass for use as schema configuration.
-        Currently only supports one schema configuration."""
+        Currently only supports one schema configuration.
+        """
         subclasses = cls.__subclasses__()
         if not subclasses:
             raise Exception('No Solr schema configuration found')
@@ -177,21 +202,29 @@ class SolrSchema:
         return subclasses[0]
 
     @classmethod
-    def get_field_names(cls):
+    def get_field_names(cls) -> list:
         """iterate over class attributes and return all that are instances of
-        :class:`SolrField`"""
+        :class:`SolrField`.
+
+        Returns:
+            List of attributes that are :class:`SolrField`.
+        """
         return [attr_name for attr_name, attr_type in cls.__dict__.items()
                 if isinstance(attr_type, SolrField)]
 
     @classmethod
-    def get_field_types(cls):
+    def get_field_types(cls) -> list:
         """iterate over class attributes and return all that are instances of
-        :class:`SolrFieldType`"""
+        :class:`SolrFieldType`.
+
+        Returns:
+            List of attriubtes that are :class:`SolrFieldType`.
+        """
         return [attr_name for attr_name, attr_type in cls.__dict__.items()
                 if isinstance(attr_type, SolrFieldType)]
 
     @classmethod
-    def configure_fields(cls, solr):
+    def configure_fields(cls, solr: SolrClient) -> AttrDefault:
         """Update the configured Solr instance schema to match
         the configured fields.
 
@@ -199,8 +232,12 @@ class SolrSchema:
         new fields have been created and before old fields are removed,
         since an outdated copy field could prevent removal.
 
-        returns: :class:`attrdict.AttrDefault` with counts for added,
-        updated, and deleted fields.
+        Args:
+          solr: A configured Solr instance schem.
+
+        Returns:
+            :class:`attrdict.AttrDefault` with counts for added,
+            updated, and deleted fields.
         """
 
         current_fields = [field.name for field in solr.schema.list_fields()]
@@ -239,8 +276,12 @@ class SolrSchema:
         return stats
 
     @classmethod
-    def configure_copy_fields(cls, solr):
-        """Update configured Solr instance schema with copy fields"""
+    def configure_copy_fields(cls, solr: SolrClient) -> None:
+        """Update configured Solr instance schema with copy fields.
+
+        Args:
+            solr: Configured Solr Schema.
+        """
 
         # get list of currently configured copy fields
         solr_copy_fields = solr.schema.list_copy_fields()
@@ -277,12 +318,17 @@ class SolrSchema:
                 solr.schema.delete_copy_field(cp_field.source, cp_field.dest)
 
     @classmethod
-    def configure_fieldtypes(cls, solr):
+    def configure_fieldtypes(cls, solr: SolrClient) -> AttrDefault:
         """Update the configured Solr instance so the schema includes
         the configured field types, if any.
 
-        returns: :class:`attrdict.AttrDefault` with counts for updated
-        and added field types."""
+        Args:
+            solr: A configured Solr instance.
+
+        Returns:
+            :class:`attrdict.AttrDefault` with counts for updated
+            and added field types.
+        """
 
         configured_field_types = cls.get_field_types()
 

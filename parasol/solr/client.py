@@ -1,6 +1,8 @@
 from collections import OrderedDict
 import logging
+from typing import Any, Optional
 
+from attrdict import AttrDict
 import requests
 
 from parasol import __version__ as parasol_version
@@ -18,8 +20,12 @@ logger = logging.getLogger(__name__)
 # and API documentation.
 
 class QueryReponse:
-    """Thin wrapper to give access to Solr select responses."""
-    def __init__(self, response):
+    """Thin wrapper to give access to Solr select responses.
+
+    Args:
+        response: A Solr query response
+    """
+    def __init__(self, response: AttrDict) -> None:
         self.numFound = response.response.numFound
         self.start = response.response.start
         self.docs = response.response.docs
@@ -34,8 +40,16 @@ class QueryReponse:
         # as OrderedDicts, you must use dict notation (or AttrDict *will*
         # convert.
 
-    def _process_facet_counts(self, facet_counts):
-        """Convert facet_fields and facet_ranges to OrderDict"""
+    def _process_facet_counts(self, facet_counts: AttrDict) \
+            -> AttrDict:
+        """Convert facet_fields and facet_ranges to OrderedDict.
+
+        Args:
+          facet_counts: Solr facet_counts field.
+
+        Returns:
+          Solr facet_counts field
+        """
         if 'facet_fields' in facet_counts:
             for k, v in facet_counts.facet_fields.items():
                 facet_counts['facet_fields'][k] = \
@@ -48,22 +62,31 @@ class QueryReponse:
 
 
 class SolrClient(ClientBase):
-    """Class to aggregate all of the other Solr APIs and settings."""
+    """Class to aggregate all of the other Solr APIs and settings.
 
-    #: core admin handler
+    Args:
+        solr_url: Base url for solr.
+        collection: Name of Solr collection or core.
+        commitWithin: Time in ms for soft commits to happen.
+        session: A python-requests :class:`requests.Session`.
+    """
+
+    #: CoreAdmin API handler
     core_admin_handler = 'admin/cores'
-    #: select handler
+    #: Select handler
     select_handler = 'select'
-    #: schema handler
+    #: Schema API handler
     schema_handler = 'schema'
-    # update handler
+    #  Update API handler
     update_handler = 'update'
-    #: core or collection
+    #: core or collection name
     collection = ''
-    # commitWithin definition
+    # commitWithin time in ms
     commitWithin = 1000
 
-    def __init__(self, solr_url, collection, commitWithin=None, session=None):
+    def __init__(self, solr_url: str, collection: str,
+                 commitWithin: Optional[int]=None,
+                 session: Optional[requests.Session]=None) -> None:
         # Go ahead and create a session if one is not passed in
         super().__init__(session=session)
 
@@ -95,9 +118,15 @@ class SolrClient(ClientBase):
             self.core_admin_handler,
             self.session)
 
-    def query(self, **kwargs):
-        """Perform a query with the specified kwargs and return a response or
-        None on error."""
+    def query(self, **kwargs: Any) -> Optional[QueryReponse]:
+        """Perform a query with the specified kwargs.
+
+        Args:
+            **kwargs: Any valid Solr search parameters.
+
+        Returns:
+            A search QueryResponse.
+        """
         url = self.build_url(self.solr_url, self.collection,
                              self.select_handler)
         # use POST for efficiency and send as x-www-form-urlencoded

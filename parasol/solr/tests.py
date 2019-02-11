@@ -36,6 +36,11 @@ TEST_FIELD_TYPES = ['test_A', 'test_B']
 
 @pytest.fixture
 def test_client(request):
+    """Creates and returns a Solr core using TEST_SETTINGS, and then removes
+    it on teardown, as well as all TEST_* fields.
+
+    If a test field is listed here, it will NOT be automatically cleaned up.
+    """
     client = SolrClient(**TEST_SETTINGS)
 
     response = client.core_admin.status(core=TEST_SETTINGS['collection'])
@@ -63,6 +68,12 @@ def test_client(request):
 
 @pytest.fixture
 def core_test_client(request):
+    """Create a core name and pass an unconfigured client for it,
+    along with name to fixture.
+
+    Unconditionally deletes the core named, so that any CoreAdmin API tests
+    are always cleaned up on teardown.
+    """
     client = SolrClient(**TEST_SETTINGS)
     core_name = str(uuid.uuid4())
 

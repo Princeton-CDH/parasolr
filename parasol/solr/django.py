@@ -17,6 +17,7 @@ instance.
 """
 
 import logging
+from typing import Any
 
 try:
     import django
@@ -36,9 +37,13 @@ if django:
     class SolrClient(client.SolrClient):
         """:class:`SolrClient` subclass that automatically pulls configuration
         from django settings.
+
+        Args:
+            *args: Positional arguments to be passed to :class:`parasol.solr.client.SolrClient`.
+            **kwargs: Keyword arguments to be passed to :class:`parasol.solr.client.SolrClient`.
         """
 
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             solr_opts = getattr(settings, 'SOLR_CONNECTIONS', None)
             # no solr connection section at all
             if not solr_opts:

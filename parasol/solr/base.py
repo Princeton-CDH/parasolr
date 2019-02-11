@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+from typing import Any, Optional
 from urllib.parse import urljoin
 
 import requests
@@ -16,22 +17,35 @@ class SolrClientException(Exception):
 
 
 class CoreExists(SolrClientException):
-    """Raised when default core for running unit tests exists"""
+    """Raised when a Solr core exists and it should not."""
     pass
 
 
 class ClientBase:
-    """Base object with common communication methods for talking to Solr API."""
+    """Base object with common communication methods for talking to Solr API.
 
-    def __init__(self, session=None):
+    Args:
+        session: A python-requests :class:`requests.Session`.
+    """
+
+    def __init__(self, session: requests.Session=None):
         if session is None:
             self.session = requests.Session()
         else:
             self.session = session
 
 
-    def build_url(self, solr_url, collection, handler):
-        """Return a url to a handler based on core and base url"""
+    def build_url(self, solr_url: str, collection: str, handler: str) -> str:
+        """Return a url to a handler based on core and base url.
+
+        Args:
+            solr_url: Base url for Solr.
+            collection: Collection or core name.
+            handler: Handler URL for construction.
+
+        Returns:
+            A full-qualified URL.
+        """
         # Two step proecess to avoid quirks in urljoin behavior
         # First, join the collection/core with a slashes appended
         # just in case so # it doesn't ovewrite the base url
@@ -41,9 +55,22 @@ class ClientBase:
         # Solr API docs.
         return urljoin(collection, handler)
 
-    def make_request(self, meth, url, headers=None,
-                      params=None, data=None, **kwargs):
-        """Private method for making a request to Solr, wraps session.request"""
+    def make_request(self, meth: str, url: str, headers: Optional[dict]=None,
+                     params: Optional[dict]=None, data: Optional[dict]=None,
+                     **kwargs: Any) -> Optional[AttrDict]:
+        """Make an HTTP request to Solr.
+
+        Args:
+            meth: HTTP method to use.
+            url: URL to make request to.
+            headers: HTTP headers.
+            params: Params to use as form-fields or query-string params.
+            data: Data for a POST request.
+            **kwargs: Any other kwargs for the request.
+
+        Returns:
+            None or response wrapped as :class:`attrdict.AttrDict`.
+        """
         if params is None:
             params = dict()
             # always add wt=json for JSON api

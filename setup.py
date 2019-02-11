@@ -12,7 +12,8 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 REQUIREMENTS = ['requests', 'attrdict', 'progressbar2']
 # NOTE: progressbar only needed for django index script; make optional?
 TEST_REQUIREMENTS = ['pytest', 'pytest-cov']
-DEV_REQUIREMENTS = ['sphinx']
+DEV_REQUIREMENTS = ['sphinx', 'sphinxcontrib-napoleon',
+                    'sphinx-autodoc-typehints']
 # django integration is optional
 DJANGO_REQUIREMENTS = ['django>=1.11', 'pytest-django']
 
