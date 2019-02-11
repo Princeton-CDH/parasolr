@@ -1,7 +1,7 @@
 """
 Module with class and methods for the Solr Schema API.
 """
-from typing import Any, Optional
+from typing import Any, Optional, List
 from urllib.parse import urljoin
 
 from attrdict import AttrDict
@@ -166,7 +166,7 @@ class Schema(ClientBase):
             return response.fields
 
     def list_copy_fields(self, source_fl: Optional[list]=None,
-                         dest_fl: Optional[list]=None) -> list:
+                         dest_fl: Optional[list]=None) -> List[AttrDict]:
         """Return a list of copy fields from Solr.
 
         Args:
@@ -186,7 +186,7 @@ class Schema(ClientBase):
         if response:
             return response.copyFields
 
-    def list_field_types(self, showDefaults: bool=True) -> list:
+    def list_field_types(self, showDefaults: bool=True) -> List[AttrDict]:
         """List all field types in a Solr collection or core.
 
         Args:

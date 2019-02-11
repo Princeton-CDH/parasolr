@@ -2,7 +2,7 @@ from collections import OrderedDict
 import logging
 from typing import Any, Optional
 
-import attrdict
+from attrdict import AttrDict
 import requests
 
 from parasol import __version__ as parasol_version
@@ -25,7 +25,7 @@ class QueryReponse:
     Args:
         response: A Solr query response
     """
-    def __init__(self, response: attrdict.AttrDict):
+    def __init__(self, response: AttrDict) -> None:
         self.numFound = response.response.numFound
         self.start = response.response.start
         self.docs = response.response.docs
@@ -40,7 +40,7 @@ class QueryReponse:
         # as OrderedDicts, you must use dict notation (or AttrDict *will*
         # convert.
 
-    def _process_facet_counts(self, facet_counts: attrdict.AttrDict) \
+    def _process_facet_counts(self, facet_counts: AttrDict) \
             -> attrdict.AttrDict:
         """Convert facet_fields and facet_ranges to OrderedDict.
 
@@ -86,7 +86,7 @@ class SolrClient(ClientBase):
 
     def __init__(self, solr_url: str, collection: str,
                  commitWithin: Optional[int]=None,
-                 session: Optional[requests.Session]=None):
+                 session: Optional[requests.Session]=None) -> None:
         # Go ahead and create a session if one is not passed in
         super().__init__(session=session)
 

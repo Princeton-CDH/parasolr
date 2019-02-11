@@ -43,7 +43,7 @@ if django:
             **kwargs: Keyword arguments to be passed to :class:`parasol.solr.client.SolrClient`.
         """
 
-        def __init__(self, *args: Any, **kwargs: Any):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             solr_opts = getattr(settings, 'SOLR_CONNECTIONS', None)
             # no solr connection section at all
             if not solr_opts:

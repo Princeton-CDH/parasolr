@@ -18,7 +18,7 @@ class Update(ClientBase):
     """
     def __init__(self, solr_url: str, collection: str,
                  handler: str, commitWithin: int,
-                 session: Optional[requests.Session]=None):
+                 session: Optional[requests.Session]=None) -> None:
         # Go ahead and create a session if one is not passed in
         super().__init__(session=session)
         self.url = self.build_url(solr_url, collection, handler)

@@ -16,7 +16,7 @@ class CoreAdmin(ClientBase):
         session: A python-requests :class:`requests.Session`
     """
     def __init__(self, solr_url: str, handler: str,
-                 session: Optional[requests.Session]=None):
+                 session: Optional[requests.Session]=None) -> None:
         super().__init__(session=session)
         self.solr_url = solr_url
         self.url = urljoin('%s/' % solr_url, handler)

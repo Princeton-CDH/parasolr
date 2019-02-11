@@ -17,7 +17,7 @@ class SolrClientException(Exception):
 
 
 class CoreExists(SolrClientException):
-    """ """
+    """Raised when a Solr core exists and it should not."""
     pass
 
 
