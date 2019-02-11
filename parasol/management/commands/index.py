@@ -145,6 +145,7 @@ class Command(BaseCommand):
 
         # report total items indexed
         if self.verbosity >= self.v_normal:
+            # using format for comma-separated numbers
             self.stdout.write('Indexed {:,} item{}'.format(
                 count, pluralize(count)))
 
@@ -164,7 +165,7 @@ class Command(BaseCommand):
             del_query = '*:*'
         else:
             # construct query based on item type
-            del_query = 'item_type:{}'.format(mode)
+            del_query = 'item_type:%s' % mode
 
         if self.verbosity >= self.v_normal:
             # pluralize indexable names but not all
