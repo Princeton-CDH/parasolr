@@ -1,3 +1,18 @@
+"""
+Object-oriented approach to Solr searching and filtering modeled
+on :class:`django.models.queryset.QuerySet`.  Supports iteration,
+slicing, counting, and boolean check to see if a search has results.
+
+Filter, search and sort methods return a new queryset, and can be
+chained. For example::
+
+    SolrQuerySet().filter(item_type='person') \
+                  .search(name='hem*') \
+                  .order_by('sort_name') \
+
+
+"""
+
 from typing import Any, Optional
 
 try:
@@ -34,7 +49,8 @@ class SolrQuerySet:
         options. Populates result cache and returns the documents portion
         of the reponse.
 
-        :return: docs as a list of dictionaries.
+        Returns:
+            Solr response documents as a list of dictionaries.
         """
         query_opts = self.query_opts()
         query_opts.update(**kwargs)
@@ -120,7 +136,8 @@ class SolrQuerySet:
         return qs_copy
 
     def order_by(self, *args):
-        """apply sort options to the queryset"""
+        """Apply sort options to the queryset by field name. If the field
+        name starts with -, sort is descending; otherwise ascending."""
         qs_copy = self._clone()
         for sort_option in args:
             if sort_option.startswith('-'):
