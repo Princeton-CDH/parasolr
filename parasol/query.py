@@ -1,6 +1,12 @@
 from typing import Any, Optional
 
-from parasol.solr.django import SolrClient
+try:
+    from parasol.solr.django import SolrClient
+except ImportError:
+    # FIXME: SolrQuerySet doesn't currently work with non-django
+    # solr client because it would need a way to get connection settings
+    from parasol.solr import SolrClient
+
 
 class SolrQuerySet:
     """A Solr queryset object that allows for object oriented
