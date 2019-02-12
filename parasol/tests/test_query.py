@@ -291,6 +291,17 @@ class TestSolrQuerySet:
         assert isinstance(sliced_qs, SolrQuerySet)
         assert sliced_qs.start == 10
         assert sliced_qs.stop == 20
+        # - slice with implicit start
+        sliced_qs = sqs[:5]
+        assert isinstance(sliced_qs, SolrQuerySet)
+        assert sliced_qs.start == 0
+        assert sliced_qs.stop == 5
+        # - slice with implicit end
+        sliced_qs = sqs[3:]
+        assert isinstance(sliced_qs, SolrQuerySet)
+        assert sliced_qs.start == 3
+        assert sliced_qs.stop is None
+
         # - slice with step
         sliced_qs = sqs[0:10:2]
         assert not isinstance(sliced_qs, SolrQuerySet)
