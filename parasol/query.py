@@ -191,6 +191,7 @@ class SolrQuerySet:
     def __getitem__(self, k):
         """Return a single result or a slice of results"""
         # based on django queryset logic
+
         if not isinstance(k, (int, slice)):
             raise TypeError
         assert ((not isinstance(k, slice) and (k >= 0)) or
@@ -198,8 +199,12 @@ class SolrQuerySet:
                  (k.stop is None or k.stop >= 0))), \
             "Negative indexing is not supported."
 
+        # if the result cache is already populated,
+        # return the requested index or slice
         if self._result_cache is not None:
             return self._result_cache['docs'][k]
+
+        qs_copy = self._clone()
 
         if isinstance(k, slice):
             if k.start is not None:
@@ -211,14 +216,9 @@ class SolrQuerySet:
             else:
                 stop = None
 
-            qs_copy = self._clone()
             qs_copy.set_limits(start, stop)
             return list(qs_copy)[::k.step] if k.step else qs_copy
 
-            # FIXME: django templates chokes on attrdict
-            # return [dict(result) for result in chunk]
-            # return
-
         # single item
-        self.set_limits(k, k + 1)
-        return self.get_results()[0]
+        qs_copy.set_limits(k, k + 1)
+        return qs_copy.get_results()[0]

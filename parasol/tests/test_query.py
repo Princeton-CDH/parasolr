@@ -1,5 +1,7 @@
 from unittest.mock import patch, Mock
 
+import pytest
+
 from parasol.solr import SolrClient
 from parasol.query import SolrQuerySet
 
@@ -246,6 +248,8 @@ class TestSolrQuerySet:
             assert list(results_iterator) == mock_get_results.return_value
             mock_get_results.assert_called_with()
 
+        # TODO: test iterating over a slice?
+
     def test_bool(self, mocksolrclient):
         sqs = SolrQuerySet()
         with patch.object(sqs, 'get_results') as mock_get_results:
@@ -256,3 +260,61 @@ class TestSolrQuerySet:
             # with no results
             mock_get_results.return_value = []
             assert not sqs
+
+    def test_set_limits(self, mocksolrclient):
+        sqs = SolrQuerySet()
+        sqs.set_limits(10, 50)
+        assert sqs.start == 10
+        assert sqs.stop == 50
+
+        sqs.set_limits(None, None)
+        assert sqs.start == 0
+        assert sqs.stop is None
+
+    def test_get_item(self, mocksolrclient):
+        sqs = SolrQuerySet()
+
+        # simulate result cache already populated
+        sqs._result_cache = {'docs': [1, 2, 3, 4, 5]}
+        # single item
+        assert sqs[0] == 1
+        assert sqs[1] == 2
+        # slice
+        assert sqs[0:2] == [1, 2]
+        # slice with step
+        assert sqs[1:5:2] == [2, 4]
+
+        # simulate result cache *not* populated
+        sqs._result_cache = None
+        # - slice
+        sliced_qs = sqs[10:20]
+        assert isinstance(sliced_qs, SolrQuerySet)
+        assert sliced_qs.start == 10
+        assert sliced_qs.stop == 20
+        # - slice with step
+        sliced_qs = sqs[0:10:2]
+        assert not isinstance(sliced_qs, SolrQuerySet)
+        # not sure how else to test this one...
+
+        # - single item
+        with patch.object(sqs, '_clone') as mock_clone:
+            mock_clone.return_value.get_results.return_value \
+                = ['d']
+            item = sqs[3]
+
+            mock_clone.assert_called_with()
+            mock_clone.return_value.set_limits.assert_called_with(3, 4)
+            mock_clone.return_value.get_results.assert_called_with()
+            assert item == 'd'
+
+        # handle invalid input
+        with pytest.raises(TypeError):
+            sqs['foo']
+
+        with pytest.raises(AssertionError):
+            sqs[-1]
+
+        with pytest.raises(AssertionError):
+            sqs[:-1]
+
+
