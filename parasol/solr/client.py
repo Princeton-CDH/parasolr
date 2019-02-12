@@ -85,8 +85,8 @@ class SolrClient(ClientBase):
     commitWithin = 1000
 
     def __init__(self, solr_url: str, collection: str,
-                 commitWithin: Optional[int]=None,
-                 session: Optional[requests.Session]=None) -> None:
+                 commitWithin: Optional[int] = None,
+                 session: Optional[requests.Session] = None) -> None:
         # Go ahead and create a session if one is not passed in
         super().__init__(session=session)
 
@@ -118,7 +118,7 @@ class SolrClient(ClientBase):
             self.core_admin_handler,
             self.session)
 
-    def query(self, **kwargs: Any) -> Optional[QueryReponse]:
+    def query(self, wrap: bool = True, **kwargs: Any) -> Optional[QueryReponse]:
         """Perform a query with the specified kwargs.
 
         Args:
@@ -139,4 +139,4 @@ class SolrClient(ClientBase):
         )
         if response:
             # queries return the search response for now
-            return QueryReponse(response)
+            return QueryReponse(response) if wrap else response['response']

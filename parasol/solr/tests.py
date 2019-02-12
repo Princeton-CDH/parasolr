@@ -177,6 +177,19 @@ class TestClientBase:
         )
         assert response is None
 
+        # test wrap = false
+        mockresp = Mock()
+        mockresp.status_code = 200
+        mockresp.json.return_value = {
+            'responseHeader': {
+                'status': 0,
+                'QTime': 0
+            }
+        }
+        response = client_base.make_request('post', 'http://localhost/',
+                                            wrap=False)
+        assert not isinstance(response, AttrDict)
+
 
 class TestQueryResponse:
 
@@ -270,9 +283,11 @@ class TestSolrClient:
         # not paginated so should be starting at 0
         assert response.start == 0
         # should be the two expected documents
+        # FIXME: these lines have no effect
         {'A': 'bar', 'B': 20, 'id': 2}
         {'A': 'baz', 'B': 25, 'id': 3} in response.docs
         {'A': 'baz', 'B': 30, 'id': 4} in response.docs
+
         # test faceting in response
         response = test_client.query(
             q='*:*',
@@ -296,6 +311,11 @@ class TestSolrClient:
         # check that the gaps are generated as expected
         assert response.facet_counts.facet_ranges['B']['counts']['1'] == 1
         assert response.facet_counts.facet_ranges['B']['counts']['11'] == 1
+
+        # test wrap = False
+        response = test_client.query(q='*:*', wrap=False)
+        assert not isinstance(response, QueryReponse)
+
 
 class TestUpdate:
 

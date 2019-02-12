@@ -57,7 +57,7 @@ class ClientBase:
 
     def make_request(self, meth: str, url: str, headers: Optional[dict]=None,
                      params: Optional[dict]=None, data: Optional[dict]=None,
-                     **kwargs: Any) -> Optional[AttrDict]:
+                     wrap: bool=True, **kwargs: Any) -> Optional[AttrDict]:
         """Make an HTTP request to Solr.
 
         Args:
@@ -71,9 +71,12 @@ class ClientBase:
         Returns:
             None or response wrapped as :class:`attrdict.AttrDict`.
         """
+
         if params is None:
             params = dict()
             # always add wt=json for JSON api
+        # copy user-supplied params for inclusion in debug logging
+        user_params = params.copy()
         params['wt'] = 'json'
         # convert True and False to their appropriate string values for
         # query string to Solr
@@ -92,11 +95,12 @@ class ClientBase:
             **kwargs)
         # log the url call and speed regardless
         logger.debug(
-            '%s %s => %d: %f sec',
+            '%s %s => %d: %f sec%s',
             meth.upper(),
             url,
             response.status_code,
-            time.time() - start
+            time.time() - start,
+            '\n%s' % user_params if user_params else '',
         )
         if response.status_code != requests.codes.ok:
             # Add the content of the response on the off chance
@@ -125,4 +129,7 @@ class ClientBase:
             # return None for failure
             return
 
-        return AttrDict(response.json())
+        if wrap:
+            return output
+
+        return response.json()
