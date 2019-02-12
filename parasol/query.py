@@ -28,12 +28,6 @@ class SolrQuerySet:
         # convert search operator into form needed for combining queries
         self._search_op = ' %s ' % self.default_search_operator
 
-    @property
-    def result(self):
-        if self._result_cache is None:
-            self.get_results()
-        return self._result_cache
-
     def get_results(self, **kwargs):
         """
         Query Solr and get the results for the current query and filter
