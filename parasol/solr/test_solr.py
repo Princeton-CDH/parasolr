@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import pytest
+import sys
 import time
 import uuid
 from unittest.mock import patch, Mock
@@ -15,12 +16,27 @@ from parasol.solr.admin import CoreAdmin
 from parasol import __version__ as parasol_ver
 
 
-TEST_SETTINGS = {
-    'solr_url': 'http://localhost:8983/solr/',
-    'collection': 'parasol_test',
-    # aggressive commitWithin for test only
-    'commitWithin': 750
-}
+# - Handling for test setttings intEgrated into CI flow.
+try:
+    from django import settings
+except ImportError:
+    # append top level working directory to path to add  testsettings
+    sys.path.append('.')
+    try:
+        import testsettings as settings
+    except ImportError:
+        raise ImportError('No Django or parasol test settings module found.')
+
+try:
+    TEST_SOLR_CONNECTION = settings.SOLR_CONNECTIONS['test']
+# reraise whether or not the key is missing for 'test' OR the entire setting
+# is missing.
+except (AttributeError, KeyError) as err:
+   raise err.__class__(
+        'Check that a SOLR_CONNECTIONS block with a "test" core entry '
+        'is defined.'
+   )
+
 
 # Any fields listed here will be cleaned up after every test,
 # as they persist--even across a core being unloaded.
@@ -41,12 +57,12 @@ def test_client(request):
 
     If a test field is listed here, it will NOT be automatically cleaned up.
     """
-    client = SolrClient(**TEST_SETTINGS)
+    client = SolrClient(**TEST_SOLR_CONNECTION)
 
-    response = client.core_admin.status(core=TEST_SETTINGS['collection'])
+    response = client.core_admin.status(core=TEST_SOLR_CONNECTION['collection'])
     if response.status.parasol_test:
         raise CoreExists('Test core "parasol_test" exists, aborting!')
-    client.core_admin.create(TEST_SETTINGS['collection'],
+    client.core_admin.create(TEST_SOLR_CONNECTION['collection'],
                              configSet='basic_configs')
 
     def clean_up():
@@ -57,7 +73,7 @@ def test_client(request):
         for ftype in TEST_FIELD_TYPES:
             client.schema.delete_field_type(name=ftype)
         client.core_admin.unload(
-            TEST_SETTINGS['collection'],
+            TEST_SOLR_CONNECTION['collection'],
             deleteInstanceDir=True,
             deleteIndex=True,
             deleteDataDir=True
@@ -74,7 +90,7 @@ def core_test_client(request):
     Unconditionally deletes the core named, so that any CoreAdmin API tests
     are always cleaned up on teardown.
     """
-    client = SolrClient(**TEST_SETTINGS)
+    client = SolrClient(**TEST_SOLR_CONNECTION)
     core_name = str(uuid.uuid4())
 
     def clean_up():
@@ -621,7 +637,7 @@ class TestCoreAdmin:
 
     def test_status(self, test_client):
         response = test_client.core_admin.\
-                status(core=TEST_SETTINGS['collection'])
+                status(core=TEST_SOLR_CONNECTION['collection'])
         # no init failures happened
         assert not response.initFailures
         # status is not empty, and therefore has core info

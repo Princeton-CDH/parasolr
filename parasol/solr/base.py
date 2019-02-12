@@ -67,9 +67,6 @@ class ClientBase:
             params: Params to use as form-fields or query-string params.
             data: Data for a POST request.
             **kwargs: Any other kwargs for the request.
-
-        Returns:
-            None or response wrapped as :class:`attrdict.AttrDict`.
         """
 
         if params is None:
