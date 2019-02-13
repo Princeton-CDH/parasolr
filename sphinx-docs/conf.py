@@ -16,6 +16,13 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
+import django
+
+sys.path.insert(0, os.path.abspath('..'))
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'testsettings'
+django.setup()
+
 from parasol import __version__
 
 # -- Project information -----------------------------------------------------

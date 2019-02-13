@@ -13,7 +13,7 @@ Example usage::
 from django.core.management.base import BaseCommand, CommandError
 import requests
 
-from parasol.solr.django import SolrClient
+from parasol.django import SolrClient
 from parasol.schema import SolrSchema
 
 

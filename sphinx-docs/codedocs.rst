@@ -51,6 +51,18 @@ Indexing
 .. automodule:: parasol.indexing
    :members:
 
+QuerySet
+--------
+
+.. automodule:: parasol.query
+   :members:
+
+Django
+------
+
+.. automodule:: parasol.django
+    :members:
+
 
 Manage Commands
 ---------------

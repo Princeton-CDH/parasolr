@@ -39,7 +39,7 @@ from django.template.defaultfilters import pluralize
 import requests
 import progressbar
 
-from parasol.solr.django import SolrClient
+from parasol.django import SolrClient
 from parasol.indexing import Indexable
 
 

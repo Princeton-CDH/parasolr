@@ -1,14 +1,15 @@
+from unittest.mock import Mock, patch
+
 import pytest
 
 try:
-    import django
     from django.core.exceptions import ImproperlyConfigured
     from django.test import override_settings
 
-    from parasol.solr.django import SolrClient
+    from parasol.django import SolrClient, SolrQuerySet
 
 except ImportError:
-    django = None
+    pass
 
 from parasol.tests.utils import skipif_no_django, skipif_django
 
@@ -58,4 +59,17 @@ def test_no_django_solrclient():
         from parasol.solr.django import SolrClient
 
 
+@skipif_no_django
+@patch('parasol.django.SolrClient')
+def test_django_solrqueryset(mocksolrclient):
+    # auto-initialize solr connection if not specified
+    sqs = SolrQuerySet()
+    mocksolrclient.assert_called_with()
+    assert sqs.solr == mocksolrclient.return_value
+    mocksolrclient.reset_mock()
 
+    # use solr client if passed in
+    mymocksolr = Mock(spec=SolrClient)
+    sqs = SolrQuerySet(solr=mymocksolr)
+    assert sqs.solr == mymocksolr
+    mocksolrclient.assert_not_called()

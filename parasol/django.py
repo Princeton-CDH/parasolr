@@ -3,7 +3,7 @@ Provides optional Django integration to automatically initialize a
 :class:`parasol.solr.SolrClient` with configurations from Django
 settings.
 
-Expected configuration format:
+Expected configuration format::
 
     SOLR_CONNECTIONS = {
         'default': {
@@ -17,7 +17,7 @@ instance.
 """
 
 import logging
-from typing import Any
+from typing import Any, Optional
 
 try:
     import django
@@ -27,6 +27,7 @@ except ImportError:
     django = None
 
 from parasol.solr import client
+from parasol import query
 
 
 logger = logging.getLogger(__name__)
@@ -35,8 +36,8 @@ logger = logging.getLogger(__name__)
 if django:
 
     class SolrClient(client.SolrClient):
-        """:class:`SolrClient` subclass that automatically pulls configuration
-        from django settings.
+        """:class:`~parasol.solr.client.SolrClient` subclass that
+        automatically pulls configuration from Django settings.
 
         Args:
             *args: Positional arguments to be passed to :class:`parasol.solr.client.SolrClient`.
@@ -62,3 +63,18 @@ if django:
             collection = default_solr.get('COLLECTION', '')
             logger.info('Connecting to default Solr %s%s', url, collection)
             super().__init__(url, collection, *args, **kwargs)
+
+
+    class SolrQuerySet(query.SolrQuerySet):
+        """:class:`~parasol.query.SolrQuerySet` subclass that
+        will automatically use :class:`~parasol.django.SolrClient` if
+        no solr client is passed on.
+
+        Args:
+            Optional :class:`parasol.solr.client.SolrClient`.
+        """
+
+        def __init__(self, solr: Optional[SolrClient] = None):
+            # use passed-in solr client if there is one;
+            # otherwise, initialize a django solr client
+            super().__init__(solr or SolrClient())
