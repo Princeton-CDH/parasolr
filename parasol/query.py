@@ -13,7 +13,7 @@ chained. For example::
 
 """
 
-from typing import Any, Optional
+from typing import Any, Optional, Dict, List
 
 try:
     from parasol.solr.django import SolrClient
@@ -42,7 +42,7 @@ class SolrQuerySet:
         # convert search operator into form needed for combining queries
         self._search_op = ' %s ' % self.default_search_operator
 
-    def get_results(self, **kwargs):
+    def get_results(self, **kwargs) -> List[dict]:
         """
         Query Solr and get the results for the current query and filter
         options. Populates result cache and returns the documents portion
@@ -66,7 +66,7 @@ class SolrQuerySet:
         self._result_cache = self.solr.query(wrap=False, **query_opts)
         return self._result_cache['response']['docs']
 
-    def query_opts(self):
+    def query_opts(self) -> Dict[str, str]:
         """Construct query options based on current queryset configuration.
         Includes filter queries, start and rows, sort, and search query.
         """
@@ -88,7 +88,7 @@ class SolrQuerySet:
 
         return query_opts
 
-    def count(self):
+    def count(self) -> int:
         """Total number of results for the current query"""
 
         # if result cache is already populated, use it
@@ -102,7 +102,7 @@ class SolrQuerySet:
         return self.solr.query(**query_opts, wrap=False)['response']['numFound']
 
     @staticmethod
-    def _lookup_to_filter(key, value):
+    def _lookup_to_filter(key, value) -> str:
         """Convert keyword argument key=value pair into a Solr filter.
         Currently only supports simple case of field:value."""
 

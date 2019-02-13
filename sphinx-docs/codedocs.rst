@@ -51,6 +51,13 @@ Indexing
 .. automodule:: parasol.indexing
    :members:
 
+QuerySet
+--------
+
+.. automodule:: parasol.query
+   :members:
+
+
 
 Manage Commands
 ---------------
