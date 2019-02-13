@@ -43,6 +43,8 @@ def test_django_solrclient():
         solr = SolrClient()
         assert solr.solr_url == config['URL']
         assert solr.collection == ''
+        # basic configs are respected as a default
+        assert solr.configSet == 'basic_configs'
 
     # url and collection
     config['COLLECTION'] = 'mycore'
@@ -50,6 +52,13 @@ def test_django_solrclient():
         solr = SolrClient()
         assert solr.solr_url == config['URL']
         assert solr.collection == config['COLLECTION']
+
+    # override configset
+    config['CONFIGSET'] = 'test_configs'
+    with override_settings(SOLR_CONNECTIONS={'default': config}):
+        solr = SolrClient()
+        assert solr.configSet == config['CONFIGSET']
+
 
 
 @skipif_django

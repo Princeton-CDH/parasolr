@@ -606,7 +606,8 @@ class TestCoreAdmin:
 
     def test_create_unload(self, core_test_client):
         test_client, core = core_test_client
-        test_client.core_admin.create(core, configSet='basic_configs')
+        configSet = TEST_SOLR_CONNECTION.get('CONFIGSET', 'basic_configs')
+        test_client.core_admin.create(core, configSet=configSet)
         resp = test_client.core_admin.status(core=core)
         assert not resp.initFailures
         # core has a start time

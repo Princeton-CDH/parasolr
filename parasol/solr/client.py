@@ -81,8 +81,10 @@ class SolrClient(ClientBase):
     update_handler = 'update'
     #: core or collection name
     collection = ''
-    # commitWithin time in ms
+    #: commitWithin time in ms
     commitWithin = 1000
+    #: Default configSet for any automated core creation
+    configSet = 'basic_configs'
 
     def __init__(self, solr_url: str, collection: str,
                  commitWithin: Optional[int] = None,

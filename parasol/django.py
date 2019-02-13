@@ -61,6 +61,11 @@ if django:
                 raise ImproperlyConfigured('No URL in default SOLR_CONNECTIONS configuration')
 
             collection = default_solr.get('COLLECTION', '')
+
+            # if a CONFIGSET name is supplied, set it on SolrClient for use
+            # later, otherwise, default to 'basic_configs'
+            self.configSet = default_solr.get('CONFIGSET', 'basic_configs')
+
             logger.info('Connecting to default Solr %s%s', url, collection)
             super().__init__(url, collection, *args, **kwargs)
 

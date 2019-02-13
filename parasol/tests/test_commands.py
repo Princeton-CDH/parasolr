@@ -50,6 +50,7 @@ class TestSolrSchemaCommand:
 
         mocksolr = mocksolrclient.return_value
         mocksolr.collection = 'test-coll'
+        mocksolr.configSet = 'test_config'
         mocksolr.core_admin.ping.return_value = False
 
         cmd = solr_schema.Command()
@@ -71,7 +72,7 @@ class TestSolrSchemaCommand:
         # called once
         assert mockinput.call_count
         mocksolr.core_admin.create.assert_called_with(
-            mocksolr.collection, configSet='basic_configs')
+            mocksolr.collection, configSet='test_config')
 
         # simulate no input requested
         mockinput.reset_mock()

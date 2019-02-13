@@ -53,7 +53,7 @@ class Command(BaseCommand):
                                solr.collection).lower() == 'y'
             if create:
                 solr.core_admin.create(solr.collection,
-                                       configSet='basic_configs')
+                                       configSet=solr.configSet)
             else:
                 # if core was not created, bail out
                 return
