@@ -8,7 +8,7 @@ from unittest.mock import patch, Mock
 from attrdict import AttrDict
 import requests
 
-from parasol.solr.base import CoreExists, ClientBase
+from parasol.solr.base import CoreExists, ClientBase, ImproperConfiguration
 from parasol.solr.client import SolrClient, QueryReponse
 from parasol.solr.schema import Schema
 from parasol.solr.update import Update
@@ -61,7 +61,13 @@ def test_client(request):
     solr_url = TEST_SOLR_CONNECTION.get('URL', None)
     collection = TEST_SOLR_CONNECTION.get('COLLECTION', None)
     commitWithin  = TEST_SOLR_CONNECTION.get('COMMITWITHIN', None)
-    configSet = TEST_SOLR_CONNECTION.get('CONFIGSET', None)
+    configSet = TEST_SOLR_CONNECTION.get('CONFIGSET', 'basic_configs')
+
+    if not solr_url or not collection:
+        raise ImproperConfiguration(
+            "Test client requires URL and COLLECTION in SOLR_CONNECTIONS."
+        )
+
 
     client = SolrClient(solr_url, collection, commitWithin=commitWithin)
 
@@ -97,6 +103,13 @@ def core_test_client(request):
     """
     solr_url = TEST_SOLR_CONNECTION.get('URL', None)
     commitWithin  = TEST_SOLR_CONNECTION.get('COMMITWITHIN', None)
+
+    if not solr_url:
+        raise ImproperConfiguration(
+            "Core admin test client requires URL setting in SOLR_CONNECTIONS."
+        )
+
+
     core_name = str(uuid.uuid4())
 
     client = SolrClient(solr_url, core_name, commitWithin=commitWithin)
