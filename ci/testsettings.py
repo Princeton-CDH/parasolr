@@ -22,9 +22,10 @@ INSTALLED_APPS = (
 # from top level project folder
 SOLR_CONNECTIONS = {
     'test': {
-        'solr_url': 'http://localhost:8983/solr/',
-        'collection': 'parasol_test',
+        'URL': 'http://localhost:8983/solr/',
+        'COLLECTION': 'parasol_test',
         # aggressive commitWithin for test only
-        'commitWithin': 750
+        'COMMITWITHIN': 750,
+        'CONFIGSET': 'basic_configs'
     }
 }
