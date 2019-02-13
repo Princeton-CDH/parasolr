@@ -20,7 +20,7 @@ import logging
 try:
     from django.db.models.query import QuerySet
 
-    from parasol.solr.django import SolrClient
+    from parasol.django import SolrClient
 except ImportError:
     QuerySet = SolrClient = None
 

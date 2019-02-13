@@ -6,24 +6,17 @@ from parasol.solr import SolrClient
 from parasol.query import SolrQuerySet
 
 
-@patch('parasol.query.SolrClient')
 class TestSolrQuerySet:
 
-    def test_init(self, mocksolrclient):
-        # auto-initialize solr connection if not specified
-        sqs = SolrQuerySet()
-        mocksolrclient.assert_called_with()
-        assert sqs.solr == mocksolrclient.return_value
-
+    def test_init(self):
         # use solr client if passed in
-        mocksolrclient.reset_mock()
         mocksolr = Mock(spec=SolrClient)
-        sqs = SolrQuerySet(solr=mocksolr)
+        sqs = SolrQuerySet(mocksolr)
         assert sqs.solr == mocksolr
-        mocksolrclient.assert_not_called()
 
-    def test_query_opts(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_query_opts(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
 
         # default behavior: find all starting at 0
         query_opts = sqs.query_opts()
@@ -57,32 +50,31 @@ class TestSolrQuerySet:
         assert query_opts['hl.snippets'] == 3
         assert query_opts['hl.method'] == 'unified'
 
-    def test_get_results(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_get_results(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
 
         mockresponse = {'response': {'docs': [{'id': 1}]}}
-        mocksolrclient.return_value.query.return_value = mockresponse
+        mocksolr.query.return_value = mockresponse
 
         # by default, should query solr with options from query_opts
         # and wrap = false
         query_opts = sqs.query_opts()
         assert sqs.get_results() == mockresponse['response']['docs']
         assert sqs._result_cache == mockresponse
-        mocksolrclient.return_value.query \
-                      .assert_called_with(**query_opts, wrap=False)
+        mocksolr.query.assert_called_with(**query_opts, wrap=False)
 
         # parameters passed in take precedence
         local_opts = {'q': 'name:hemingway', 'sort': 'name asc'}
         sqs.get_results(**local_opts)
         # update copy of query opts with locally passed in params
         query_opts.update(local_opts)
-        mocksolrclient.return_value.query \
-                      .assert_called_with(**query_opts, wrap=False)
+        mocksolr.query.assert_called_with(**query_opts, wrap=False)
 
-    def test_count(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_count(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
 
-        mocksolr = mocksolrclient.return_value
         # simulate result cache already populated; should use
         sqs._result_cache = {'response': {'numFound': 5009}}
         assert sqs.count() == sqs._result_cache['response']['numFound']
@@ -98,8 +90,9 @@ class TestSolrQuerySet:
         # cache should not be populated
         assert not sqs._result_cache
 
-    def test_filter(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_filter(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
 
         # arg options added to filter list as is
         new_filters = ['item_type:work', 'date:[1550 TO 1900]']
@@ -124,8 +117,9 @@ class TestSolrQuerySet:
         assert 'date:1500' in filtered_qs.filter_qs
         assert 'name:he*' in filtered_qs.filter_qs
 
-    def test_search(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_search(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
 
         # arg options added to filter list as is
         queries = ['item_type:work', 'date:[1550 TO *]']
@@ -149,8 +143,9 @@ class TestSolrQuerySet:
         # original queryset is unchanged
         assert not sqs.search_qs
 
-    def test_order_by(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_order_by(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
 
         # default is ascending
         sorted_sqs = sqs.order_by('date')
@@ -176,8 +171,9 @@ class TestSolrQuerySet:
         # original queryset is unchanged
         assert not sqs.sort_options
 
-    def test_only(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_only(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
         only_fields = ['title', 'author', 'date']
         # field name only, single list
         fields_sqs = sqs.only(*only_fields)
@@ -193,8 +189,9 @@ class TestSolrQuerySet:
         # original field list unchanged
         assert not sqs.field_list
 
-    def test_highlight(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_highlight(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
         # field only, defaults
         highlight_qs = sqs.highlight('content')
         assert highlight_qs.highlight_field == 'content'
@@ -211,8 +208,9 @@ class TestSolrQuerySet:
         assert sqs.highlight_field is None
         assert sqs.highlight_opts == {}
 
-    def test_get_highlighting(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_get_highlighting(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
         # simulate result cache already populated, no highlighting
         sqs._result_cache = {'response': {'docs': []}}
         assert sqs.get_highlighting() == {}
@@ -222,16 +220,18 @@ class TestSolrQuerySet:
         sqs._result_cache = {'highlighting': mock_highlights}
         assert sqs.get_highlighting() == mock_highlights
 
-    def test_all(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_all(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
         # all just calls clone and returns the queryset copy
         with patch.object(sqs, '_clone') as mockclone:
             all_sqs = sqs.all()
             mockclone.assert_called_with()
             assert all_sqs == mockclone.return_value
 
-    def test_none(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_none(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
         none_sqs = sqs.none()
         # new queryset search replaced with something to return nothing
         assert none_sqs.search_qs == ['NOT *:*']
@@ -239,13 +239,14 @@ class TestSolrQuerySet:
         assert sqs.search_qs == []
 
         # none after search terms replaces the search
-        search_sqs = SolrQuerySet().search('item_type:work')
+        search_sqs = SolrQuerySet(mocksolr).search('item_type:work')
         none_sqs = search_sqs.none()
         assert search_sqs.search_qs == ['item_type:work']
         assert none_sqs.search_qs == ['NOT *:*']
 
-    def test__clone(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test__clone(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
         # clone default with no filters
         cloned_sqs = sqs._clone()
         assert cloned_sqs.start == 0
@@ -274,11 +275,11 @@ class TestSolrQuerySet:
         class CustomSolrQuerySet(SolrQuerySet):
             pass
 
-        custom_clone = CustomSolrQuerySet()._clone()
+        custom_clone = CustomSolrQuerySet(mocksolr)._clone()
         assert isinstance(custom_clone, CustomSolrQuerySet)
 
         # sanity-check chaining
-        sqs = SolrQuerySet()
+        sqs = SolrQuerySet(mocksolr)
         filtered_sqs = sqs.filter(item_type='person')
         # filter should be set
         assert 'item_type:person' in filtered_sqs.filter_qs
@@ -292,12 +293,13 @@ class TestSolrQuerySet:
         assert 'birth_year asc' in search_sqs.sort_options
         assert 'name:hem*' in search_sqs.search_qs
 
-    def test__lookup_to_filter(self, mocksolrclient):
+    def test__lookup_to_filter(self):
         assert SolrQuerySet._lookup_to_filter('item_type', 'work') == \
             'item_type:work'
 
-    def test_iter(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_iter(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
         with patch.object(sqs, 'get_results') as mock_get_results:
             mock_get_results.return_value = [{'id': 1}, {'id': 2}]
             results_iterator = sqs.__iter__()
@@ -307,8 +309,9 @@ class TestSolrQuerySet:
 
         # TODO: test iterating over a slice?
 
-    def test_bool(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_bool(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
         with patch.object(sqs, 'get_results') as mock_get_results:
             # with results
             mock_get_results.return_value = [{'id': 1}, {'id': 2}]
@@ -318,8 +321,9 @@ class TestSolrQuerySet:
             mock_get_results.return_value = []
             assert not sqs
 
-    def test_set_limits(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_set_limits(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
         sqs.set_limits(10, 50)
         assert sqs.start == 10
         assert sqs.stop == 50
@@ -328,8 +332,9 @@ class TestSolrQuerySet:
         assert sqs.start == 0
         assert sqs.stop is None
 
-    def test_get_item(self, mocksolrclient):
-        sqs = SolrQuerySet()
+    def test_get_item(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
 
         # simulate result cache already populated
         sqs._result_cache = {'response': {'docs': [1, 2, 3, 4, 5]}}
@@ -359,10 +364,15 @@ class TestSolrQuerySet:
         assert sliced_qs.start == 3
         assert sliced_qs.stop is None
 
-        # - slice with step
-        sliced_qs = sqs[0:10:2]
-        assert not isinstance(sliced_qs, SolrQuerySet)
-        # not sure how else to test this one...
+        # - slice with step - requires fetching results
+        with patch.object(sqs, '_clone') as mock_clone:
+            # for step slicing, calls list on the cloned queryset,
+            # which calls iterate; supply list of numbers as response
+            mock_clone.return_value.__iter__.return_value = range(20)
+            sliced_qs = sqs[0:10:2]
+            assert not isinstance(sliced_qs, SolrQuerySet)
+            assert sliced_qs[1] == 2
+            assert sliced_qs[-1] == 18
 
         # - single item
         with patch.object(sqs, '_clone') as mock_clone:

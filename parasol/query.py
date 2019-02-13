@@ -6,27 +6,28 @@ slicing, counting, and boolean check to see if a search has results.
 Filter, search and sort methods return a new queryset, and can be
 chained. For example::
 
-    SolrQuerySet().filter(item_type='person') \
-                  .search(name='hem*') \
-                  .order_by('sort_name') \
+    SolrQuerySet(solrclient).filter(item_type='person') \
+                            .search(name='hem*') \
+                            .order_by('sort_name') \
 
 
+If you are working with Django you should use
+:class:`parasol.django.SolrQuerySet`,
+which will automatically initialize a new :class:`parasol.django.SolrClient`
+if one is not passed in.
 """
 
-from typing import Optional, Dict, List
+from typing import Dict, List
 
-try:
-    from parasol.solr.django import SolrClient
-except ImportError:
-    # FIXME: SolrQuerySet doesn't currently work with non-django
-    # solr client because it would need a way to get connection settings
-    from parasol.solr import SolrClient
+from parasol.solr import SolrClient
 
 
 class SolrQuerySet:
     """A Solr queryset object that allows for object oriented
     searching and filtering of Solr results. Allows search results
-    to be paginated by django paginator."""
+    to be pagination using slicing, count, and iteration.
+
+    """
 
     _result_cache = None
     start = 0
@@ -41,8 +42,9 @@ class SolrQuerySet:
     #: by default, combine search queries with AND
     default_search_operator = 'AND'
 
-    def __init__(self, solr: Optional[SolrClient] = None):
-        self.solr = solr or SolrClient()
+    def __init__(self, solr: SolrClient):
+        # requires solr client so that this version can be django-agnostic
+        self.solr = solr
         # convert search operator into form needed for combining queries
         self._search_op = ' %s ' % self.default_search_operator
 
