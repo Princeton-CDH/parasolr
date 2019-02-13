@@ -13,7 +13,7 @@ chained. For example::
 
 """
 
-from typing import Any, Optional, Dict, List
+from typing import Optional, Dict, List
 
 try:
     from parasol.solr.django import SolrClient
@@ -34,6 +34,7 @@ class SolrQuerySet:
     sort_options = []
     search_qs = []
     filter_qs = []
+    field_list = []
     #: by default, combine search queries with AND
     default_search_operator = 'AND'
 
@@ -86,6 +87,10 @@ class SolrQuerySet:
         else:
             query_opts['q'] = '*:*'
 
+        if self.field_list:
+            query_opts['fl'] = ','.join(self.field_list)
+
+
         return query_opts
 
     def count(self) -> int:
@@ -113,6 +118,18 @@ class SolrQuerySet:
     def filter(self, *args, **kwargs):
         """
         Return a new SolrQuerySet with Solr filter queries added.
+        Multiple filters can be combined either in a single
+        method call, or they can be chained for the same effect.
+        For example::
+
+            queryset.filter(item_type='person').filter(birth_year=1900)
+            queryset.filter(item_type='person', birth_year=1900)
+
+        To provide a filter that should be used in modified, provide
+        the exact string of your filter query::
+
+            queryset.filter('birth_year:[1800 TO *]')
+
         """
         qs_copy = self._clone()
 
@@ -162,6 +179,21 @@ class SolrQuerySet:
         qs_copy.get_results(**kwargs)
         return qs_copy
 
+    def only(self, *args, **kwargs):
+        """Use field limit option to return only the specified fields.
+        Optionally provide aliases for them in the return. Example::
+
+            queryset.only('title', 'author', 'date')
+            queryset.only('title:title_t', 'date:pubyear_i')
+
+        """
+        qs_copy = self._clone()
+        qs_copy.field_list.extend(args)
+        for key, value in kwargs.items():
+            qs_copy.field_list.append('%s:%s' % (key, value))
+
+        return qs_copy
+
     def all(self):
         """Return a new queryset that is a copy of the current one."""
         return self._clone()
@@ -189,6 +221,7 @@ class SolrQuerySet:
         qs_copy.search_qs = list(self.search_qs)
         qs_copy.filter_qs = list(self.filter_qs)
         qs_copy.sort_options = list(self.sort_options)
+        qs_copy.field_list = list(self.field_list)
 
         return qs_copy
 

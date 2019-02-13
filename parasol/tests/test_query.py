@@ -39,12 +39,14 @@ class TestSolrQuerySet:
         sqs.sort_options = ['title asc', 'date desc']
         sqs.filter_qs = ['item_type:work']
         sqs.search_qs = ['title:reading', 'author:johnson']
+        sqs.field_list = ['title', 'author', 'date:pubyear_i']
         query_opts = sqs.query_opts()
         assert query_opts['start'] == sqs.start
         assert query_opts['rows'] == sqs.stop - sqs.start
         assert query_opts['fq'] == sqs.filter_qs
         assert query_opts['q'] == ' AND '.join(sqs.search_qs)
         assert query_opts['sort'] == ','.join(sqs.sort_options)
+        assert query_opts['fl'] == ','.join(sqs.field_list)
 
     def test_get_results(self, mocksolrclient):
         sqs = SolrQuerySet()
@@ -164,6 +166,24 @@ class TestSolrQuerySet:
         assert sorted_sqs.sort_options == ['title asc', 'date asc']
         # original queryset is unchanged
         assert not sqs.sort_options
+
+    def test_only(self, mocksolrclient):
+        sqs = SolrQuerySet()
+        only_fields = ['title', 'author', 'date']
+        # field name only, single list
+        fields_sqs = sqs.only(*only_fields)
+        # field list refined
+        assert fields_sqs.field_list == only_fields
+        # original field list unchanged
+        assert not sqs.field_list
+
+        # chaining is equivalent
+        fields_sqs = sqs.only('title').only('author').only('date')
+        # field list refined
+        assert fields_sqs.field_list == only_fields
+        # original field list unchanged
+        assert not sqs.field_list
+
 
     def test_all(self, mocksolrclient):
         sqs = SolrQuerySet()
@@ -320,12 +340,10 @@ class TestSolrQuerySet:
 
         # handle invalid input
         with pytest.raises(TypeError):
-            sqs['foo']
+            assert sqs['foo']
 
         with pytest.raises(AssertionError):
-            sqs[-1]
+            assert sqs[-1]
 
         with pytest.raises(AssertionError):
-            sqs[:-1]
-
-
+            assert sqs[:-1]
