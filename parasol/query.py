@@ -34,7 +34,6 @@ class SolrQuerySet:
     sort_options = []
     search_qs = []
     filter_qs = []
-
     #: by default, combine search queries with AND
     default_search_operator = 'AND'
 
@@ -52,6 +51,11 @@ class SolrQuerySet:
         Returns:
             Solr response documents as a list of dictionaries.
         """
+
+        # TODO: can we store the result cache and only retrieve
+        # if query options have changed?
+        # For now, always query.
+
         query_opts = self.query_opts()
         query_opts.update(**kwargs)
         # TODO: what do we do about the fact that Solr defaults
@@ -60,7 +64,7 @@ class SolrQuerySet:
         # NOTE: django templates choke on AttrDict because it is
         # callable; using dictionary response instead
         self._result_cache = self.solr.query(wrap=False, **query_opts)
-        return self._result_cache['docs']
+        return self._result_cache['response']['docs']
 
     def query_opts(self):
         """Construct query options based on current queryset configuration.
@@ -89,13 +93,13 @@ class SolrQuerySet:
 
         # if result cache is already populated, use it
         if self._result_cache is not None:
-            return self._result_cache['numFound']
+            return self._result_cache['response']['numFound']
 
         # otherwise, query with current options but request zero rows
         # and do not populate the result cache
         query_opts = self.query_opts()
         query_opts['rows'] = 0
-        return self.solr.query(**query_opts, wrap=False)['numFound']
+        return self.solr.query(**query_opts, wrap=False)['response']['numFound']
 
     @staticmethod
     def _lookup_to_filter(key, value):
@@ -219,7 +223,7 @@ class SolrQuerySet:
         # if the result cache is already populated,
         # return the requested index or slice
         if self._result_cache is not None:
-            return self._result_cache['docs'][k]
+            return self._result_cache['response']['docs'][k]
 
         qs_copy = self._clone()
 

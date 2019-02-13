@@ -49,13 +49,13 @@ class TestSolrQuerySet:
     def test_get_results(self, mocksolrclient):
         sqs = SolrQuerySet()
 
-        mockresponse = {'docs': [{'id': 1}]}
+        mockresponse = {'response': {'docs': [{'id': 1}]}}
         mocksolrclient.return_value.query.return_value = mockresponse
 
         # by default, should query solr with options from query_opts
         # and wrap = false
         query_opts = sqs.query_opts()
-        assert sqs.get_results() == mockresponse['docs']
+        assert sqs.get_results() == mockresponse['response']['docs']
         assert sqs._result_cache == mockresponse
         mocksolrclient.return_value.query \
                       .assert_called_with(**query_opts, wrap=False)
@@ -73,13 +73,13 @@ class TestSolrQuerySet:
 
         mocksolr = mocksolrclient.return_value
         # simulate result cache already populated; should use
-        sqs._result_cache = {'numFound': 5009}
-        assert sqs.count() == sqs._result_cache['numFound']
+        sqs._result_cache = {'response': {'numFound': 5009}}
+        assert sqs.count() == sqs._result_cache['response']['numFound']
         mocksolr.query.assert_not_called()
 
         # if cache is not populated, should query for count
         sqs._result_cache = None
-        mocksolr.query.return_value = {'numFound': 343}
+        mocksolr.query.return_value = {'response': {'numFound': 343}}
         assert sqs.count() == 343
         count_query_opts = sqs.query_opts()
         count_query_opts['rows'] = 0
@@ -275,7 +275,7 @@ class TestSolrQuerySet:
         sqs = SolrQuerySet()
 
         # simulate result cache already populated
-        sqs._result_cache = {'docs': [1, 2, 3, 4, 5]}
+        sqs._result_cache = {'response': {'docs': [1, 2, 3, 4, 5]}}
         # single item
         assert sqs[0] == 1
         assert sqs[1] == 2

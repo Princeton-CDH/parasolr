@@ -139,4 +139,4 @@ class SolrClient(ClientBase):
         )
         if response:
             # queries return the search response for now
-            return QueryReponse(response) if wrap else response['response']
+            return QueryReponse(response) if wrap else response
