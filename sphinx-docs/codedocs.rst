@@ -57,6 +57,11 @@ QuerySet
 .. automodule:: parasol.query
    :members:
 
+Django
+------
+
+.. automodule:: parasol.django
+    :members:
 
 
 Manage Commands
