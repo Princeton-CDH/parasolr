@@ -30,7 +30,7 @@ class TestSolrQuerySet:
         assert query_opts['start'] == 0
         assert query_opts['q'] == '*:*'
         # don't include unset options
-        for opt in ['fq', 'rows', 'sort']:
+        for opt in ['fq', 'rows', 'sort', 'fl', 'hl', 'hl.field']:
             assert opt not in query_opts
 
         # customized query opts
@@ -40,13 +40,22 @@ class TestSolrQuerySet:
         sqs.filter_qs = ['item_type:work']
         sqs.search_qs = ['title:reading', 'author:johnson']
         sqs.field_list = ['title', 'author', 'date:pubyear_i']
+        sqs.highlight_field = 'content'
+        sqs.highlight_opts = {'snippets': 3, 'method': 'unified'}
         query_opts = sqs.query_opts()
+
         assert query_opts['start'] == sqs.start
         assert query_opts['rows'] == sqs.stop - sqs.start
         assert query_opts['fq'] == sqs.filter_qs
         assert query_opts['q'] == ' AND '.join(sqs.search_qs)
         assert query_opts['sort'] == ','.join(sqs.sort_options)
         assert query_opts['fl'] == ','.join(sqs.field_list)
+        # highlighting should be turned on
+        assert query_opts['hl']
+        assert query_opts['hl.field'] == 'content'
+        # highlighting options added with hl.prefix
+        assert query_opts['hl.snippets'] == 3
+        assert query_opts['hl.method'] == 'unified'
 
     def test_get_results(self, mocksolrclient):
         sqs = SolrQuerySet()
@@ -184,6 +193,34 @@ class TestSolrQuerySet:
         # original field list unchanged
         assert not sqs.field_list
 
+    def test_highlight(self, mocksolrclient):
+        sqs = SolrQuerySet()
+        # field only, defaults
+        highlight_qs = sqs.highlight('content')
+        assert highlight_qs.highlight_field == 'content'
+        assert highlight_qs.highlight_opts == {}
+        # original unchanged
+        assert sqs.highlight_field is None
+
+        # field and opts
+        highlight_qs = sqs.highlight('text', snippets=3, method='unified')
+        assert highlight_qs.highlight_field == 'text'
+        assert highlight_qs.highlight_opts == \
+            {'snippets': 3, 'method': 'unified'}
+        # original unchanged
+        assert sqs.highlight_field is None
+        assert sqs.highlight_opts == {}
+
+    def test_get_highlighting(self, mocksolrclient):
+        sqs = SolrQuerySet()
+        # simulate result cache already populated, no highlighting
+        sqs._result_cache = {'response': {'docs': []}}
+        assert sqs.get_highlighting() == {}
+
+        # simulate response with highlighting
+        mock_highlights = {'id1': {'text': ['sample match content']}}
+        sqs._result_cache = {'highlighting': mock_highlights}
+        assert sqs.get_highlighting() == mock_highlights
 
     def test_all(self, mocksolrclient):
         sqs = SolrQuerySet()

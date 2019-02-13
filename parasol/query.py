@@ -35,6 +35,9 @@ class SolrQuerySet:
     search_qs = []
     filter_qs = []
     field_list = []
+    highlight_field = None
+    highlight_opts = {}
+
     #: by default, combine search queries with AND
     default_search_operator = 'AND'
 
@@ -90,6 +93,13 @@ class SolrQuerySet:
         if self.field_list:
             query_opts['fl'] = ','.join(self.field_list)
 
+        if self.highlight_field:
+            query_opts.update({
+                'hl': True,
+                'hl.field': self.highlight_field
+            })
+            for key, val in self.highlight_opts.items():
+                query_opts['hl.%s' % key] = val
 
         return query_opts
 
@@ -194,6 +204,23 @@ class SolrQuerySet:
 
         return qs_copy
 
+    def highlight(self, field: str, **kwargs):
+        """"Configure highlighting. Takes arbitrary Solr highlight
+        parameters and adds the `hl.` prefix to them.  Example use::
+
+            queryset.highlight('content', snippets=3, method='unified')
+        """
+        qs_copy = self._clone()
+        qs_copy.highlight_field = field
+        qs_copy.highlight_opts = kwargs
+        return qs_copy
+
+    def get_highlighting(self):
+        """Return the highlighting portion of the Solr response."""
+        if not self._result_cache:
+            self.get_results()
+        return self._result_cache.get('highlighting', {})
+
     def all(self):
         """Return a new queryset that is a copy of the current one."""
         return self._clone()
@@ -216,12 +243,14 @@ class SolrQuerySet:
         # set attributes that can be copied directly
         qs_copy.start = self.start
         qs_copy.stop = self.stop
+        qs_copy.highlight_field = self.highlight_field
 
         # set copies of list attributes
         qs_copy.search_qs = list(self.search_qs)
         qs_copy.filter_qs = list(self.filter_qs)
         qs_copy.sort_options = list(self.sort_options)
         qs_copy.field_list = list(self.field_list)
+        qs_copy.highlight_opts = dict(self.highlight_opts)
 
         return qs_copy
 
