@@ -7,6 +7,7 @@ import requests
 try:
     from django.core.management import call_command
     from django.core.management.base import CommandError
+    from django.test import override_settings
 
     from parasol.management.commands import solr_schema, index
 except ImportError:
@@ -45,12 +46,12 @@ class TestSolrSchemaCommand:
     @patch('parasol.management.commands.solr_schema.SolrClient')
     @patch('parasol.management.commands.solr_schema.SolrSchema')
     @patch('parasol.management.commands.solr_schema.input')
+    @override_settings(SOLR_CONNECTIONS={'default': {'CONFIGSET': 'test_config'}})
     def test_handle_core(self, mockinput, mocksolrschema, mocksolrclient):
         # using mock SolrSchema to avoid exception on get_configuration
 
         mocksolr = mocksolrclient.return_value
         mocksolr.collection = 'test-coll'
-        mocksolr.configSet = 'test_config'
         mocksolr.core_admin.ping.return_value = False
 
         cmd = solr_schema.Command()

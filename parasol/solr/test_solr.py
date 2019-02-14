@@ -61,7 +61,6 @@ def test_client(request):
     solr_url = TEST_SOLR_CONNECTION.get('URL', None)
     collection = TEST_SOLR_CONNECTION.get('COLLECTION', None)
     commitWithin  = TEST_SOLR_CONNECTION.get('COMMITWITHIN', None)
-    configSet = TEST_SOLR_CONNECTION.get('CONFIGSET', 'basic_configs')
 
     if not solr_url or not collection:
         raise ImproperConfiguration(
@@ -74,7 +73,7 @@ def test_client(request):
     response = client.core_admin.status(core=collection)
     if response.status.parasol_test:
         raise CoreExists('Test core "parasol_test" exists, aborting!')
-    client.core_admin.create(collection, configSet=configSet)
+    client.core_admin.create(collection, configSet='basic_configs')
 
     def clean_up():
         for field in TEST_FIELDS:
@@ -619,8 +618,7 @@ class TestCoreAdmin:
 
     def test_create_unload(self, core_test_client):
         test_client, core = core_test_client
-        configSet = TEST_SOLR_CONNECTION.get('CONFIGSET', 'basic_configs')
-        test_client.core_admin.create(core, configSet=configSet)
+        test_client.core_admin.create(core, configSet='basic_configs')
         resp = test_client.core_admin.status(core=core)
         assert not resp.initFailures
         # core has a start time
