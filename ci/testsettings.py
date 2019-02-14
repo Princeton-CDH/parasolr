@@ -26,5 +26,10 @@ SOLR_CONNECTIONS = {
         'collection': 'parasol_test',
         # aggressive commitWithin for test only
         'commitWithin': 750
+    },
+    # default config for testing pytest plugin
+    'default': {
+        'URL': 'http://localhost:8983/solr/',
+        'COLLECTION': 'myplugin'
     }
 }
