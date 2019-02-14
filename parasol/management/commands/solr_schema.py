@@ -10,6 +10,7 @@ Example usage::
 
 """
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 import requests
 
@@ -52,8 +53,11 @@ class Command(BaseCommand):
                 create = input('Solr core %s does not exist. Create it? (y/n)' %
                                solr.collection).lower() == 'y'
             if create:
-                solr.core_admin.create(solr.collection,
-                                       configSet='basic_configs')
+                # The error handling for ensuring there's a configuration
+                # has already happened, so just get default
+                default_solr = settings.SOLR_CONNECTIONS['default']
+                configSet = default_solr.get('CONFIGSET', 'basic_configs')
+                solr.core_admin.create(solr.collection, configSet=configSet)
             else:
                 # if core was not created, bail out
                 return

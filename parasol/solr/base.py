@@ -21,6 +21,11 @@ class CoreExists(SolrClientException):
     pass
 
 
+class ImproperConfiguration(SolrClientException):
+    """Raised when a required setting is not present or is an invalid value."""
+    pass
+
+
 class ClientBase:
     """Base object with common communication methods for talking to Solr API.
 

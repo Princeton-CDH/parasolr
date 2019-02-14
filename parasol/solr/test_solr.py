@@ -8,7 +8,7 @@ from unittest.mock import patch, Mock
 from attrdict import AttrDict
 import requests
 
-from parasol.solr.base import CoreExists, ClientBase
+from parasol.solr.base import CoreExists, ClientBase, ImproperConfiguration
 from parasol.solr.client import SolrClient, QueryReponse
 from parasol.solr.schema import Schema
 from parasol.solr.update import Update
@@ -57,13 +57,23 @@ def test_client(request):
 
     If a test field is listed here, it will NOT be automatically cleaned up.
     """
-    client = SolrClient(**TEST_SOLR_CONNECTION)
 
-    response = client.core_admin.status(core=TEST_SOLR_CONNECTION['collection'])
+    solr_url = TEST_SOLR_CONNECTION.get('URL', None)
+    collection = TEST_SOLR_CONNECTION.get('COLLECTION', None)
+    commitWithin  = TEST_SOLR_CONNECTION.get('COMMITWITHIN', None)
+
+    if not solr_url or not collection:
+        raise ImproperConfiguration(
+            "Test client requires URL and COLLECTION in SOLR_CONNECTIONS."
+        )
+
+
+    client = SolrClient(solr_url, collection, commitWithin=commitWithin)
+
+    response = client.core_admin.status(core=collection)
     if response.status.parasol_test:
         raise CoreExists('Test core "parasol_test" exists, aborting!')
-    client.core_admin.create(TEST_SOLR_CONNECTION['collection'],
-                             configSet='basic_configs')
+    client.core_admin.create(collection, configSet='basic_configs')
 
     def clean_up():
         for field in TEST_FIELDS:
@@ -73,7 +83,7 @@ def test_client(request):
         for ftype in TEST_FIELD_TYPES:
             client.schema.delete_field_type(name=ftype)
         client.core_admin.unload(
-            TEST_SOLR_CONNECTION['collection'],
+            collection,
             deleteInstanceDir=True,
             deleteIndex=True,
             deleteDataDir=True
@@ -90,8 +100,18 @@ def core_test_client(request):
     Unconditionally deletes the core named, so that any CoreAdmin API tests
     are always cleaned up on teardown.
     """
-    client = SolrClient(**TEST_SOLR_CONNECTION)
+    solr_url = TEST_SOLR_CONNECTION.get('URL', None)
+    commitWithin  = TEST_SOLR_CONNECTION.get('COMMITWITHIN', None)
+
+    if not solr_url:
+        raise ImproperConfiguration(
+            "Core admin test client requires URL setting in SOLR_CONNECTIONS."
+        )
+
+
     core_name = str(uuid.uuid4())
+
+    client = SolrClient(solr_url, core_name, commitWithin=commitWithin)
 
     def clean_up():
 
@@ -637,7 +657,7 @@ class TestCoreAdmin:
 
     def test_status(self, test_client):
         response = test_client.core_admin.\
-                status(core=TEST_SOLR_CONNECTION['collection'])
+                status(core=TEST_SOLR_CONNECTION['COLLECTION'])
         # no init failures happened
         assert not response.initFailures
         # status is not empty, and therefore has core info
