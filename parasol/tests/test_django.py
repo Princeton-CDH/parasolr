@@ -51,6 +51,16 @@ def test_django_solrclient():
         assert solr.solr_url == config['URL']
         assert solr.collection == config['COLLECTION']
 
+    # commit within option
+    config['COMMITWITHIN'] = 750
+    with override_settings(SOLR_CONNECTIONS={'default': config}):
+        solr = SolrClient()
+        assert solr.commitWithin == 750
+
+        # but passed in value takes precedence
+        solr = SolrClient(commitWithin=7339)
+        assert solr.commitWithin == 7339
+
 
 @skipif_django
 def test_no_django_solrclient():
