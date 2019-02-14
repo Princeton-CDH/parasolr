@@ -28,6 +28,8 @@ To use with Django:
         'default': {
         'URL': 'http://localhost:8983/solr/',
         'COLLECTION': 'name',
+        # any configSet in SOLR_ROOT/server/solr/configsets
+        'CONFIGSET': 'basic_configs'
         }
     }
 
