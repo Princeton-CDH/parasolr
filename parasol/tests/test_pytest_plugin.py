@@ -28,6 +28,8 @@ def test_configure_django_test_solr(testdir):
         """
         from parasol.django import SolrClient
 
+        pytest_plugins = "parasol.pytest_plugin"
+
         def test_solr_client():
             solr = SolrClient()
             # solr client should use test config
