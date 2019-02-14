@@ -53,5 +53,10 @@ setup(
         'Programming Language :: Python :: 3.6'
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Database',
-    ]
+    ],
+    entry_points={
+        'pytest11': [
+            'parasol = parasol.pytest_plugin',
+        ]
+    },
 )
