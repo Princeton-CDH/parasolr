@@ -46,7 +46,6 @@ class TestSolrSchemaCommand:
     @patch('parasol.management.commands.solr_schema.SolrClient')
     @patch('parasol.management.commands.solr_schema.SolrSchema')
     @patch('parasol.management.commands.solr_schema.input')
-    @override_settings(SOLR_CONNECTIONS={'default': {'CONFIGSET': 'test_config'}})
     def test_handle_core(self, mockinput, mocksolrschema, mocksolrclient):
         # using mock SolrSchema to avoid exception on get_configuration
 
@@ -69,36 +68,39 @@ class TestSolrSchemaCommand:
         # simulate user says yes when asked to create core
         mockinput.reset_mock()
         mockinput.return_value = 'Y'
-        cmd.handle()
-        # called once
-        assert mockinput.call_count
-        mocksolr.core_admin.create.assert_called_with(
-            mocksolr.collection, configSet='test_config')
+        with override_settings(SOLR_CONNECTIONS=\
+            {'default': {'CONFIGSET': 'test_config'}}):
 
-        # simulate no input requested
-        mockinput.reset_mock()
-        mocksolr.reset_mock()
-        mocksolr.core_admin.ping.return_value = False
-        cmd.handle(noinput=True)
-        # input not called, but create should be called
-        mockinput.assert_not_called()
-        assert mocksolr.core_admin.create.call_count
+            cmd.handle()
+            # called once
+            assert mockinput.call_count
+            mocksolr.core_admin.create.assert_called_with(
+                mocksolr.collection, configSet='test_config')
 
-        # should work the same way from the command line
-        mockinput.reset_mock()
-        mocksolr.reset_mock()
-        mocksolr.core_admin.ping.return_value = False
-        call_command('solr_schema', noinput=True, verbosity=0)
-        # input not called, but create should be called
-        mockinput.assert_not_called()
-        assert mocksolr.core_admin.create.call_count
+            # simulate no input requested
+            mockinput.reset_mock()
+            mocksolr.reset_mock()
+            mocksolr.core_admin.ping.return_value = False
+            cmd.handle(noinput=True)
+            # input not called, but create should be called
+            mockinput.assert_not_called()
+            assert mocksolr.core_admin.create.call_count
 
-        # simulate collection does exist - no input or create
-        mocksolr.reset_mock()
-        mocksolr.core_admin.ping.return_value = True
-        cmd.handle()
-        mockinput.assert_not_called()
-        mocksolr.core_admin.create.assert_not_called()
+            # should work the same way from the command line
+            mockinput.reset_mock()
+            mocksolr.reset_mock()
+            mocksolr.core_admin.ping.return_value = False
+            call_command('solr_schema', noinput=True, verbosity=0)
+            # input not called, but create should be called
+            mockinput.assert_not_called()
+            assert mocksolr.core_admin.create.call_count
+
+            # simulate collection does exist - no input or create
+            mocksolr.reset_mock()
+            mocksolr.core_admin.ping.return_value = True
+            cmd.handle()
+            mockinput.assert_not_called()
+            mocksolr.core_admin.create.assert_not_called()
 
     @patch('parasol.management.commands.solr_schema.SolrClient')
     @patch('parasol.management.commands.solr_schema.SolrSchema')
