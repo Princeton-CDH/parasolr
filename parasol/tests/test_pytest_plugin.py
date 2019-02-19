@@ -34,7 +34,7 @@ def test_configure_django_test_solr(testdir):
         from parasol.django import SolrClient
 
         # causes "Plugin already registered" error on travis...
-        pytest_plugins = "parasol.pytest_plugin"
+        # pytest_plugins = "parasol.pytest_plugin"
 
         def test_solr_client():
             solr = SolrClient()
