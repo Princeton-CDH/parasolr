@@ -44,6 +44,7 @@ setup(
         'Framework :: Django :: 1.11',
         'Framework :: Django :: 2.0',
         'Framework :: Django :: 2.1',
+        "Framework :: Pytest",
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
@@ -53,5 +54,10 @@ setup(
         'Programming Language :: Python :: 3.6'
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Database',
-    ]
+    ],
+    entry_points={
+        'pytest11': [
+            'parasol = parasol.pytest_plugin',
+        ]
+    },
 )

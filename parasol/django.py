@@ -62,6 +62,12 @@ if django:
 
             collection = default_solr.get('COLLECTION', '')
 
+            # use commit within if configured
+            commit_within = default_solr.get('COMMITWITHIN', None)
+            # passed-in value takes precedence
+            if 'commitWithin' not in kwargs and commit_within:
+                kwargs['commitWithin'] = commit_within
+
             logger.info('Connecting to default Solr %s%s', url, collection)
             super().__init__(url, collection, *args, **kwargs)
 

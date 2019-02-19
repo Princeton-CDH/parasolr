@@ -22,6 +22,9 @@ INSTALLED_APPS = (
 # from top level project folder
 SOLR_CONNECTIONS = {
     'default': {
+        # default config for testing pytest plugin
+        'URL': 'http://localhost:8983/solr/',
+        'COLLECTION': 'myplugin',
         'TEST': {
             'URL': 'http://localhost:8983/solr/',
             'COLLECTION': 'parasol_test',
