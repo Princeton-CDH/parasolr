@@ -21,16 +21,16 @@ INSTALLED_APPS = (
 # Default CI test settings; imported by parasol.solr.test_solr as testsettings
 # from top level project folder
 SOLR_CONNECTIONS = {
-    'test': {
-        'URL': 'http://localhost:8983/solr/',
-        'COLLECTION': 'parasol_test',
-        # aggressive commitWithin for test only
-        'COMMITWITHIN': 750,
-        'CONFIGSET': 'basic_configs'
-    },
-    # default config for testing pytest plugin
     'default': {
+        # default config for testing pytest plugin
         'URL': 'http://localhost:8983/solr/',
-        'COLLECTION': 'myplugin'
+        'COLLECTION': 'myplugin',
+        'TEST': {
+            'URL': 'http://localhost:8983/solr/',
+            'COLLECTION': 'parasol_test',
+            # aggressive commitWithin for test only
+            'COMMITWITHIN': 750,
+            'CONFIGSET': 'basic_configs'
+        }
     }
 }

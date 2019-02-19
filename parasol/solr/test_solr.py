@@ -28,12 +28,12 @@ except ImportError:
         raise ImportError('No Django or parasol test settings module found.')
 
 try:
-    TEST_SOLR_CONNECTION = settings.SOLR_CONNECTIONS['test']
+    TEST_SOLR_CONNECTION = settings.SOLR_CONNECTIONS['default']['TEST']
 # reraise whether or not the key is missing for 'test' OR the entire setting
 # is missing.
 except (AttributeError, KeyError) as err:
    raise err.__class__(
-        'Check that a SOLR_CONNECTIONS block with a "test" core entry '
+        'Check that a SOLR_CONNECTIONS block with a "TEST" entry '
         'is defined.'
    )
 
