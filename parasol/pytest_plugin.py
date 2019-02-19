@@ -40,24 +40,28 @@ if django:
 
         """
 
-        if 'TEST' in settings.SOLR_CONNECTIONS['default'] and \
-          'NAME' in settings.SOLR_CONNECTIONS['default']['TEST']:
-            test_collection = settings.SOLR_CONNECTIONS['default']['TEST']['NAME']
-        else:
-            test_collection = 'test_%s'% settings.SOLR_CONNECTIONS['default']['COLLECTION']
+        solr_config_opts = settings.SOLR_CONNECTIONS['default'].copy()
+        # use test settings as primary
+        if 'TEST' in settings.SOLR_CONNECTIONS['default']:
+            # anything in test settings should override default settings
+            solr_config_opts.update(settings.SOLR_CONNECTIONS['default']['TEST'])
 
-        test_config = settings.SOLR_CONNECTIONS['default'].copy()
-        test_config['COLLECTION'] = test_collection
+        # if test collection is not explicitly configured,
+        # set it based on default collection
+        if 'COLLECTION' not in settings.SOLR_CONNECTIONS['default']['TEST']:
+            solr_config_opts['COLLECTION'] = 'test_%s' % \
+                settings.SOLR_CONNECTIONS['default']['COLLECTION']
 
-        logger.info('Configuring Solr for tests %s%s',
-                    test_config['URL'], test_collection)
 
-        with override_settings(SOLR_CONNECTIONS={'default': test_config}):
+        logger.info('Configuring Solr for tests %(URL)s%(COLLECTION)s',
+                    solr_config_opts)
+
+        with override_settings(SOLR_CONNECTIONS={'default': solr_config_opts}):
             # reload core before and after to ensure field list is accurate
             solr = django.SolrClient(commitWithin=10)
-            response = solr.core_admin.status(core=test_collection)
-            if not response.status.get(test_collection, None):
-                solr.core_admin.create(test_collection, configSet='basic_configs')
+            response = solr.core_admin.status(core=solr_config_opts['COLLECTION'])
+            if not response.status.get(solr_config_opts['COLLECTION'], None):
+                solr.core_admin.create(solr_config_opts['COLLECTION'], configSet='basic_configs')
 
             try:
                 # if a schema is configured, update the test core
@@ -74,7 +78,7 @@ if django:
             solr.update.delete_by_query('*:*')
             # and unload
             solr.core_admin.unload(
-                test_collection,
+                solr_config_opts['COLLECTION'],
                 deleteInstanceDir=True,
                 deleteIndex=True,
                 deleteDataDir=True
