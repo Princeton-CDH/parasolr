@@ -18,6 +18,36 @@ logger = logging.getLogger(__name__)
 
 if django:
 
+
+    def get_test_solr_config():
+        '''Get configuration for test Solr connection based on
+        default and test options in django settings. Any test configuration
+        options specified are used; if no test collection name
+        is specified, generates one based on the configured collection.'''
+
+        # copy default config for basic connection optiosn (e.g. url)
+        test_config = settings.SOLR_CONNECTIONS['default'].copy()
+        print(test_config)
+
+        # use test settings as primary: anything in test settings
+        # should override default settings
+        if 'TEST' in settings.SOLR_CONNECTIONS['default']:
+            test_config.update(settings.SOLR_CONNECTIONS['default']['TEST'])
+
+        print(test_config)
+
+        # if test collection is not explicitly configured,
+        # set it based on default collection
+        if 'TEST' not in test_config or \
+         'COLLECTION' not in settings.SOLR_CONNECTIONS['default']['TEST']:
+            test_config['COLLECTION'] = 'test_%s' % \
+                settings.SOLR_CONNECTIONS['default']['COLLECTION']
+        print(test_config)
+
+        logger.info('Configuring Solr for tests %(URL)s%(COLLECTION)s',
+                    test_config)
+        return test_config
+
     @pytest.fixture(autouse=True, scope="session")
     def configure_django_test_solr():
         """Automatically configure the default Solr to use a test
@@ -40,18 +70,7 @@ if django:
 
         """
 
-        solr_config_opts = settings.SOLR_CONNECTIONS['default'].copy()
-        # use test settings as primary
-        if 'TEST' in settings.SOLR_CONNECTIONS['default']:
-            # anything in test settings should override default settings
-            solr_config_opts.update(settings.SOLR_CONNECTIONS['default']['TEST'])
-
-        # if test collection is not explicitly configured,
-        # set it based on default collection
-        if 'COLLECTION' not in settings.SOLR_CONNECTIONS['default']['TEST']:
-            solr_config_opts['COLLECTION'] = 'test_%s' % \
-                settings.SOLR_CONNECTIONS['default']['COLLECTION']
-
+        solr_config_opts = get_test_solr_config()
 
         logger.info('Configuring Solr for tests %(URL)s%(COLLECTION)s',
                     solr_config_opts)
