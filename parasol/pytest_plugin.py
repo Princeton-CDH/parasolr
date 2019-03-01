@@ -27,14 +27,11 @@ if django:
 
         # copy default config for basic connection optiosn (e.g. url)
         test_config = settings.SOLR_CONNECTIONS['default'].copy()
-        print(test_config)
 
         # use test settings as primary: anything in test settings
         # should override default settings
         if 'TEST' in settings.SOLR_CONNECTIONS['default']:
             test_config.update(settings.SOLR_CONNECTIONS['default']['TEST'])
-
-        print(test_config)
 
         # if test collection is not explicitly configured,
         # set it based on default collection
@@ -42,7 +39,6 @@ if django:
          'COLLECTION' not in settings.SOLR_CONNECTIONS['default']['TEST']:
             test_config['COLLECTION'] = 'test_%s' % \
                 settings.SOLR_CONNECTIONS['default']['COLLECTION']
-        print(test_config)
 
         logger.info('Configuring Solr for tests %(URL)s%(COLLECTION)s',
                     test_config)
@@ -80,7 +76,8 @@ if django:
             solr = django.SolrClient(commitWithin=10)
             response = solr.core_admin.status(core=solr_config_opts['COLLECTION'])
             if not response.status.get(solr_config_opts['COLLECTION'], None):
-                solr.core_admin.create(solr_config_opts['COLLECTION'], configSet='basic_configs')
+                solr.core_admin.create(solr_config_opts['COLLECTION'],
+                                       configSet=solr_config_opts.get('CONFIGSET', 'basic_configs'))
 
             try:
                 # if a schema is configured, update the test core
