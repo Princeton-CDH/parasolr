@@ -29,7 +29,7 @@ configuration and indexing content.
      :alt: Requirements Status
 
 Currently tested against Python 3.5 and 3.6, Solr 6.6.5, and Django 1.11,
-2.0, and 2.1.
+2.0, and 2.1, and without Django.
 
 
 Installation
