@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 import requests
 
 
-from parasol.solr.client import ClientBase
+from parasolr.solr.client import ClientBase
 
 
 class Update(ClientBase):

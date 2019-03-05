@@ -3,8 +3,8 @@ from unittest.mock import patch, Mock
 from attrdict import AttrDict
 import pytest
 
-from parasol.solr import SolrClient
-from parasol import schema
+from parasolr.solr import SolrClient
+from parasolr import schema
 
 
 def test_solr_fields():

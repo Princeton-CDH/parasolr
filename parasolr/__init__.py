@@ -1,5 +1,5 @@
 
-default_app_config = 'parasol.apps.ParasolConfig'
+default_app_config = 'parasolr.apps.ParasolConfig'
 
 __version_info__ = (0, 1, 0, 'dev')
 

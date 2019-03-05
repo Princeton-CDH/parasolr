@@ -10,57 +10,57 @@ Solr Client
 Base and Exceptions
 ^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: parasol.solr.base
+.. automodule:: parasolr.solr.base
     :members:
 
 Client and Search API
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: parasol.solr.client
+.. automodule:: parasolr.solr.client
    :members:
 
 Schema API
 ^^^^^^^^^^
 
-.. automodule:: parasol.solr.schema
+.. automodule:: parasolr.solr.schema
    :members:
 
 Update API
 ^^^^^^^^^^
 
-.. automodule:: parasol.solr.update
+.. automodule:: parasolr.solr.update
    :members:
 
 Core Admin API
 ^^^^^^^^^^^^^^
 
-.. automodule:: parasol.solr.admin
+.. automodule:: parasolr.solr.admin
    :members:
 
 
 Schema
 ------
 
-.. automodule:: parasol.schema
+.. automodule:: parasolr.schema
    :members:
 
 
 Indexing
 --------
 
-.. automodule:: parasol.indexing
+.. automodule:: parasolr.indexing
    :members:
 
 QuerySet
 --------
 
-.. automodule:: parasol.query
+.. automodule:: parasolr.query
    :members:
 
 Django
 ------
 
-.. automodule:: parasol.django
+.. automodule:: parasolr.django
     :members:
 
 
@@ -70,10 +70,10 @@ Manage Commands
 Solr schema
 ^^^^^^^^^^^
 
-.. automodule:: parasol.management.commands.solr_schema
+.. automodule:: parasolr.management.commands.solr_schema
 
 Index
 ^^^^^
 
-.. automodule:: parasol.management.commands.index
+.. automodule:: parasolr.management.commands.index
 

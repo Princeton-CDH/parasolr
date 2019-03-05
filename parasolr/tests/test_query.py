@@ -2,8 +2,8 @@ from unittest.mock import patch, Mock
 
 import pytest
 
-from parasol.solr import SolrClient
-from parasol.query import SolrQuerySet
+from parasolr.solr import SolrClient
+from parasolr.query import SolrQuerySet
 
 
 class TestSolrQuerySet:

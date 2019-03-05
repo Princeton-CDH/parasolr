@@ -7,7 +7,7 @@ Fields should be defined using :class:`SolrField` and field types
 with :class:`SolrAnalyzer` and :class:`SolrFieldType`.
 For example::
 
-    from parasol import schema
+    from parasolr import schema
 
     class MySolrSchema(schema.SolrSchema):
         '''Project Solr schema configuration'''
@@ -68,7 +68,7 @@ To update your configured solr core with your schema, run::
     python manage.py solr_schema
 
 This will automatically find your :class:`SolrSchema` subclass and
-apply changes.  See :mod:`~parasol.management.commands.solr_schema`
+apply changes.  See :mod:`~parasolr.management.commands.solr_schema`
 manage command documentation for more details.
 
 -------------------------
@@ -80,7 +80,7 @@ from typing import Any, Optional
 
 from attrdict import AttrDefault
 
-from parasol.solr.client import SolrClient
+from parasolr.solr.client import SolrClient
 
 
 logger = logging.getLogger(__name__)

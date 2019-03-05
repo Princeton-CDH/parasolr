@@ -7,8 +7,8 @@ try:
 except ImportError:
     QuerySet = None
 
-from parasol.indexing import Indexable
-from parasol.tests.utils import skipif_no_django
+from parasolr.indexing import Indexable
+from parasolr.tests.utils import skipif_no_django
 
 
 # Define Indexable subclasses for testing
@@ -46,7 +46,7 @@ class ModelIndexable(Indexable):
 
 
 @skipif_no_django
-@patch('parasol.indexing.SolrClient')
+@patch('parasolr.indexing.SolrClient')
 class TestIndexable:
 
     def test_all_indexables(self, mocksolr):

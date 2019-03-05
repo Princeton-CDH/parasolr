@@ -5,11 +5,11 @@ from typing import Any, Optional
 from attrdict import AttrDict
 import requests
 
-from parasol import __version__ as parasol_version
-from parasol.solr.base import ClientBase
-from parasol.solr.schema import Schema
-from parasol.solr.update import Update
-from parasol.solr.admin import CoreAdmin
+from parasolr import __version__ as parasol_version
+from parasolr.solr.base import ClientBase
+from parasolr.solr.schema import Schema
+from parasolr.solr.update import Update
+from parasolr.solr.admin import CoreAdmin
 
 
 logger = logging.getLogger(__name__)
@@ -96,7 +96,7 @@ class SolrClient(ClientBase):
         if commitWithin:
             self.commitWithin = commitWithin
         self.session.headers = {
-            'User-Agent': 'parasol/%s (python-requests/%s)' % \
+            'User-Agent': 'parasolr/%s (python-requests/%s)' % \
                 (parasol_version, requests.__version__)
         }
 

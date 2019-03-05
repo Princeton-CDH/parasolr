@@ -1,7 +1,7 @@
 import os
 import sys
 from setuptools import find_packages, setup
-from parasol import __version__
+from parasolr import __version__
 
 with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
     README = readme.read()
@@ -18,7 +18,7 @@ DEV_REQUIREMENTS = ['sphinx', 'sphinxcontrib-napoleon',
 DJANGO_REQUIREMENTS = ['django>=1.11', 'pytest-django']
 
 setup(
-    name='parasol',
+    name='parasolr',
     version=__version__,
     packages=find_packages(),
     include_package_data=True,
@@ -26,7 +26,7 @@ setup(
     description='Lightweight python library for Solr indexing, searching' +
         ' and schema management with optional Django integration.',
     long_description=README,
-    url='https://github.com/Princeton-CDH/parasol',
+    url='https://github.com/Princeton-CDH/parasolr',
     install_requires=REQUIREMENTS,
     setup_requires=['pytest-runner'],
     tests_require=TEST_REQUIREMENTS,
@@ -57,7 +57,7 @@ setup(
     ],
     entry_points={
         'pytest11': [
-            'parasol = parasol.pytest_plugin',
+            'parasolr = parasolr.pytest_plugin',
         ]
     },
 )

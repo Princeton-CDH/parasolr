@@ -6,12 +6,12 @@ try:
     from django.core.exceptions import ImproperlyConfigured
     from django.test import override_settings
 
-    from parasol.django import SolrClient, SolrQuerySet
+    from parasolr.django import SolrClient, SolrQuerySet
 
 except ImportError:
     pass
 
-from parasol.tests.utils import skipif_no_django, skipif_django
+from parasolr.tests.utils import skipif_no_django, skipif_django
 
 
 @skipif_no_django
@@ -66,11 +66,11 @@ def test_django_solrclient():
 def test_no_django_solrclient():
     # should not be defined when django is not installed
     with pytest.raises(ImportError):
-        from parasol.solr.django import SolrClient
+        from parasolr.solr.django import SolrClient
 
 
 @skipif_no_django
-@patch('parasol.django.SolrClient')
+@patch('parasolr.django.SolrClient')
 def test_django_solrqueryset(mocksolrclient):
     # auto-initialize solr connection if not specified
     sqs = SolrQuerySet()

@@ -8,12 +8,12 @@ from unittest.mock import patch, Mock
 from attrdict import AttrDict
 import requests
 
-from parasol.solr.base import CoreExists, ClientBase, ImproperConfiguration
-from parasol.solr.client import SolrClient, QueryReponse
-from parasol.solr.schema import Schema
-from parasol.solr.update import Update
-from parasol.solr.admin import CoreAdmin
-from parasol import __version__ as parasol_ver
+from parasolr.solr.base import CoreExists, ClientBase, ImproperConfiguration
+from parasolr.solr.client import SolrClient, QueryReponse
+from parasolr.solr.schema import Schema
+from parasolr.solr.update import Update
+from parasolr.solr.admin import CoreAdmin
+from parasolr import __version__ as parasolr_ver
 
 
 # - Handling for test setttings intEgrated into CI flow.
@@ -25,7 +25,7 @@ except ImportError:
     try:
         import testsettings as settings
     except ImportError:
-        raise ImportError('No Django or parasol test settings module found.')
+        raise ImportError('No Django or parasolr test settings module found.')
 
 try:
     TEST_SOLR_CONNECTION = settings.SOLR_CONNECTIONS['default']['TEST']
@@ -60,7 +60,7 @@ def test_client(request):
 
     solr_url = TEST_SOLR_CONNECTION.get('URL', None)
     collection = TEST_SOLR_CONNECTION.get('COLLECTION', None)
-    commitWithin  = TEST_SOLR_CONNECTION.get('COMMITWITHIN', None)
+    commitWithin = TEST_SOLR_CONNECTION.get('COMMITWITHIN', None)
 
     if not solr_url or not collection:
         raise ImproperConfiguration(
@@ -71,8 +71,8 @@ def test_client(request):
     client = SolrClient(solr_url, collection, commitWithin=commitWithin)
 
     response = client.core_admin.status(core=collection)
-    if response.status.parasol_test:
-        raise CoreExists('Test core "parasol_test" exists, aborting!')
+    if response.status.parasolr_test:
+        raise CoreExists('Test core "parasolr_test" exists, aborting!')
     client.core_admin.create(collection, configSet='basic_configs')
 
     def clean_up():
@@ -143,7 +143,7 @@ class TestClientBase:
 
     # patch so that we can intercept the request and get the
     # prepared request object
-    @patch('parasol.solr.base.requests.sessions.Session.send')
+    @patch('parasolr.solr.base.requests.sessions.Session.send')
     def test_make_request(self, mocksend):
         client_base = ClientBase()
         client_base.session.headers = {
@@ -291,7 +291,7 @@ class TestSolrClient:
 
         # test that session headers include the version name
         assert client.session.headers['User-Agent'] == \
-            'parasol/%s (python-requests/%s)' % (parasol_ver,
+            'parasolr/%s (python-requests/%s)' % (parasolr_ver,
                                                  requests.__version__)
 
     def test_query(self, test_client):
@@ -632,7 +632,7 @@ class TestCoreAdmin:
         )
         # check that additional params (for the rest of the API)
         # can be used
-        with patch('parasol.solr.admin.ClientBase.make_request') as mockrequest:
+        with patch('parasolr.solr.admin.ClientBase.make_request') as mockrequest:
             test_client.core_admin.create(core, configSet='basic_configs',
                                           dataDir='foo')
             assert mockrequest.called
@@ -661,8 +661,8 @@ class TestCoreAdmin:
         # no init failures happened
         assert not response.initFailures
         # status is not empty, and therefore has core info
-        assert response.status.parasol_test
+        assert response.status.parasolr_test
         # check a few core traits to make sure a valid
         # response came back
-        assert response.status.parasol_test.name == 'parasol_test'
-        assert response.status.parasol_test.startTime
+        assert response.status.parasolr_test.name == 'parasolr_test'
+        assert response.status.parasolr_test.startTime

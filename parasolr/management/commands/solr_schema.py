@@ -14,8 +14,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 import requests
 
-from parasol.django import SolrClient
-from parasol.schema import SolrSchema
+from parasolr.django import SolrClient
+from parasolr.schema import SolrSchema
 
 
 class Command(BaseCommand):

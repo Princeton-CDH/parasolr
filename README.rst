@@ -1,31 +1,31 @@
-parasol
+parasolr
 ==============
 
 .. sphinx-start-marker-do-not-remove
 
-**parasol** is a lightweight python library for `Apache Solr`_ indexing,
+**parasolr** is a lightweight python library for `Apache Solr`_ indexing,
 searching and schema management with optional `Django`_ integration.
-It includes a Solr client (`parasol.solr.SolrClient`). When used with
+It includes a Solr client (`parasolr.solr.SolrClient`). When used with
 Django, it provides management commands for updating your Solr schema
 configuration and indexing content.
 
 .. _Django: https://www.djangoproject.com/
 .. _Apache Solr: http://lucene.apache.org/solr/
 
-.. image:: https://travis-ci.org/Princeton-CDH/parasol.svg?branch=master
-   :target: https://travis-ci.org/Princeton-CDH/parasol
+.. image:: https://travis-ci.org/Princeton-CDH/parasolr.svg?branch=master
+   :target: https://travis-ci.org/Princeton-CDH/parasolr
    :alt: Build status
 
-.. image:: https://codecov.io/gh/Princeton-CDH/parasol/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/Princeton-CDH/parasol
+.. image:: https://codecov.io/gh/Princeton-CDH/parasolr/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/Princeton-CDH/parasolr
    :alt: Code coverage
 
 .. image:: https://api.codeclimate.com/v1/badges/558e86a46c76335f6673/maintainability
-   :target: https://codeclimate.com/github/Princeton-CDH/parasol/maintainability
+   :target: https://codeclimate.com/github/Princeton-CDH/parasolr/maintainability
    :alt: Maintainability
 
-.. image:: https://requires.io/github/Princeton-CDH/parasol/requirements.svg?branch=master
-     :target: https://requires.io/github/Princeton-CDH/parasol/requirements/?branch=master
+.. image:: https://requires.io/github/Princeton-CDH/parasolr/requirements.svg?branch=master
+     :target: https://requires.io/github/Princeton-CDH/parasolr/requirements/?branch=master
      :alt: Requirements Status
 
 Currently tested against Python 3.5 and 3.6, Solr 6.6.5, and Django 1.11,
@@ -37,11 +37,11 @@ Installation
 
 To install before an official pypi release::
 
-   pip install git+https://github.com/Princeton-CDH/parasol@develop#egg=parasol
+   pip install git+https://github.com/Princeton-CDH/parasolr@develop#egg=parasolr
 
 To use with Django:
 
-* Add `parasol` to **INSTALLED_APPS**
+* Add `parasolr` to **INSTALLED_APPS**
 * Configure **SOLR_CONNECTIONS** in your django settings::
 
     SOLR_CONNECTIONS = {
@@ -71,8 +71,8 @@ Initial setup and installation:
 
 - *Recommmended*: create and activate a Python 3.6 virtualenv::
 
-   virtualenv parasol -p python3.6
-   source parasol/bin/activate
+   virtualenv parasolr -p python3.6
+   source parasolr/bin/activate
 
 - Install the package with its dependencies as well as development
   dependencies::

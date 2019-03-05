@@ -8,12 +8,12 @@ try:
     from django.conf import settings
     from django.test import override_settings
 
-    from parasol.pytest_plugin import get_test_solr_config
+    from parasolr.pytest_plugin import get_test_solr_config
 
 except ImportError:
     pass
 
-from parasol.tests.utils import skipif_no_django
+from parasolr.tests.utils import skipif_no_django
 
 
 pytest_plugins = "pytester"
@@ -72,10 +72,10 @@ def test_configure_django_test_solr(testdir):
     # create a temporary pytest test file
     testdir.makepyfile(
         """
-        from parasol.django import SolrClient
+        from parasolr.django import SolrClient
 
         # causes "Plugin already registered" error on travis...
-        # pytest_plugins = "parasol.pytest_plugin"
+        # pytest_plugins = "parasolr.pytest_plugin"
 
         def test_solr_client():
             solr = SolrClient()

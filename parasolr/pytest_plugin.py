@@ -9,8 +9,8 @@ try:
 except ImportError:
     django = None
 
-from parasol import django
-from parasol.schema import SolrSchema
+from parasolr import django
+from parasolr.schema import SolrSchema
 
 
 logger = logging.getLogger(__name__)

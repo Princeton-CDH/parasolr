@@ -12,14 +12,14 @@ chained. For example::
 
 
 If you are working with Django you should use
-:class:`parasol.django.SolrQuerySet`,
-which will automatically initialize a new :class:`parasol.django.SolrClient`
+:class:`parasolr.django.SolrQuerySet`,
+which will automatically initialize a new :class:`parasolr.django.SolrClient`
 if one is not passed in.
 """
 
 from typing import Dict, List
 
-from parasol.solr import SolrClient
+from parasolr.solr import SolrClient
 
 
 class SolrQuerySet:

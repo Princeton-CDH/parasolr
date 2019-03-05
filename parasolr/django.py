@@ -1,6 +1,6 @@
 """
 Provides optional Django integration to automatically initialize a
-:class:`parasol.solr.SolrClient` with configurations from Django
+:class:`parasolr.solr.SolrClient` with configurations from Django
 settings.
 
 Expected configuration format::
@@ -26,8 +26,8 @@ try:
 except ImportError:
     django = None
 
-from parasol.solr import client
-from parasol import query
+from parasolr.solr import client
+from parasolr import query
 
 
 logger = logging.getLogger(__name__)
@@ -36,12 +36,12 @@ logger = logging.getLogger(__name__)
 if django:
 
     class SolrClient(client.SolrClient):
-        """:class:`~parasol.solr.client.SolrClient` subclass that
+        """:class:`~parasolr.solr.client.SolrClient` subclass that
         automatically pulls configuration from Django settings.
 
         Args:
-            *args: Positional arguments to be passed to :class:`parasol.solr.client.SolrClient`.
-            **kwargs: Keyword arguments to be passed to :class:`parasol.solr.client.SolrClient`.
+            *args: Positional arguments to be passed to :class:`parasolr.solr.client.SolrClient`.
+            **kwargs: Keyword arguments to be passed to :class:`parasolr.solr.client.SolrClient`.
         """
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -73,12 +73,12 @@ if django:
 
 
     class SolrQuerySet(query.SolrQuerySet):
-        """:class:`~parasol.query.SolrQuerySet` subclass that
-        will automatically use :class:`~parasol.django.SolrClient` if
+        """:class:`~parasolr.query.SolrQuerySet` subclass that
+        will automatically use :class:`~parasolr.django.SolrClient` if
         no solr client is passed on.
 
         Args:
-            Optional :class:`parasol.solr.client.SolrClient`.
+            Optional :class:`parasolr.solr.client.SolrClient`.
         """
 
         def __init__(self, solr: Optional[SolrClient] = None):

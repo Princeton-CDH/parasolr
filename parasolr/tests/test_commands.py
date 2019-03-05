@@ -9,11 +9,11 @@ try:
     from django.core.management.base import CommandError
     from django.test import override_settings
 
-    from parasol.management.commands import solr_schema, index
+    from parasolr.management.commands import solr_schema, index
 except ImportError:
     pass
 
-from parasol.tests.utils import skipif_no_django
+from parasolr.tests.utils import skipif_no_django
 
 
 @skipif_no_django
@@ -35,7 +35,7 @@ class TestSolrSchemaCommand:
             cmd.report_changes(counts, 'field')
             assert mock_stdout.write.call_count == 0
 
-    @patch('parasol.management.commands.solr_schema.SolrClient')
+    @patch('parasolr.management.commands.solr_schema.SolrClient')
     def test_handle_connection_error(self, mocksolr):
         mocksolr.return_value.core_admin.ping.side_effect = \
             requests.exceptions.ConnectionError
@@ -43,9 +43,9 @@ class TestSolrSchemaCommand:
         with pytest.raises(CommandError):
             solr_schema.Command().handle()
 
-    @patch('parasol.management.commands.solr_schema.SolrClient')
-    @patch('parasol.management.commands.solr_schema.SolrSchema')
-    @patch('parasol.management.commands.solr_schema.input')
+    @patch('parasolr.management.commands.solr_schema.SolrClient')
+    @patch('parasolr.management.commands.solr_schema.SolrSchema')
+    @patch('parasolr.management.commands.solr_schema.input')
     def test_handle_core(self, mockinput, mocksolrschema, mocksolrclient):
         # using mock SolrSchema to avoid exception on get_configuration
 
@@ -102,8 +102,8 @@ class TestSolrSchemaCommand:
             mockinput.assert_not_called()
             mocksolr.core_admin.create.assert_not_called()
 
-    @patch('parasol.management.commands.solr_schema.SolrClient')
-    @patch('parasol.management.commands.solr_schema.SolrSchema')
+    @patch('parasolr.management.commands.solr_schema.SolrClient')
+    @patch('parasolr.management.commands.solr_schema.SolrSchema')
     def test_handle_no_schema(self, mocksolrschema, mocksolrclient):
         mocksolr = mocksolrclient.return_value
         mocksolr.collection = 'test-coll'
@@ -115,8 +115,8 @@ class TestSolrSchemaCommand:
             solr_schema.Command().handle()
         assert err_msg in str(err)
 
-    @patch('parasol.management.commands.solr_schema.SolrClient')
-    @patch('parasol.management.commands.solr_schema.SolrSchema')
+    @patch('parasolr.management.commands.solr_schema.SolrClient')
+    @patch('parasolr.management.commands.solr_schema.SolrSchema')
     def test_handle(self, mocksolrschema, mocksolrclient):
         mocksolr = mocksolrclient.return_value
         mocksolr.collection = 'test-coll'
@@ -145,7 +145,7 @@ class TestSolrSchemaCommand:
 @skipif_no_django
 class TestIndexCommand:
 
-    @patch('parasol.management.commands.index.Indexable')
+    @patch('parasolr.management.commands.index.Indexable')
     def test_index(self, mockindexable):
         # index data into solr and catch an error
         cmd = index.Command()
@@ -186,14 +186,14 @@ class TestIndexCommand:
         assert cmd.stdout.getvalue() == 'Clearing everything from the index'
 
         # should also work from the command line
-        with patch('parasol.management.commands.index.SolrClient'):
+        with patch('parasolr.management.commands.index.SolrClient'):
             cmd.stdout.seek(0)
             call_command('index', index='none', clear='all', stdout=cmd.stdout)
             assert 'Clearing everything from the index' in cmd.stdout.getvalue()
             assert 'Indexed 0 items' in cmd.stdout.getvalue()
 
-    @patch('parasol.management.commands.index.Indexable')
-    @patch('parasol.management.commands.index.SolrClient')
+    @patch('parasolr.management.commands.index.Indexable')
+    @patch('parasolr.management.commands.index.SolrClient')
     def test_handle_index_by_id(self, mocksolr, mockindexable):
         # create a mock indexable subclass to be returned by
         # mockindexable
@@ -231,9 +231,9 @@ class TestIndexCommand:
             assert not mock_index_meth.call_count
             assert "Unrecognized index id 'foo:1'" in str(err)
 
-    @patch('parasol.management.commands.index.progressbar')
-    @patch('parasol.management.commands.index.SolrClient')
-    @patch('parasol.indexing.SolrClient')
+    @patch('parasolr.management.commands.index.progressbar')
+    @patch('parasolr.management.commands.index.SolrClient')
+    @patch('parasolr.indexing.SolrClient')
     def test_call_command(self, mocksolr, mocksolr2, mockprogbar):
         mocksolr = Mock()
 

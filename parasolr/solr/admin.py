@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 from attrdict import AttrDict
 import requests
 
-from parasol.solr.client import ClientBase
+from parasolr.solr.client import ClientBase
 
 
 class CoreAdmin(ClientBase):

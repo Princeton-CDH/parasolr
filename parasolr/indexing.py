@@ -8,7 +8,7 @@ to be indexed in Solr. You may also customize :meth:`Indexable.index_item_type`
 and :meth:`Indexable.index_item_id`.
 
 To manually index content in Solr, see
-:mod:`~parasol.management.commands.index` manage command documentation.
+:mod:`~parasolr.management.commands.index` manage command documentation.
 
 -------------------------
 
@@ -20,7 +20,7 @@ import logging
 try:
     from django.db.models.query import QuerySet
 
-    from parasol.django import SolrClient
+    from parasolr.django import SolrClient
 except ImportError:
     QuerySet = SolrClient = None
 

@@ -39,8 +39,8 @@ from django.template.defaultfilters import pluralize
 import requests
 import progressbar
 
-from parasol.django import SolrClient
-from parasol.indexing import Indexable
+from parasolr.django import SolrClient
+from parasolr.indexing import Indexable
 
 
 class Command(BaseCommand):
