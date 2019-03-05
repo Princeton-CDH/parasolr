@@ -12,6 +12,26 @@ configuration and indexing content.
 .. _Django: https://www.djangoproject.com/
 .. _Apache Solr: http://lucene.apache.org/solr/
 
+.. image:: https://travis-ci.org/Princeton-CDH/parasol.svg?branch=master
+   :target: https://travis-ci.org/Princeton-CDH/parasol
+   :alt: Build status
+
+.. image:: https://codecov.io/gh/Princeton-CDH/parasol/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/Princeton-CDH/parasol
+   :alt: Code coverage
+
+.. image:: https://api.codeclimate.com/v1/badges/558e86a46c76335f6673/maintainability
+   :target: https://codeclimate.com/github/Princeton-CDH/parasol/maintainability
+   :alt: Maintainability
+
+.. image:: https://requires.io/github/Princeton-CDH/parasol/requirements.svg?branch=master
+     :target: https://requires.io/github/Princeton-CDH/parasol/requirements/?branch=master
+     :alt: Requirements Status
+
+Currently tested against Python 3.5 and 3.6, Solr 6.6.5, and Django 1.11,
+2.0, and 2.1.
+
+
 Installation
 ------------
 
