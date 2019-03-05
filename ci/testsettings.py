@@ -10,7 +10,7 @@ DATABASES = {
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'parasol',
+    'parasolr',
 )
 
 # Keeping this blank avoids false detections from SECRET_KEY
@@ -27,7 +27,7 @@ SOLR_CONNECTIONS = {
         'COLLECTION': 'myplugin',
         'TEST': {
             'URL': 'http://localhost:8983/solr/',
-            'COLLECTION': 'parasol_test',
+            'COLLECTION': 'parasolr_test',
             # aggressive commitWithin for test only
             'COMMITWITHIN': 750,
             'CONFIGSET': 'basic_configs'
