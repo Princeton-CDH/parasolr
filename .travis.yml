@@ -15,6 +15,9 @@ cache:
   pip: true
   directories:
     - downloads
+before_script:
+- curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+- chmod +x ./cc-test-reporter
 install:
 - if [ ! -z $DJANGO ]; then pip install -q Django==$DJANGO pytest-django; fi
 - pip install -e .
@@ -26,6 +29,7 @@ script:
 - pytest --cov=parasol
 after_success:
 - codecov
+- if [[ "$TRAVIS_PULL_REQUEST" == "false" && "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi
 before_cache:
   - rm -rf downloads/solr-${SOLR_VERSION}
 notifications:
