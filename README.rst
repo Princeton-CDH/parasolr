@@ -20,6 +20,10 @@ configuration and indexing content.
   :target: https://codecov.io/gh/Princeton-CDH/parasolr
    :alt: Code coverage
 
+.. image:: https://readthedocs.org/projects/parasolr/badge/?version=latest
+  :target: https://parasolr.readthedocs.io/en/latest/?badge=latest
+  :alt: Documentation Status
+
 .. image:: https://api.codeclimate.com/v1/badges/558e86a46c76335f6673/maintainability
    :target: https://codeclimate.com/github/Princeton-CDH/parasolr/maintainability
    :alt: Maintainability
