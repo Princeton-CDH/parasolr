@@ -17,7 +17,7 @@ configuration and indexing content.
    :alt: Build status
 
 .. image:: https://codecov.io/gh/Princeton-CDH/parasolr/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/Princeton-CDH/parasolr
+   :target: https://codecov.io/gh/Princeton-CDH/parasolr
    :alt: Code coverage
 
 .. image:: https://readthedocs.org/projects/parasolr/badge/?version=latest
