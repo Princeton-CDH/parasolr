@@ -1,0 +1,4 @@
+django>=1.11
+sphinx
+sphinxcontrib-napoleon
+sphinx-autodoc-typehints
