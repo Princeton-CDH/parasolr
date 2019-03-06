@@ -14,13 +14,13 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
 
 import django
 
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('.'))
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'testsettings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'docsettings'
 django.setup()
 
 from parasolr import __version__
