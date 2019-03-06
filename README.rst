@@ -39,7 +39,11 @@ Currently tested against Python 3.5 and 3.6, Solr 6.6.5, and Django 1.11,
 Installation
 ------------
 
-To install before an official pypi release::
+Install released version from pypi::
+
+   pip install parasolr
+
+To install an unreleased version from GitHub::
 
    pip install git+https://github.com/Princeton-CDH/parasolr@develop#egg=parasolr
 
@@ -53,7 +57,7 @@ To use with Django:
         'URL': 'http://localhost:8983/solr/',
         'COLLECTION': 'name',
         # any configSet in SOLR_ROOT/server/solr/configsets
-        'CONFIGSET': 'basic_configs'
+        'CONFIGSET': 'basic_configs' # optional, basic_configs is default
         }
     }
 
