@@ -3,6 +3,11 @@
 CHANGELOG
 =========
 
+0.1.1
+-----
+
+* Fix travis-ci build for code coverage reporting.
+
 0.1
 ---
 
