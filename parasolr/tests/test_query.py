@@ -182,10 +182,10 @@ class TestSolrQuerySet:
         # original field list unchanged
         assert not sqs.field_list
 
-        # chaining is equivalent
-        fields_sqs = sqs.only('title').only('author').only('date')
+        # chaining is not equivalent, but *replaces*
+        fields_sqs = sqs.only('title').only('author')
         # field list refined
-        assert fields_sqs.field_list == only_fields
+        assert fields_sqs.field_list == ['author']
         # original field list unchanged
         assert not sqs.field_list
 

@@ -193,14 +193,16 @@ class SolrQuerySet:
 
     def only(self, *args, **kwargs):
         """Use field limit option to return only the specified fields.
-        Optionally provide aliases for them in the return. Example::
+        Optionally provide aliases for them in the return. Subsequent
+        calls will *replace* any previous field limits. Example::
 
             queryset.only('title', 'author', 'date')
             queryset.only('title:title_t', 'date:pubyear_i')
 
         """
         qs_copy = self._clone()
-        qs_copy.field_list.extend(args)
+        # *replace* any existing field list with the current values
+        qs_copy.field_list = list(args)
         for key, value in kwargs.items():
             qs_copy.field_list.append('%s:%s' % (key, value))
 

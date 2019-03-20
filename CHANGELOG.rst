@@ -3,6 +3,13 @@
 CHANGELOG
 =========
 
+
+0.2
+---
+
+* Subquent calls to SolrQuerySet.only() now *replaces* field limit options
+  rather than adding to them.
+
 0.1.1
 -----
 
