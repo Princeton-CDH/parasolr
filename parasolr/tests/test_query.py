@@ -208,6 +208,22 @@ class TestSolrQuerySet:
         assert sqs.highlight_field is None
         assert sqs.highlight_opts == {}
 
+    def test_raw_query_parameters(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        raw_q = {'extra_query': 'foobar'}
+        raw_sqs = sqs.raw_query_parameters(**raw_q)
+        # raw query stored
+        assert raw_sqs.raw_params == raw_q
+        # included in query opts
+        assert raw_q['extra_query'] in raw_sqs.query_opts()['extra_query']
+        # original unchanged
+        assert sqs.raw_params == {}
+
+        # additional raw params add rather than replace
+        rawer_sqs = raw_sqs.raw_query_parameters(another='two')
+        assert len(rawer_sqs.raw_params) == 2
+
     def test_get_highlighting(self):
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)

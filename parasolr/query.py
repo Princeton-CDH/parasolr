@@ -38,6 +38,7 @@ class SolrQuerySet:
     field_list = []
     highlight_field = None
     highlight_opts = {}
+    raw_params = {}
 
     #: by default, combine search queries with AND
     default_search_operator = 'AND'
@@ -79,6 +80,7 @@ class SolrQuerySet:
         query_opts = {
             'start': self.start,
         }
+
         if self.filter_qs:
             query_opts['fq'] = self.filter_qs
         if self.stop:
@@ -102,6 +104,9 @@ class SolrQuerySet:
             })
             for key, val in self.highlight_opts.items():
                 query_opts['hl.%s' % key] = val
+
+        # include any raw query parameters
+        query_opts.update(self.raw_params)
 
         return query_opts
 
@@ -219,6 +224,14 @@ class SolrQuerySet:
         qs_copy.highlight_opts = kwargs
         return qs_copy
 
+    def raw_query_parameters(self, **kwargs):
+        """Add abritrary raw parameters to be included in the query
+        request, e.g. for variables referenced in join or field queries.
+        Analogous to the input of the same name in the Solr web interface."""
+        qs_copy = self._clone()
+        qs_copy.raw_params.update(kwargs)
+        return qs_copy
+
     def get_highlighting(self):
         """Return the highlighting portion of the Solr response."""
         if not self._result_cache:
@@ -255,6 +268,7 @@ class SolrQuerySet:
         qs_copy.sort_options = list(self.sort_options)
         qs_copy.field_list = list(self.field_list)
         qs_copy.highlight_opts = dict(self.highlight_opts)
+        qs_copy.raw_params = dict(self.raw_params)
 
         return qs_copy
 
