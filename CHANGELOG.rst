@@ -9,6 +9,7 @@ CHANGELOG
 
 * Subquent calls to SolrQuerySet.only() now *replaces* field limit options
   rather than adding to them.
+* New SolrQuerySet method `raw_query_parameters`
 
 0.1.1
 -----
