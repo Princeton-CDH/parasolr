@@ -132,7 +132,7 @@ class SolrQuerySet:
         # such as __in=[a, b, c] or __range=(start, end)
         return '%s:%s' % (key, value)
 
-    def filter(self, *args, **kwargs):
+    def filter(self, *args, **kwargs) -> 'SolrQuerySet':
         """
         Return a new SolrQuerySet with Solr filter queries added.
         Multiple filters can be combined either in a single
@@ -158,7 +158,7 @@ class SolrQuerySet:
 
         return qs_copy
 
-    def search(self, *args, **kwargs):
+    def search(self, *args, **kwargs) -> 'SolrQuerySet':
         """
         Return a new SolrQuerySet with search queries added. All
         queries will combined with the default search operator when
@@ -173,7 +173,7 @@ class SolrQuerySet:
 
         return qs_copy
 
-    def order_by(self, *args):
+    def order_by(self, *args) -> 'SolrQuerySet':
         """Apply sort options to the queryset by field name. If the field
         name starts with -, sort is descending; otherwise ascending."""
         qs_copy = self._clone()
@@ -187,7 +187,7 @@ class SolrQuerySet:
 
         return qs_copy
 
-    def query(self, **kwargs):
+    def query(self, **kwargs) -> 'SolrQuerySet':
         """Return a new SolrQuerySet with the results populated from Solr.
         Any options passed in via keyword arguments take precedence
         over query options on the queryset.
@@ -196,7 +196,7 @@ class SolrQuerySet:
         qs_copy.get_results(**kwargs)
         return qs_copy
 
-    def only(self, *args, **kwargs):
+    def only(self, *args, **kwargs) -> 'SolrQuerySet':
         """Use field limit option to return only the specified fields.
         Optionally provide aliases for them in the return. Subsequent
         calls will *replace* any previous field limits. Example::
@@ -213,7 +213,7 @@ class SolrQuerySet:
 
         return qs_copy
 
-    def highlight(self, field: str, **kwargs):
+    def highlight(self, field: str, **kwargs) -> 'SolrQuerySet':
         """"Configure highlighting. Takes arbitrary Solr highlight
         parameters and adds the `hl.` prefix to them.  Example use::
 
@@ -224,7 +224,7 @@ class SolrQuerySet:
         qs_copy.highlight_opts = kwargs
         return qs_copy
 
-    def raw_query_parameters(self, **kwargs):
+    def raw_query_parameters(self, **kwargs) -> 'SolrQuerySet':
         """Add abritrary raw parameters to be included in the query
         request, e.g. for variables referenced in join or field queries.
         Analogous to the input of the same name in the Solr web interface."""
@@ -238,18 +238,18 @@ class SolrQuerySet:
             self.get_results()
         return self._result_cache.get('highlighting', {})
 
-    def all(self):
+    def all(self) -> 'SolrQuerySet':
         """Return a new queryset that is a copy of the current one."""
         return self._clone()
 
-    def none(self):
+    def none(self) -> 'SolrQuerySet':
         """Return an empty result list."""
         qs_copy = self._clone()
         # replace any search queries with this to find not anything
         qs_copy.search_qs = ['NOT *:*']
         return qs_copy
 
-    def _clone(self):
+    def _clone(self) -> 'SolrQuerySet':
         """
         Return a copy of the current QuerySet for modification via
         filters.
@@ -273,7 +273,7 @@ class SolrQuerySet:
         return qs_copy
 
     def set_limits(self, start, stop):
-        """Return a subsection of the results, to support slicing."""
+        """Set limits to get a subsection of the results, to support slicing."""
         if start is None:
             start = 0
         self.start = start
