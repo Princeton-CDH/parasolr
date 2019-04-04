@@ -101,7 +101,7 @@ def core_test_client(request):
     are always cleaned up on teardown.
     """
     solr_url = TEST_SOLR_CONNECTION.get('URL', None)
-    commitWithin  = TEST_SOLR_CONNECTION.get('COMMITWITHIN', None)
+    commitWithin = TEST_SOLR_CONNECTION.get('COMMITWITHIN', None)
 
     if not solr_url:
         raise ImproperConfiguration(
@@ -646,10 +646,12 @@ class TestCoreAdmin:
         assert test_client.core_admin.reload(test_client.collection)
         assert not test_client.core_admin.reload('foo')
 
-    def test_ping(self, core_test_client):
+    def test_ping(self, core_test_client, caplog):
         # ping should return false for non-existent core
         solrclient, core = core_test_client
         assert not solrclient.core_admin.ping(core)
+        # should not log the error since 404 is an allowed response for ping
+        assert not caplog.records
         # create the core and then check it
         solrclient.core_admin.create(core, configSet='basic_configs',
                                       dataDir='foo')
