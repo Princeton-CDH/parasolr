@@ -20,7 +20,7 @@ if one is not passed in.
 from typing import Dict, List
 
 from parasolr.solr import SolrClient
-from parasolr.solr.client import QueryReponse
+from parasolr.solr.client import QueryResponse
 
 class SolrQuerySet:
     """A Solr queryset object that allows for object oriented
@@ -128,18 +128,20 @@ class SolrQuerySet:
         return self.solr.query(**query_opts, wrap=False)['response']['numFound']
 
     def facet_fields(self) -> dict:
+        """Return a dictionary of facets and their values/counts (also as a
+        dicitionary).
+        """
         if self._result_cache is not None:
             # wrap to process facets and return as dictionary
             # for Django template support
-            qr = QueryReponse(self._result_cache)
+            qr = QueryResponse(self._result_cache)
             return dict(qr.facet_counts.facet_fields)
         # since we just want a dictionary of facet fields, don't populate
         # the result cache and do a wrapped request with an explicit cast
-        # to dict
+        # to dict, no rows needed.
         query_opts = self.query_opts()
         query_opts['rows'] = 0
         return dict(self.solr.query(**query_opts).facet_counts.facet_fields)
-
 
     @staticmethod
     def _lookup_to_filter(key, value) -> str:
@@ -181,19 +183,22 @@ class SolrQuerySet:
         Return a new SolrQuerySet with Solr faceting enabled and facet.field
         parameter set. Does not yet support ranged faceting.
 
-        Subsequent calls will reset the facet.field list to the last set of
+        Subsequent calls will reset the facet.field to the last set of
         args in the chain.
 
         For example::
 
-            queryset.facet('person_type', 'age')
+            qs = queryset.facet('person_type', 'age')
+            qs = qs.facet('item_type')
 
+        would result in `item_type` being the only facet field.
         """
         qs_copy = self._clone()
 
         # enable faceting
         qs_copy.facet_opts['facet'] = True
-        qs_copy.facet_opts['facet.field'] = args
+        # add args as a list to facet.field
+        qs_copy.facet_opts['facet.field'] = list(args)
 
         return qs_copy
 

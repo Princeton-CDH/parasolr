@@ -3,6 +3,7 @@ from unittest.mock import patch, Mock
 import pytest
 
 from parasolr.solr import SolrClient
+from parasolr.solr.client import QueryResponse
 from parasolr.query import SolrQuerySet
 
 
@@ -90,6 +91,60 @@ class TestSolrQuerySet:
         # cache should not be populated
         assert not sqs._result_cache
 
+    def test_facet_fields(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        # mock facet response
+        mock_response = {
+            'response': {
+                'numFound': 999999,
+                'start': 0,
+                'end': 0,
+                'docs': [],
+            },
+            'responseHeader': {
+                'params': '',
+            },
+            'facet_counts': {
+                    'facet_fields': {
+                        'item_type': ['book', 142, 'magazine', 157],
+                        'occupation': ['programmer', 3346, 'hacker', 1337],
+                    }
+            },
+        }
+        sqs._result_cache = mock_response
+        # facet fields should return the lists of facets returned as dictionaries
+        assert sqs.facet_fields() == {
+            'item_type': {
+                'book': 142,
+                'magazine': 157
+            },
+            'occupation': {
+                'programmer': 3346,
+                'hacker': 1337
+            }
+        }
+        # if no cache is set, should query directly
+        mock_response2 = mock_response.copy()
+        mock_response2['facet_counts'] = {
+            'facet_fields': {
+                'foo': ['a', 1, 'b', 3],
+                'bar': ['c', 5, 'd', 7]
+            }
+        }
+        sqs._result_cache = None
+        mocksolr.query.return_value = QueryResponse(mock_response2)
+        assert sqs.facet_fields() == {
+            'foo': {
+                'a': 1,
+                'b': 3,
+            },
+            'bar': {
+                'c': 5,
+                'd': 7
+            }
+        }
+
     def test_filter(self):
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
@@ -116,6 +171,22 @@ class TestSolrQuerySet:
         assert 'item_type:work' in filtered_qs.filter_qs
         assert 'date:1500' in filtered_qs.filter_qs
         assert 'name:he*' in filtered_qs.filter_qs
+
+    def test_facet(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        # facet a search
+        facet_list = ['person_type', 'item_type']
+        faceted_qs = sqs.facet(*facet_list)
+        # faceting should be set on
+        assert faceted_qs.facet_opts['facet']
+        assert faceted_qs.facet_opts['facet.field'] == facet_list
+        # subsequents calls to facet should simply reset list
+        facet_list = ['foobars']
+        faceted_qs = faceted_qs.facet(*facet_list)
+        assert faceted_qs.facet_opts['facet']
+        assert faceted_qs.facet_opts['facet.field'] == facet_list
+
 
     def test_search(self):
         mocksolr = Mock(spec=SolrClient)

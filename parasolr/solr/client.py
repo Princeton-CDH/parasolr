@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import logging
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from attrdict import AttrDict
 import requests
@@ -19,13 +19,15 @@ logger = logging.getLogger(__name__)
 # despite not being hugely Pythonic, for consistency with Solr's responses
 # and API documentation.
 
-class QueryReponse:
+class QueryResponse:
     """Thin wrapper to give access to Solr select responses.
 
     Args:
         response: A Solr query response
     """
-    def __init__(self, response: AttrDict) -> None:
+    def __init__(self, response: Dict) -> None:
+        # cast to AttrDict for any dict-like object
+        response = AttrDict(response)
         self.numFound = response.response.numFound
         self.start = response.response.start
         self.docs = response.response.docs
@@ -119,7 +121,7 @@ class SolrClient(ClientBase):
             self.core_admin_handler,
             self.session)
 
-    def query(self, wrap: bool = True, **kwargs: Any) -> Optional[QueryReponse]:
+    def query(self, wrap: bool = True, **kwargs: Any) -> Optional[QueryResponse]:
         """Perform a query with the specified kwargs.
 
         Args:
@@ -140,4 +142,4 @@ class SolrClient(ClientBase):
         )
         if response:
             # queries return the search response for now
-            return QueryReponse(response) if wrap else response
+            return QueryResponse(response) if wrap else response

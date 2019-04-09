@@ -9,7 +9,7 @@ from attrdict import AttrDict
 import requests
 
 from parasolr.solr.base import CoreExists, ClientBase, ImproperConfiguration
-from parasolr.solr.client import SolrClient, QueryReponse
+from parasolr.solr.client import SolrClient, QueryResponse
 from parasolr.solr.schema import Schema
 from parasolr.solr.update import Update
 from parasolr.solr.admin import CoreAdmin
@@ -255,7 +255,7 @@ class TestQueryResponse:
                     }
             },
         })
-        qr = QueryReponse(response)
+        qr = QueryResponse(response)
         assert qr.params == response.responseHeader.params
         assert qr.start == response.response.start
         assert qr.docs == response.response.docs
@@ -350,7 +350,7 @@ class TestSolrClient:
 
         # test wrap = False
         response = test_client.query(q='*:*', wrap=False)
-        assert not isinstance(response, QueryReponse)
+        assert not isinstance(response, QueryResponse)
 
 
 class TestUpdate:
