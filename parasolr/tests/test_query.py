@@ -1,9 +1,10 @@
+from collections import OrderedDict
 from unittest.mock import patch, Mock
 
 import pytest
 
 from parasolr.solr import SolrClient
-from parasolr.solr.client import QueryResponse
+from parasolr.solr.client import QueryResponse, ParasolrDict
 from parasolr.query import SolrQuerySet
 
 
@@ -55,95 +56,91 @@ class TestSolrQuerySet:
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
 
-        mockresponse = {'response': {'docs': [{'id': 1}]}}
+        mockresponse = Mock()
+        mockresponse.docs = [
+            ParasolrDict({'a': 1})
+        ]
         mocksolr.query.return_value = mockresponse
 
         # by default, should query solr with options from query_opts
         # and wrap = false
         query_opts = sqs.query_opts()
-        assert sqs.get_results() == mockresponse['response']['docs']
+        assert sqs.get_results() == mockresponse.docs
         assert sqs._result_cache == mockresponse
-        mocksolr.query.assert_called_with(**query_opts, wrap=False)
+        mocksolr.query.assert_called_with(**query_opts)
 
         # parameters passed in take precedence
         local_opts = {'q': 'name:hemingway', 'sort': 'name asc'}
         sqs.get_results(**local_opts)
         # update copy of query opts with locally passed in params
         query_opts.update(local_opts)
-        mocksolr.query.assert_called_with(**query_opts, wrap=False)
+        mocksolr.query.assert_called_with(**query_opts)
 
     def test_count(self):
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
 
         # simulate result cache already populated; should use
-        sqs._result_cache = {'response': {'numFound': 5009}}
-        assert sqs.count() == sqs._result_cache['response']['numFound']
+        sqs._result_cache = Mock()
+        sqs._result_cache.numFound = 5477
+        assert sqs.count() == 5477
         mocksolr.query.assert_not_called()
 
         # if cache is not populated, should query for count
         sqs._result_cache = None
-        mocksolr.query.return_value = {'response': {'numFound': 343}}
+        mocksolr.query.return_value = Mock()
+        mocksolr.query.return_value.numFound = 343
         assert sqs.count() == 343
         count_query_opts = sqs.query_opts()
         count_query_opts['rows'] = 0
-        mocksolr.query.assert_called_with(**count_query_opts, wrap=False)
+        count_query_opts['hl'] = False
+        count_query_opts['facet'] = False
+        mocksolr.query.assert_called_with(**count_query_opts)
         # cache should not be populated
         assert not sqs._result_cache
 
-    def test_facet_fields(self):
+    @patch('parasolr.query.QueryResponse')
+    def test_get_facets(self, mockQR):
         mocksolr = Mock(spec=SolrClient)
+        # mock cached solr response
+        mock_response = Mock()
         sqs = SolrQuerySet(mocksolr)
-        # mock facet response
-        mock_response = {
-            'response': {
-                'numFound': 999999,
-                'start': 0,
-                'end': 0,
-                'docs': [],
-            },
-            'responseHeader': {
-                'params': '',
-            },
-            'facet_counts': {
-                    'facet_fields': {
-                        'item_type': ['book', 142, 'magazine', 157],
-                        'occupation': ['programmer', 3346, 'hacker', 1337],
-                    }
-            },
-        }
+        # mock out return of MockQR constructor to ensure it calls
+        # facet_counts.facet_fields
+        mockQR.return_value = Mock()
+        mockQR.return_value.facet_counts = {'facet_fields': OrderedDict(a=1)}
         sqs._result_cache = mock_response
-        # facet fields should return the lists of facets returned as dictionaries
-        assert sqs.facet_fields() == {
-            'item_type': {
-                'book': 142,
-                'magazine': 157
-            },
-            'occupation': {
-                'programmer': 3346,
-                'hacker': 1337
-            }
-        }
-        # if no cache is set, should query directly
-        mock_response2 = mock_response.copy()
-        mock_response2['facet_counts'] = {
-            'facet_fields': {
-                'foo': ['a', 1, 'b', 3],
-                'bar': ['c', 5, 'd', 7]
-            }
-        }
+
+        ret = sqs.get_facets()
+        # QueryResponse called to wrap mock_response
+        assert mockQR.called
+        # called with the cached response
+        mockQR.assert_called_with(mock_response)
+        # casts return to an OrderedDict
+        assert isinstance(ret, OrderedDict)
+        # return the value of facet_counts.facet_fields
+        assert ret == OrderedDict(a=1)
+
+        # now test no cached result
+        mocksolr.query.return_value = Mock()
+        mocksolr.query.return_value.facet_counts = {'facet_fields': OrderedDict(b=2)}
         sqs._result_cache = None
-        mocksolr.query.return_value = QueryResponse(mock_response2)
-        assert sqs.facet_fields() == {
-            'foo': {
-                'a': 1,
-                'b': 3,
-            },
-            'bar': {
-                'c': 5,
-                'd': 7
-            }
-        }
+        # clear the previous mocks
+        mockQR.reset_mock()
+
+        ret = sqs.get_facets()
+        # QueryResponse not called to wrap return of query
+        assert not mockQR.called
+        # solr.query called
+        assert mocksolr.query.called
+        # should be called with rows=0 and hl=False to avoid inefficiencies
+        name, args, kwargs = mocksolr.query.mock_calls[0]
+        assert kwargs['rows'] == 0
+        assert not kwargs['hl']
+        # casts return to an OrderedDict
+        assert isinstance(ret, OrderedDict)
+        # return should be the return value of facet_counts.facet_fields
+        assert ret == OrderedDict(b=2)
 
     def test_filter(self):
         mocksolr = Mock(spec=SolrClient)
@@ -181,12 +178,19 @@ class TestSolrQuerySet:
         # faceting should be set on
         assert faceted_qs.facet_opts['facet']
         assert faceted_qs.facet_opts['facet.field'] == facet_list
+        # a call to another method should leave facet options as is
+        faceted_qs = faceted_qs.filter(foo='bar')
+        assert faceted_qs.facet_opts['facet']
+        assert faceted_qs.facet_opts['facet.field'] == facet_list
         # subsequents calls to facet should simply reset list
         facet_list = ['foobars']
         faceted_qs = faceted_qs.facet(*facet_list)
         assert faceted_qs.facet_opts['facet']
         assert faceted_qs.facet_opts['facet.field'] == facet_list
-
+        # kwargs should simply be set in facet opts
+        faceted_qs = faceted_qs.facet(*facet_list, **{'facet.sort': 'count'})
+        assert faceted_qs.facet_opts['facet.field'] == facet_list
+        assert faceted_qs.facet_opts['facet.sort'] == 'count'
 
     def test_search(self):
         mocksolr = Mock(spec=SolrClient)

@@ -1,4 +1,5 @@
-# NOTE: Field names must be registered and cleaned up on conftest.py
+# NOTE: Field and field-type names must be registered and cleaned
+# up in conftest.py
 # Otherwise, they will be retained between test iterations and break results.
 
 class TestSchema:

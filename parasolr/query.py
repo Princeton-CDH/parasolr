@@ -35,11 +35,12 @@ class SolrQuerySet:
     sort_options = []
     search_qs = []
     filter_qs = []
-    facet_opts = {}
     field_list = []
     highlight_field = None
+    facet_opts = {}
     highlight_opts = {}
     raw_params = {}
+
 
     #: by default, combine search queries with AND
     default_search_operator = 'AND'
@@ -71,8 +72,8 @@ class SolrQuerySet:
 
         # NOTE: django templates choke on AttrDict because it is
         # callable; using dictionary response instead
-        self._result_cache = self.solr.query(wrap=False, **query_opts)
-        return self._result_cache['response']['docs']
+        self._result_cache = self.solr.query(**query_opts)
+        return [doc.as_dict() for doc in self._result_cache.docs]
 
     def query_opts(self) -> Dict[str, str]:
         """Construct query options based on current queryset configuration.
@@ -119,15 +120,15 @@ class SolrQuerySet:
 
         # if result cache is already populated, use it
         if self._result_cache is not None:
-            return self._result_cache['response']['numFound']
+            return self._result_cache.numFound
 
         # otherwise, query with current options but request zero rows
         # and do not populate the result cache
         query_opts = self.query_opts()
-        query_opts['rows'] = 0
-        return self.solr.query(**query_opts, wrap=False)['response']['numFound']
+        return self.solr.query(rows=0, hl=False,
+                               facet=False, **query_opts).numFound
 
-    def get_facets(self) -> Dict[]:
+    def get_facets(self) -> Dict[str, int]:
         """Return a dictionary of facets and their values and
         counts as key/value pairs.
         """
@@ -135,13 +136,12 @@ class SolrQuerySet:
             # wrap to process facets and return as dictionary
             # for Django template support
             qr = QueryResponse(self._result_cache)
-            return OrderedDict(qr.facet_counts.facet_fields)
+            # NOTE: using dictionary syntax preserves OrderedDict
+            return qr.facet_counts['facet_fields']
         # since we just want a dictionary of facet fields, don't populate
-        # the result cache and do a wrapped request with an explicit cast
-        # to dict, no rows needed.
+        # the result cache, no rows needed
         query_opts = self.query_opts()
-        query_opts['rows'] = 0
-        return OrderedDict(self.solr.query(**query_opts).facet_counts.facet_fields)
+        return self.solr.query(rows=0, hl=False, **query_opts).facet_counts['facet_fields']
 
     @staticmethod
     def _lookup_to_filter(key, value) -> str:
@@ -198,7 +198,8 @@ class SolrQuerySet:
 
         # enable faceting
         qs_copy.facet_opts['facet'] = True
-        # add args as a list to facet.field
+        # add args as a list to facet.field, rather than a tuple in
+        # case it needs to be appended or modified later.
         qs_copy.facet_opts['facet.field'] = list(args)
         # add
         qs_copy.facet_opts.update(kwargs)
@@ -308,6 +309,7 @@ class SolrQuerySet:
         qs_copy.start = self.start
         qs_copy.stop = self.stop
         qs_copy.highlight_field = self.highlight_field
+        #qs.copy.facet_opts = self.facet_opts
 
         # set copies of list attributes
         qs_copy.search_qs = list(self.search_qs)

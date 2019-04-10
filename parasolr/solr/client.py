@@ -41,7 +41,7 @@ class QueryResponse:
         response: A Solr query response
     """
     def __init__(self, response: Dict) -> None:
-        # cast to AttrDict for any dict-like object
+        # cast to ParasolrDict for any dict-like object
         response = ParasolrDict(response)
         self.numFound = response.response.numFound
         self.start = response.response.start
