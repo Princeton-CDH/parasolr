@@ -19,6 +19,21 @@ logger = logging.getLogger(__name__)
 # despite not being hugely Pythonic, for consistency with Solr's responses
 # and API documentation.
 
+class ParasolrDict(AttrDict):
+    """A subclass of :class:`attrdict.AttrDict` that can convert itself to a
+    regular dictionary."""
+
+    def as_dict(self):
+        """Copy attributes from self as a dictionary, and recursively convert
+        instances of :class:`attrdict.AttrDict`."""
+        copy = {}
+        for k, v in self.items():
+            if isinstance(v, AttrDict):
+                copy[k] = v.as_dict()
+            else:
+                copy[k] = v
+        return copy
+
 class QueryResponse:
     """Thin wrapper to give access to Solr select responses.
 
@@ -27,7 +42,7 @@ class QueryResponse:
     """
     def __init__(self, response: Dict) -> None:
         # cast to AttrDict for any dict-like object
-        response = AttrDict(response)
+        response = ParasolrDict(response)
         self.numFound = response.response.numFound
         self.start = response.response.start
         self.docs = response.response.docs
@@ -40,7 +55,7 @@ class QueryResponse:
                 self._process_facet_counts(response.facet_counts)
         # NOTE: To access facet_counts.facet_fields or facet_counts.facet_ranges
         # as OrderedDicts, you must use dict notation (or AttrDict *will*
-        # convert.
+        # convert).
 
     def _process_facet_counts(self, facet_counts: AttrDict) \
             -> AttrDict:
