@@ -16,7 +16,7 @@ If you are working with Django you should use
 which will automatically initialize a new :class:`parasolr.django.SolrClient`
 if one is not passed in.
 """
-
+from collections import OrderedDict
 from typing import Dict, List
 
 from parasolr.solr import SolrClient
@@ -127,21 +127,21 @@ class SolrQuerySet:
         query_opts['rows'] = 0
         return self.solr.query(**query_opts, wrap=False)['response']['numFound']
 
-    def facet_fields(self) -> dict:
-        """Return a dictionary of facets and their values/counts (also as a
-        dicitionary).
+    def get_facets(self) -> Dict[]:
+        """Return a dictionary of facets and their values and
+        counts as key/value pairs.
         """
         if self._result_cache is not None:
             # wrap to process facets and return as dictionary
             # for Django template support
             qr = QueryResponse(self._result_cache)
-            return dict(qr.facet_counts.facet_fields)
+            return OrderedDict(qr.facet_counts.facet_fields)
         # since we just want a dictionary of facet fields, don't populate
         # the result cache and do a wrapped request with an explicit cast
         # to dict, no rows needed.
         query_opts = self.query_opts()
         query_opts['rows'] = 0
-        return dict(self.solr.query(**query_opts).facet_counts.facet_fields)
+        return OrderedDict(self.solr.query(**query_opts).facet_counts.facet_fields)
 
     @staticmethod
     def _lookup_to_filter(key, value) -> str:
@@ -180,8 +180,9 @@ class SolrQuerySet:
 
     def facet(self, *args: str, **kwargs) -> 'SolrQuerySet':
         """
-        Return a new SolrQuerySet with Solr faceting enabled and facet.field
-        parameter set. Does not yet support ranged faceting.
+        Request facets for specified fields. Returns a new SolrQuerySet
+        with Solr faceting enabled and facet.field parameter set. Does not
+        support ranged faceting.
 
         Subsequent calls will reset the facet.field to the last set of
         args in the chain.
@@ -199,6 +200,8 @@ class SolrQuerySet:
         qs_copy.facet_opts['facet'] = True
         # add args as a list to facet.field
         qs_copy.facet_opts['facet.field'] = list(args)
+        # add
+        qs_copy.facet_opts.update(kwargs)
 
         return qs_copy
 
