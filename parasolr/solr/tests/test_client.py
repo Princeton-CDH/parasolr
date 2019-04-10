@@ -6,13 +6,38 @@ import requests
 
 from parasolr import __version__ as parasolr_ver
 from parasolr.solr.admin import CoreAdmin
-from parasolr.solr.client import QueryResponse, SolrClient
+from parasolr.solr.client import QueryResponse, SolrClient, ParasolrDict
 from parasolr.solr.schema import Schema
 from parasolr.solr.update import Update
 
 # NOTE: Field and field-type names must be registered and cleaned
 # up in conftest.py
 # Otherwise, they will be retained between test iterations and break results.
+
+class TestParasolrDict:
+
+    def test_as_dict(self):
+        para_dict = ParasolrDict({
+            'a': 1,
+            'b': ParasolrDict({
+                'c': [1, 2 ,3],
+                'd': ParasolrDict({'z': 1})
+            })
+        })
+        as_dict = para_dict.as_dict()
+        # no longer an attrdict
+        assert not isinstance(as_dict, AttrDict)
+        assert isinstance(as_dict, dict)
+        # should be formatted so as to have preserved old arrangement
+        assert as_dict == para_dict
+        # subdictionaries should be dicts but not AttrDict subclasses
+        assert not isinstance(as_dict['b'], AttrDict)
+        assert isinstance(as_dict['b'], dict)
+        assert not isinstance(as_dict['b']['d'], AttrDict)
+        assert isinstance(as_dict['b']['d'], dict)
+        # other structures should be untouched
+        assert isinstance(as_dict['b']['c'], list)
+
 
 
 class TestQueryResponse:

@@ -25,10 +25,10 @@ class ParasolrDict(AttrDict):
 
     def as_dict(self):
         """Copy attributes from self as a dictionary, and recursively convert
-        instances of :class:`attrdict.AttrDict`."""
+        instances of :class:`ParasolrDict`."""
         copy = {}
         for k, v in self.items():
-            if isinstance(v, AttrDict):
+            if isinstance(v, ParasolrDict):
                 copy[k] = v.as_dict()
             else:
                 copy[k] = v
@@ -43,8 +43,8 @@ class QueryResponse:
     def __init__(self, response: Dict) -> None:
         # cast to ParasolrDict for any dict-like object
         response = ParasolrDict(response)
-        self.numFound = response.response.numFound
-        self.start = response.response.start
+        self.numFound = int(response.response.numFound)
+        self.start = int(response.response.start)
         self.docs = response.response.docs
         self.params = response.responseHeader.params
         self.facet_counts = {}

@@ -125,8 +125,12 @@ class SolrQuerySet:
         # otherwise, query with current options but request zero rows
         # and do not populate the result cache
         query_opts = self.query_opts()
-        return self.solr.query(rows=0, hl=False,
-                               facet=False, **query_opts).numFound
+        # setting these by dictionary assignment, because conflicting
+        # kwargs results in a Python exception
+        query_opts['rows'] = 0
+        query_opts['facet'] = False
+        query_opts['hl'] = False
+        return self.solr.query(**query_opts).numFound
 
     def get_facets(self) -> Dict[str, int]:
         """Return a dictionary of facets and their values and
@@ -140,9 +144,13 @@ class SolrQuerySet:
             return qr.facet_counts['facet_fields']
         # since we just want a dictionary of facet fields, don't populate
         # the result cache, no rows needed
+
         query_opts = self.query_opts()
-        return self.solr.query(rows=0, hl=False,
-                               **query_opts).facet_counts['facet_fields']
+        query_opts['rows'] = 0
+        query_opts['hl'] = False
+        # setting these by dictionary assignment, because conflicting
+        # kwargs results in a Python exception
+        return self.solr.query(**query_opts).facet_counts['facet_fields']
 
     @staticmethod
     def _lookup_to_filter(key, value) -> str:
@@ -353,7 +361,7 @@ class SolrQuerySet:
         # if the result cache is already populated,
         # return the requested index or slice
         if self._result_cache is not None:
-            return self._result_cache['response']['docs'][k]
+            return self._result_cache.d[k]
 
         qs_copy = self._clone()
 

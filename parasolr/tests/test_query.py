@@ -433,7 +433,8 @@ class TestSolrQuerySet:
         sqs = SolrQuerySet(mocksolr)
 
         # simulate result cache already populated
-        sqs._result_cache = {'response': {'docs': [1, 2, 3, 4, 5]}}
+        sqs._result_cache = Mock()
+        sqs._result_cache.docs = [1, 2, 3, 4, 5]
         # single item
         assert sqs[0] == 1
         assert sqs[1] == 2
