@@ -361,7 +361,7 @@ class SolrQuerySet:
         # if the result cache is already populated,
         # return the requested index or slice
         if self._result_cache is not None:
-            return self._result_cache.d[k]
+            return self._result_cache.docs[k]
 
         qs_copy = self._clone()
 
