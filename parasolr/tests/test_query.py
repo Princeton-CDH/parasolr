@@ -25,7 +25,7 @@ class TestSolrQuerySet:
         assert query_opts['start'] == 0
         assert query_opts['q'] == '*:*'
         # don't include unset options
-        for opt in ['fq', 'rows', 'sort', 'fl', 'hl', 'hl.field']:
+        for opt in ['fq', 'rows', 'sort', 'fl', 'hl', 'hl.field', 'facet']:
             assert opt not in query_opts
 
         # customized query opts
@@ -37,6 +37,8 @@ class TestSolrQuerySet:
         sqs.field_list = ['title', 'author', 'date:pubyear_i']
         sqs.highlight_field = 'content'
         sqs.highlight_opts = {'snippets': 3, 'method': 'unified'}
+        sqs.facet_opts = {'facet': True,
+                          'facet.field': ['item_type', 'membership_type']}
         query_opts = sqs.query_opts()
 
         assert query_opts['start'] == sqs.start
@@ -51,6 +53,9 @@ class TestSolrQuerySet:
         # highlighting options added with hl.prefix
         assert query_opts['hl.snippets'] == 3
         assert query_opts['hl.method'] == 'unified'
+        # make sure faceting opts are preserved
+        assert query_opts['facet'] is True
+        assert query_opts['facet.field'] == ['item_type', 'membership_type']
 
     def test_get_results(self):
         mocksolr = Mock(spec=SolrClient)

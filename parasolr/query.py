@@ -141,7 +141,8 @@ class SolrQuerySet:
         # since we just want a dictionary of facet fields, don't populate
         # the result cache, no rows needed
         query_opts = self.query_opts()
-        return self.solr.query(rows=0, hl=False, **query_opts).facet_counts['facet_fields']
+        return self.solr.query(rows=0, hl=False,
+                               **query_opts).facet_counts['facet_fields']
 
     @staticmethod
     def _lookup_to_filter(key, value) -> str:
