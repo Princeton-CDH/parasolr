@@ -183,6 +183,9 @@ class TestSolrQuerySet:
         # faceting should be set on
         assert faceted_qs.facet_opts['facet']
         assert faceted_qs.facet_opts['facet.field'] == facet_list
+        # facet opts for original queryset should be unchanged
+        assert not sqs.facet_opts
+
         # a call to another method should leave facet options as is
         faceted_qs = faceted_qs.filter(foo='bar')
         assert faceted_qs.facet_opts['facet']
