@@ -24,7 +24,7 @@ configuration and indexing content.
   :target: https://parasolr.readthedocs.io/en/latest/?badge=latest
   :alt: Documentation Status
 
-.. image:: https://api.codeclimate.com/v1/badges/558e86a46c76335f6673/maintainability
+.. image:: https://api.codeclimate.com/v1/badges/73394d05decdf32f12f3/maintainability
    :target: https://codeclimate.com/github/Princeton-CDH/parasolr/maintainability
    :alt: Maintainability
 
