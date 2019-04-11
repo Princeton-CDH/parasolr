@@ -58,6 +58,19 @@ class TestSolrQuerySet:
         assert query_opts['facet.field'] == sqs.facet_field
         assert query_opts['facet.sort'] == 'count'
 
+    def test_query(self):
+        mocksolr = Mock(spec=SolrClient)
+        mocksolr.query.return_value.docs = []
+        sqs = SolrQuerySet(mocksolr)
+        query_sqs = sqs.query()
+        # returns a copy, not same queryset
+        assert query_sqs != sqs
+        # sets the result cache (via get_results)
+        assert query_sqs._result_cache
+        # result cache not set on original
+        assert not sqs._result_cache
+
+
     def test_get_results(self):
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
@@ -271,6 +284,10 @@ class TestSolrQuerySet:
         # original field list unchanged
         assert not sqs.field_list
 
+        # only with field alias
+        fields_sqs = sqs.only(title='title_i')
+        assert 'title:title_i' in fields_sqs.field_list
+
     def test_highlight(self):
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
@@ -317,6 +334,16 @@ class TestSolrQuerySet:
         mock_highlights = {'id1': {'text': ['sample match content']}}
         sqs._result_cache = {'highlighting': mock_highlights}
         assert sqs.get_highlighting() == mock_highlights
+
+        # should populate cache if empty
+        sqs._result_cache = None
+        with patch.object(sqs, 'get_results') as mock_get_results:
+            def set_result_cache():
+                sqs._result_cache = Mock()
+            mock_get_results.side_effect = set_result_cache
+
+            sqs.get_highlighting()
+            mock_get_results.assert_called_with()
 
     def test_all(self):
         mocksolr = Mock(spec=SolrClient)
