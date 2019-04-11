@@ -37,6 +37,7 @@ class SolrQuerySet:
     filter_qs = []
     field_list = []
     highlight_field = None
+    facet_field = []
     facet_opts = {}
     highlight_opts = {}
     raw_params = {}
@@ -107,8 +108,13 @@ class SolrQuerySet:
             for key, val in self.highlight_opts.items():
                 query_opts['hl.%s' % key] = val
 
-        if self.facet_opts:
-            query_opts.update(self.facet_opts)
+        if self.facet_field:
+            query_opts.update({
+                'facet': True,
+                'facet.field': self.facet_field
+            })
+            for key, val in self.facet_opts.items():
+                query_opts['facet.%s' % key] = val
 
         # include any raw query parameters
         query_opts.update(self.raw_params)
@@ -205,12 +211,9 @@ class SolrQuerySet:
         """
         qs_copy = self._clone()
 
-        # enable faceting
-        qs_copy.facet_opts['facet'] = True
-        # add args as a list to facet.field, rather than a tuple in
-        # case it needs to be appended or modified later.
-        qs_copy.facet_opts['facet.field'] = list(args)
-        # add
+        # cast args tuple to list for consistency with other iterable fields
+        qs_copy.facet_field = list(args)
+        # add other kwargs to be prefixed in query_opts
         qs_copy.facet_opts.update(kwargs)
 
         return qs_copy
@@ -319,13 +322,14 @@ class SolrQuerySet:
         qs_copy.stop = self.stop
         qs_copy.highlight_field = self.highlight_field
 
-        # set copies of list attributes
+        # set copies of list and dict attributes
         qs_copy.search_qs = list(self.search_qs)
         qs_copy.filter_qs = list(self.filter_qs)
         qs_copy.sort_options = list(self.sort_options)
         qs_copy.field_list = list(self.field_list)
         qs_copy.highlight_opts = dict(self.highlight_opts)
         qs_copy.raw_params = dict(self.raw_params)
+        qs_copy.facet_field = list(self.facet_field)
         qs_copy.facet_opts = dict(self.facet_opts)
 
 
