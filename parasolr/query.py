@@ -318,7 +318,6 @@ class SolrQuerySet:
         qs_copy.start = self.start
         qs_copy.stop = self.stop
         qs_copy.highlight_field = self.highlight_field
-        #qs.copy.facet_opts = self.facet_opts
 
         # set copies of list attributes
         qs_copy.search_qs = list(self.search_qs)
@@ -327,6 +326,8 @@ class SolrQuerySet:
         qs_copy.field_list = list(self.field_list)
         qs_copy.highlight_opts = dict(self.highlight_opts)
         qs_copy.raw_params = dict(self.raw_params)
+        qs_copy.facet_opts = dict(self.facet_opts)
+
 
         return qs_copy
 
