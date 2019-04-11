@@ -16,11 +16,11 @@ If you are working with Django you should use
 which will automatically initialize a new :class:`parasolr.django.SolrClient`
 if one is not passed in.
 """
-
+from collections import OrderedDict
 from typing import Dict, List
 
 from parasolr.solr import SolrClient
-
+from parasolr.solr.client import QueryResponse
 
 class SolrQuerySet:
     """A Solr queryset object that allows for object oriented
@@ -37,8 +37,11 @@ class SolrQuerySet:
     filter_qs = []
     field_list = []
     highlight_field = None
+    facet_field = []
+    facet_opts = {}
     highlight_opts = {}
     raw_params = {}
+
 
     #: by default, combine search queries with AND
     default_search_operator = 'AND'
@@ -70,8 +73,8 @@ class SolrQuerySet:
 
         # NOTE: django templates choke on AttrDict because it is
         # callable; using dictionary response instead
-        self._result_cache = self.solr.query(wrap=False, **query_opts)
-        return self._result_cache['response']['docs']
+        self._result_cache = self.solr.query(**query_opts)
+        return [doc.as_dict() for doc in self._result_cache.docs]
 
     def query_opts(self) -> Dict[str, str]:
         """Construct query options based on current queryset configuration.
@@ -105,6 +108,14 @@ class SolrQuerySet:
             for key, val in self.highlight_opts.items():
                 query_opts['hl.%s' % key] = val
 
+        if self.facet_field:
+            query_opts.update({
+                'facet': True,
+                'facet.field': self.facet_field
+            })
+            for key, val in self.facet_opts.items():
+                query_opts['facet.%s' % key] = val
+
         # include any raw query parameters
         query_opts.update(self.raw_params)
 
@@ -115,13 +126,37 @@ class SolrQuerySet:
 
         # if result cache is already populated, use it
         if self._result_cache is not None:
-            return self._result_cache['response']['numFound']
+            return self._result_cache.numFound
 
         # otherwise, query with current options but request zero rows
         # and do not populate the result cache
         query_opts = self.query_opts()
+        # setting these by dictionary assignment, because conflicting
+        # kwargs results in a Python exception
         query_opts['rows'] = 0
-        return self.solr.query(**query_opts, wrap=False)['response']['numFound']
+        query_opts['facet'] = False
+        query_opts['hl'] = False
+        return self.solr.query(**query_opts).numFound
+
+    def get_facets(self) -> Dict[str, int]:
+        """Return a dictionary of facets and their values and
+        counts as key/value pairs.
+        """
+        if self._result_cache is not None:
+            # wrap to process facets and return as dictionary
+            # for Django template support
+            qr = QueryResponse(self._result_cache)
+            # NOTE: using dictionary syntax preserves OrderedDict
+            return qr.facet_counts['facet_fields']
+        # since we just want a dictionary of facet fields, don't populate
+        # the result cache, no rows needed
+
+        query_opts = self.query_opts()
+        query_opts['rows'] = 0
+        query_opts['hl'] = False
+        # setting these by dictionary assignment, because conflicting
+        # kwargs results in a Python exception
+        return self.solr.query(**query_opts).facet_counts['facet_fields']
 
     @staticmethod
     def _lookup_to_filter(key, value) -> str:
@@ -155,6 +190,31 @@ class SolrQuerySet:
 
         for key, value in kwargs.items():
             qs_copy.filter_qs.append(self._lookup_to_filter(key, value))
+
+        return qs_copy
+
+    def facet(self, *args: str, **kwargs) -> 'SolrQuerySet':
+        """
+        Request facets for specified fields. Returns a new SolrQuerySet
+        with Solr faceting enabled and facet.field parameter set. Does not
+        support ranged faceting.
+
+        Subsequent calls will reset the facet.field to the last set of
+        args in the chain.
+
+        For example::
+
+            qs = queryset.facet('person_type', 'age')
+            qs = qs.facet('item_type')
+
+        would result in `item_type` being the only facet field.
+        """
+        qs_copy = self._clone()
+
+        # cast args tuple to list for consistency with other iterable fields
+        qs_copy.facet_field = list(args)
+        # add other kwargs to be prefixed in query_opts
+        qs_copy.facet_opts.update(kwargs)
 
         return qs_copy
 
@@ -262,13 +322,16 @@ class SolrQuerySet:
         qs_copy.stop = self.stop
         qs_copy.highlight_field = self.highlight_field
 
-        # set copies of list attributes
+        # set copies of list and dict attributes
         qs_copy.search_qs = list(self.search_qs)
         qs_copy.filter_qs = list(self.filter_qs)
         qs_copy.sort_options = list(self.sort_options)
         qs_copy.field_list = list(self.field_list)
         qs_copy.highlight_opts = dict(self.highlight_opts)
         qs_copy.raw_params = dict(self.raw_params)
+        qs_copy.facet_field = list(self.facet_field)
+        qs_copy.facet_opts = dict(self.facet_opts)
+
 
         return qs_copy
 
@@ -303,7 +366,7 @@ class SolrQuerySet:
         # if the result cache is already populated,
         # return the requested index or slice
         if self._result_cache is not None:
-            return self._result_cache['response']['docs'][k]
+            return self._result_cache.docs[k]
 
         qs_copy = self._clone()
 
