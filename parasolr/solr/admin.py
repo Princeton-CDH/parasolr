@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 from attrdict import AttrDict
 import requests
 
-from parasolr.solr.client import ClientBase
+from parasolr.solr.base import ClientBase
 
 
 class CoreAdmin(ClientBase):
@@ -79,8 +79,9 @@ class CoreAdmin(ClientBase):
 
         """
         ping_url = '/'.join([self.solr_url.rstrip('/'), core, 'admin', 'ping'])
-        response = self.make_request('get', ping_url)
-        # ping returns 404 if core does not exist (make request returns None)
-
+        # ping returns 404 if core does not exist, but that's ok here
+        allowed_responses = [requests.codes.ok, requests.codes.not_found]
+        response = self.make_request('get', ping_url,
+                                     allowed_responses=allowed_responses)
         # return True if response is valid and status is OK
         return response and response.status == 'OK'

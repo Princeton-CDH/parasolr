@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import logging
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from attrdict import AttrDict
 import requests
@@ -19,15 +19,32 @@ logger = logging.getLogger(__name__)
 # despite not being hugely Pythonic, for consistency with Solr's responses
 # and API documentation.
 
-class QueryReponse:
+class ParasolrDict(AttrDict):
+    """A subclass of :class:`attrdict.AttrDict` that can convert itself to a
+    regular dictionary."""
+
+    def as_dict(self):
+        """Copy attributes from self as a dictionary, and recursively convert
+        instances of :class:`ParasolrDict`."""
+        copy = {}
+        for k, v in self.items():
+            if isinstance(v, ParasolrDict):
+                copy[k] = v.as_dict()
+            else:
+                copy[k] = v
+        return copy
+
+class QueryResponse:
     """Thin wrapper to give access to Solr select responses.
 
     Args:
         response: A Solr query response
     """
-    def __init__(self, response: AttrDict) -> None:
-        self.numFound = response.response.numFound
-        self.start = response.response.start
+    def __init__(self, response: Dict) -> None:
+        # cast to ParasolrDict for any dict-like object
+        response = ParasolrDict(response)
+        self.numFound = int(response.response.numFound)
+        self.start = int(response.response.start)
         self.docs = response.response.docs
         self.params = response.responseHeader.params
         self.facet_counts = {}
@@ -38,7 +55,7 @@ class QueryReponse:
                 self._process_facet_counts(response.facet_counts)
         # NOTE: To access facet_counts.facet_fields or facet_counts.facet_ranges
         # as OrderedDicts, you must use dict notation (or AttrDict *will*
-        # convert.
+        # convert).
 
     def _process_facet_counts(self, facet_counts: AttrDict) \
             -> AttrDict:
@@ -119,7 +136,7 @@ class SolrClient(ClientBase):
             self.core_admin_handler,
             self.session)
 
-    def query(self, wrap: bool = True, **kwargs: Any) -> Optional[QueryReponse]:
+    def query(self, wrap: bool = True, **kwargs: Any) -> Optional[QueryResponse]:
         """Perform a query with the specified kwargs.
 
         Args:
@@ -140,4 +157,4 @@ class SolrClient(ClientBase):
         )
         if response:
             # queries return the search response for now
-            return QueryReponse(response) if wrap else response
+            return QueryResponse(response) if wrap else response

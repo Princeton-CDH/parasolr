@@ -50,7 +50,7 @@ class Command(BaseCommand):
                 create = True
             # otherwise, prompt the user to confirm
             else:
-                create = input('Solr core %s does not exist. Create it? (y/n)' %
+                create = input('Solr core %s does not exist. Create it? (y/n) ' %
                                solr.collection).lower() == 'y'
             if create:
                 # The error handling for ensuring there's a configuration

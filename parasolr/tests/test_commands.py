@@ -61,7 +61,7 @@ class TestSolrSchemaCommand:
         mockinput.return_value = 'n'
         cmd.handle()
         mockinput.assert_called_with(
-            'Solr core %s does not exist. Create it? (y/n)' %
+            'Solr core %s does not exist. Create it? (y/n) ' %
             mocksolr.collection)
         mocksolr.core_admin.create.assert_not_called()
 

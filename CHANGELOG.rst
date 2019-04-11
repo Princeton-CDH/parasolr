@@ -3,6 +3,19 @@
 CHANGELOG
 =========
 
+
+0.2
+---
+
+* Subquent calls to SolrQuerySet.only() now *replaces* field limit options
+  rather than adding to them.
+* New SolrQuerySet method `raw_query_parameters`
+* SolrQuerySet now has support for faceting via `facet` method to configure
+  facets on the request and `get_facets` to retrieve them from the response.
+* Update `ping` method of `parasolr.solr.admin.CoreAdmin` so that
+  a 404 response is not logged as an error.
+* Refactor `parsolr.solr` tests into submodules
+
 0.1.1
 -----
 

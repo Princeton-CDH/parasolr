@@ -62,8 +62,12 @@ class ClientBase:
 
     def make_request(self, meth: str, url: str, headers: Optional[dict]=None,
                      params: Optional[dict]=None, data: Optional[dict]=None,
-                     wrap: bool=True, **kwargs: Any) -> Optional[AttrDict]:
-        """Make an HTTP request to Solr.
+                     wrap: bool=True, allowed_responses: Optional[list]=None,
+                     **kwargs: Any) -> Optional[AttrDict]:
+        """Make an HTTP request to Solr. May optionally specify a list of
+        allowed HTTP status codes for this request. Responses will be
+        logged as errors if they are not in the list, but only responses
+        with 200 OK status will be loaded as JSON.
 
         Args:
             meth: HTTP method to use.
@@ -71,12 +75,15 @@ class ClientBase:
             headers: HTTP headers.
             params: Params to use as form-fields or query-string params.
             data: Data for a POST request.
+            allowed_responses: HTTP status codes that are allowed for this
+                request; if not set, defaults to 200 OK
             **kwargs: Any other kwargs for the request.
         """
 
         if params is None:
             params = dict()
             # always add wt=json for JSON api
+
         # copy user-supplied params for inclusion in debug logging
         user_params = params.copy()
         params['wt'] = 'json'
@@ -104,7 +111,11 @@ class ClientBase:
             time.time() - start,
             '\n%s' % user_params if user_params else '',
         )
-        if response.status_code != requests.codes.ok:
+
+        if allowed_responses is None:
+            allowed_responses = [requests.codes.ok]
+
+        if response.status_code not in allowed_responses:
             # Add the content of the response on the off chance
             # it's helpful
             logger.error(
@@ -118,6 +129,12 @@ class ClientBase:
 
         # do further error checking on the response because Solr
         # may return 200 but pass along its own error codes and information
+
+        # if response was allowed but not a 200, just
+        # return response instead of attempting to load as json
+        if response.status_code != requests.codes.ok:
+            return response
+
         output = AttrDict(response.json())
         if 'responseHeader' in output \
                 and output.responseHeader.status != 0:
