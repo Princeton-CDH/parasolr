@@ -68,6 +68,7 @@ class TestClientBase:
             headers={'baz': 'bar'},
             data='foo'
         )
+        assert isinstance(response, AttrDict)
         assert response.responseHeader.status == 0
         assert response.responseHeader.QTime == 0
         # an incorrect run by status code returns None
