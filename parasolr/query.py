@@ -17,7 +17,8 @@ which will automatically initialize a new :class:`parasolr.django.SolrClient`
 if one is not passed in.
 """
 from collections import OrderedDict
-from typing import Dict, List
+import re
+from typing import Any, Dict, List
 
 from parasolr.solr import SolrClient
 from parasolr.solr.client import QueryResponse
@@ -159,13 +160,56 @@ class SolrQuerySet:
         return self.solr.query(**query_opts).facet_counts['facet_fields']
 
     @staticmethod
-    def _lookup_to_filter(key, value) -> str:
-        """Convert keyword argument key=value pair into a Solr filter.
-        Currently only supports simple case of field:value."""
+    def _lookup_to_filter(key: str, value: Any) -> str:
+        """Convert keyword/value argument, with optional filters, into a
+        Solr query.
 
-        # NOTE: as needed, we can start implementing django-style filters
-        # such as __in=[a, b, c] or __range=(start, end)
-        return '%s:%s' % (key, value)
+            Returns: A propertly formatted Solr query string.
+        """
+
+        # Flag if a null/empty search is being conducted
+        null_filter = False
+
+        # Base filter for all queries
+        _filter = ''
+
+        # Implementations of Django-style filters such as __in=[a, b, c]
+        # or __range=(start, end).
+
+        # Parse these special cases first and handle simple key/value pair
+        # at the very end.
+
+        # Regex to split for a double-underscore at end of a filter
+        # since Solr fields, in theory, could have double-underscores in name
+        double_underscore_regex = re.compile(r'_{2}(?=[A-Za-z]+$)')
+
+        # value is a list, join with OR logic for all values in list,
+        # include the empty value for a missing/empty field
+        if key.endswith('__in'):
+            # filter out a negative search and set flag
+            null_filter = bool([item for item in value if not item])
+
+            value = [item for item in value if item]
+            key = re.split(double_underscore_regex, key)[0]
+            if value:
+                _filter = '(%s)' % ' OR '.join(value)
+
+        # dictionary for easier interpolation of values
+        filter_vals = {
+            'filter': _filter if _filter else value,
+            'key': key
+        }
+
+        # there is a key:value pair and an search for a null via an empty
+        # string or None
+        if null_filter and value:
+            return '-(%(key)s:[* TO *] -%(key)s:%(filter)s)' % filter_vals
+        # there is a search for a null field
+        elif null_filter and not value:
+            return '-%(key)s:[* TO *]' % filter_vals
+        # there is a simple key/value pair
+        return '%(key)s:%(filter)s' % filter_vals
+
 
     def filter(self, *args, **kwargs) -> 'SolrQuerySet':
         """
