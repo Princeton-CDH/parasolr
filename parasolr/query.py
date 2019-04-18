@@ -162,7 +162,8 @@ class SolrQuerySet:
     @staticmethod
     def _lookup_to_filter(key: str, value: Any) -> str:
         """Convert keyword/value argument, with optional filters, into a
-        Solr query.
+        Solr query. Currently supports simple key-value pairs, searching for
+        empty/unset values, and __in filters of lists.
 
             Returns: A propertly formatted Solr query string.
         """
@@ -200,8 +201,19 @@ class SolrQuerySet:
             'key': key
         }
 
-        # there is a key:value pair and an search for a null via an empty
-        # string or None
+        # if filter_vals['filter] can be cast to int,
+        # do so for comparison against 0 since we don't want to treat
+        # that value as implicitly falsy
+        try:
+            filter_vals['filter'] = int(filter_vals['filter'])
+        except ValueError:
+            pass
+
+        if not filter_vals['filter'] and filter_vals['filter'] != 0:
+            null_filter = True
+
+        # there is a key:value pair and a search for a null via an empty string
+        # or None
         if null_filter and value:
             return '-(%(key)s:[* TO *] -%(key)s:%(filter)s)' % filter_vals
         # there is a search for a null field
@@ -221,10 +233,16 @@ class SolrQuerySet:
             queryset.filter(item_type='person').filter(birth_year=1900)
             queryset.filter(item_type='person', birth_year=1900)
 
-        To provide a filter that should be used in modified, provide
+        To provide a filter that should be used unmodified, provide
         the exact string of your filter query::
 
             queryset.filter('birth_year:[1800 TO *]')
+
+        You can also search for empty values or use the __in filter for OR
+        functionality in a list::
+
+            queryset.filter(item_type='')
+            queryset.filter(item_type=['person', 'book'])
 
         """
         qs_copy = self._clone()
