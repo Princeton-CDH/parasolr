@@ -423,19 +423,16 @@ class TestSolrQuerySet:
         assert SolrQuerySet._lookup_to_filter('item_type', 'work') == \
             'item_type:work'
         # simple key-value with empty/null
-        assert SolrQuerySet._lookup_to_filter('item_type', '') == \
+        assert SolrQuerySet._lookup_to_filter('item_type__exists', True) == \
+            'item_type:[* TO *]'
+        assert SolrQuerySet._lookup_to_filter('item_type__exists', False) == \
             '-item_type:[* TO *]'
         # simple __in query
         assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b']) == \
             'item_type:(a OR b)'
         # complex __in query with a negation
         assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b', '']) == \
-            '-(item_type:[* TO *] -item_type:(a OR b))'
-
-        # check edge case as 0 should probably not be treated as false
-        assert SolrQuerySet._lookup_to_filter('item_type', 0) == \
-            'item_type:0'
-
+            '-(item_type:[* TO *] OR -item_type:(a OR b))'
 
     def test_iter(self):
         mocksolr = Mock(spec=SolrClient)

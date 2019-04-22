@@ -23,6 +23,11 @@ from typing import Any, Dict, List
 from parasolr.solr import SolrClient
 from parasolr.solr.client import QueryResponse
 
+
+#: module-level default separator for lookups
+LOOKUP_SEP = '__'
+
+
 class SolrQuerySet:
     """A Solr queryset object that allows for object oriented
     searching and filtering of Solr results. Allows search results
@@ -42,7 +47,6 @@ class SolrQuerySet:
     facet_opts = {}
     highlight_opts = {}
     raw_params = {}
-
 
     #: by default, combine search queries with AND
     default_search_operator = 'AND'
@@ -161,67 +165,52 @@ class SolrQuerySet:
 
     @staticmethod
     def _lookup_to_filter(key: str, value: Any) -> str:
-        """Convert keyword/value argument, with optional filters, into a
-        Solr query. Currently supports simple key-value pairs, searching for
-        empty/unset values, and __in filters of lists.
+        """Convert keyword/value argument, with optional lookups separated by
+        ``__``, including: in and exists. Field names should *NOT* include
+        double-underscores by convention.
 
             Returns: A propertly formatted Solr query string.
         """
-
-        # Flag if a null/empty search is being conducted
-        null_filter = False
-
-        # Base filter for all queries
-        _filter = ''
-
+        # NOTE: Should this go to a class or module constant?
+        ALL_VALUES = '[* TO *]'
+        # check for a lookup separator and split
+        lookup = ''
+        split_key = key.split(LOOKUP_SEP)
+        if len(split_key) == 1:
+            # simple lookup, return key,value pair
+            return '%s:%s' % (key, value)
         # Implementations of Django-style filters such as __in=[a, b, c]
-        # or __range=(start, end).
+        # or __range=(start, end)
 
-        # Parse these special cases first and handle simple key/value pair
-        # at the very end.
+        # NOTE: Assuming there is only one LOOKUP_SEP without error handling
+        key, lookup = split_key
 
-        # Regex to split for a double-underscore at end of a filter
-        # since Solr fields, in theory, could have double-underscores in name
-        double_underscore_regex = re.compile(r'_{2}(?=[A-Za-z]+$)')
-
-        # value is a list, join with OR logic for all values in list,
-        # include the empty value for a missing/empty field
-        if key.endswith('__in'):
-            # filter out a negative search and set flag
-            null_filter = bool([item for item in value if not item])
-
-            value = [item for item in value if item]
-            key = re.split(double_underscore_regex, key)[0]
+        if lookup == 'in':
+            # value is a list, join with OR logic for all values in list,
+            # treat '' or None values as flagging an exists query
+            implicit_exists = False
+            if '' in value or None in value:
+                implicit_exists = True
+            value = filter(lambda x: x not in ['', None], value)
+            _filter = '%s:(%s)' % (key, ' OR '.join(value))
+            if not implicit_exists:
+                return _filter
+            else:
+                # This query handles the fact that query syntax does not
+                # support the simpler positive case. Instead, we do a
+                # negative lookup that negates a positive lookup for
+                # all possible values and double-negates a lookup
+                # for any filtered values (thus producing a positive)
+                # The final output is something like:
+                # -(item_type:[* TO *] OR item_type: book OR periodical)
+                return '-(%s:%s OR -%s)' % (key, ALL_VALUES, _filter)
+        if lookup == 'exists':
+            # Look for all possible values, and either negatve or not,
+            # depending on the boolean of value.
             if value:
-                _filter = '(%s)' % ' OR '.join(value)
-
-        # dictionary for easier interpolation of values
-        filter_vals = {
-            'filter': _filter if _filter else value,
-            'key': key
-        }
-
-        # if filter_vals['filter] can be cast to int,
-        # do so for comparison against 0 since we don't want to treat
-        # that value as implicitly falsy
-        try:
-            filter_vals['filter'] = int(filter_vals['filter'])
-        except ValueError:
-            pass
-
-        if not filter_vals['filter'] and filter_vals['filter'] != 0:
-            null_filter = True
-
-        # there is a key:value pair and a search for a null via an empty string
-        # or None
-        if null_filter and value:
-            return '-(%(key)s:[* TO *] -%(key)s:%(filter)s)' % filter_vals
-        # there is a search for a null field
-        elif null_filter and not value:
-            return '-%(key)s:[* TO *]' % filter_vals
-        # there is a simple key/value pair
-        return '%(key)s:%(filter)s' % filter_vals
-
+                return '%s:%s' % (key, ALL_VALUES)
+            else:
+                return '-%s:%s' % (key, ALL_VALUES)
 
     def filter(self, *args, **kwargs) -> 'SolrQuerySet':
         """
@@ -238,11 +227,10 @@ class SolrQuerySet:
 
             queryset.filter('birth_year:[1800 TO *]')
 
-        You can also search for empty values or use the __in filter for OR
-        functionality in a list::
+        You can also search for pre-defined using lookups (in, exists)::
 
-            queryset.filter(item_type='')
-            queryset.filter(item_type=['person', 'book'])
+            queryset.filter(item_type__in=['person', 'book'])
+            queryset.filter(item_type__exists=False)
 
         """
         qs_copy = self._clone()
