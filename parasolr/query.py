@@ -24,10 +24,6 @@ from parasolr.solr import SolrClient
 from parasolr.solr.client import QueryResponse
 
 
-#: module-level default separator for lookups
-LOOKUP_SEP = '__'
-
-
 class SolrQuerySet:
     """A Solr queryset object that allows for object oriented
     searching and filtering of Solr results. Allows search results
@@ -50,6 +46,11 @@ class SolrQuerySet:
 
     #: by default, combine search queries with AND
     default_search_operator = 'AND'
+
+    #: any value constant
+    ANY_VALUE = '[* TO *]'
+    #: lookup separator
+    LOOKUP_SEP = '__'
 
     def __init__(self, solr: SolrClient):
         # requires solr client so that this version can be django-agnostic
@@ -166,37 +167,44 @@ class SolrQuerySet:
         return self.solr.query(**query_opts).facet_counts['facet_fields']
 
     @staticmethod
-    def _lookup_to_filter(key: str, value: Any) -> str:
+    def _lookup_to_filter(key: str, value: Any, tag: str='') -> str:
         """Convert keyword/value argument, with optional lookups separated by
         ``__``, including: in and exists. Field names should *NOT* include
-        double-underscores by convention.
+        double-underscores by convention. Accepts an optional tag argument
+        to specify an exclude tag as needed.
 
             Returns: A propertly formatted Solr query string.
         """
-        # NOTE: Should this go to a class or module constant?
-        ALL_VALUES = '[* TO *]'
         # check for a lookup separator and split
         lookup = ''
-        split_key = key.split(LOOKUP_SEP)
+        # format tag for inclusion if tag
+        if tag:
+            tag = '{!tag=%s}' % tag
+        split_key = key.split(SolrQuerySet.LOOKUP_SEP)
         if len(split_key) == 1:
             # simple lookup, return key,value pair
-            return '%s:%s' % (key, value)
+            return '%s%s:%s' % (tag, key, value)
         # Implementations of Django-style filters such as __in=[a, b, c]
         # or __range=(start, end)
 
         # NOTE: Assuming there is only one LOOKUP_SEP without error handling
         key, lookup = split_key
 
+        # __in=[a, b, c] filter
         if lookup == 'in':
             # value is a list, join with OR logic for all values in list,
             # treat '' or None values as flagging an exists query
-            implicit_exists = False
+            not_exists = False
             if '' in value or None in value:
-                implicit_exists = True
-            value = filter(lambda x: x not in ['', None], value)
+                not_exists = True
+            value = list(filter(lambda x: x not in ['', None], value))
+            # if we have a case where the list was just a falsy value
+            # return as if __exists=False
+            if not value:
+                return '%s-%s:%s' % (tag, key, SolrQuerySet.ANY_VALUE)
             _filter = '%s:(%s)' % (key, ' OR '.join(value))
-            if not implicit_exists:
-                return _filter
+            if not not_exists:
+                return '%s%s' % (tag, _filter)
             else:
                 # This query handles the fact that query syntax does not
                 # support the simpler positive case. Instead, we do a
@@ -205,16 +213,17 @@ class SolrQuerySet:
                 # for any filtered values (thus producing a positive)
                 # The final output is something like:
                 # -(item_type:[* TO *] OR item_type: book OR periodical)
-                return '-(%s:%s OR -%s)' % (key, ALL_VALUES, _filter)
-        if lookup == 'exists':
-            # Look for all possible values, and either negatve or not,
-            # depending on the boolean of value.
-            if value:
-                return '%s:%s' % (key, ALL_VALUES)
-            else:
-                return '-%s:%s' % (key, ALL_VALUES)
+                return '%s-(%s:%s OR -%s)' % (tag, key, SolrQuerySet.ANY_VALUE,
+                                              _filter)
 
-    def filter(self, *args, **kwargs) -> 'SolrQuerySet':
+        # exists=True/False filter
+        if lookup == 'exists':
+            # Look for all possible values, and either negative or not,
+            # depending on the boolean of value.
+            negate = '' if value else '-'
+            return '%s%s%s:%s' % (tag, negate, key, SolrQuerySet.ANY_VALUE)
+
+    def filter(self, *args, tag: str='', **kwargs) -> 'SolrQuerySet':
         """
         Return a new SolrQuerySet with Solr filter queries added.
         Multiple filters can be combined either in a single
@@ -224,25 +233,30 @@ class SolrQuerySet:
             queryset.filter(item_type='person').filter(birth_year=1900)
             queryset.filter(item_type='person', birth_year=1900)
 
+        You can also search for pre-defined using lookups (in, exists)::
+
+            queryset.filter(item_type__in=['person', 'book'])
+            queryset.filter(item_type__exists=False)
+
+        Tags may be specified for the filter to be used with facet.field
+        exclusions::
+
+            queryset.filter(item_type='person', tag='person')
+
         To provide a filter that should be used unmodified, provide
         the exact string of your filter query::
 
             queryset.filter('birth_year:[1800 TO *]')
 
-        You can also search for pre-defined using lookups (in, exists)::
 
-            queryset.filter(item_type__in=['person', 'book'])
-            queryset.filter(item_type__exists=False)
 
         """
         qs_copy = self._clone()
 
         # any args are treated as filter queries without modification
         qs_copy.filter_qs.extend(args)
-
         for key, value in kwargs.items():
-            qs_copy.filter_qs.append(self._lookup_to_filter(key, value))
-
+            qs_copy.filter_qs.append(self._lookup_to_filter(key, value, tag=tag))
         return qs_copy
 
     def facet(self, *args: str, **kwargs) -> 'SolrQuerySet':
@@ -270,16 +284,21 @@ class SolrQuerySet:
 
         return qs_copy
 
-    def facet_field(self, field: str, **kwargs) -> 'SolrQuerySet':
+    def facet_field(self, field: str, ex: str='', **kwargs) -> 'SolrQuerySet':
         """
         Request faceting for a single field. Returns a new SolrQuerySet
         with Solr faceting enabled and the field added to
         the list of facet fields.  Any keyword arguments will be set
         as field-specific facet  configurations.
+
+        ``ex`` will specify a related filter query tag to exclude when
+        generating counts for the facet.
+
         """
         qs_copy = self._clone()
-        # add the field to the list of facet fields
-        qs_copy.facet_field_list.append(field)
+        # append exclude tag if specified
+        qs_copy.facet_field_list.append('{!ex=%s}%s' % (ex, field)
+                                         if ex else field)
         # prefix any keyword args with the field name
         # (facet. prefix added in query_opts)
 
