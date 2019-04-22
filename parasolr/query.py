@@ -43,7 +43,7 @@ class SolrQuerySet:
     filter_qs = []
     field_list = []
     highlight_field = None
-    facet_field = []
+    facet_field_list = []
     facet_opts = {}
     highlight_opts = {}
     raw_params = {}
@@ -113,13 +113,15 @@ class SolrQuerySet:
             for key, val in self.highlight_opts.items():
                 query_opts['hl.%s' % key] = val
 
-        if self.facet_field:
+        if self.facet_field_list:
             query_opts.update({
                 'facet': True,
-                'facet.field': self.facet_field
+                'facet.field': self.facet_field_list
             })
             for key, val in self.facet_opts.items():
-                query_opts['facet.%s' % key] = val
+                # use key as is if it starts with "f."
+                # (field-specific facet options); otherwise prepend "facet."
+                query_opts[key if key.startswith('f.') else 'facet.%s' % key] = val
 
         # include any raw query parameters
         query_opts.update(self.raw_params)
@@ -262,9 +264,28 @@ class SolrQuerySet:
         qs_copy = self._clone()
 
         # cast args tuple to list for consistency with other iterable fields
-        qs_copy.facet_field = list(args)
+        qs_copy.facet_field_list = list(args)
         # add other kwargs to be prefixed in query_opts
         qs_copy.facet_opts.update(kwargs)
+
+        return qs_copy
+
+    def facet_field(self, field: str, **kwargs) -> 'SolrQuerySet':
+        """
+        Request faceting for a single field. Returns a new SolrQuerySet
+        with Solr faceting enabled and the field added to
+        the list of facet fields.  Any keyword arguments will be set
+        as field-specific facet  configurations.
+        """
+        qs_copy = self._clone()
+        # add the field to the list of facet fields
+        qs_copy.facet_field_list.append(field)
+        # prefix any keyword args with the field name
+        # (facet. prefix added in query_opts)
+
+        qs_copy.facet_opts.update({
+            'f.%s.facet.%s' % (field, opt) : value
+            for opt, value in kwargs.items()})
 
         return qs_copy
 
@@ -379,9 +400,8 @@ class SolrQuerySet:
         qs_copy.field_list = list(self.field_list)
         qs_copy.highlight_opts = dict(self.highlight_opts)
         qs_copy.raw_params = dict(self.raw_params)
-        qs_copy.facet_field = list(self.facet_field)
+        qs_copy.facet_field_list = list(self.facet_field_list)
         qs_copy.facet_opts = dict(self.facet_opts)
-
 
         return qs_copy
 

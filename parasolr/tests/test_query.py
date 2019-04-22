@@ -37,7 +37,7 @@ class TestSolrQuerySet:
         sqs.field_list = ['title', 'author', 'date:pubyear_i']
         sqs.highlight_field = 'content'
         sqs.highlight_opts = {'snippets': 3, 'method': 'unified'}
-        sqs.facet_field = ['item_type', 'member_type']
+        sqs.facet_field_list = ['item_type', 'member_type']
         sqs.facet_opts = {'sort': 'count'}
         query_opts = sqs.query_opts()
 
@@ -55,8 +55,16 @@ class TestSolrQuerySet:
         assert query_opts['hl.method'] == 'unified'
         # make sure faceting opts are preserved
         assert query_opts['facet'] is True
-        assert query_opts['facet.field'] == sqs.facet_field
+        assert query_opts['facet.field'] == sqs.facet_field_list
         assert query_opts['facet.sort'] == 'count'
+
+        # field-specific facet unchanged
+        field_facet_opt = 'f.sort.facet.missing'
+        sqs.facet_opts = {field_facet_opt: True}
+        query_opts = sqs.query_opts()
+        # included unchanged, without extra facet prefix
+        assert field_facet_opt in query_opts
+        assert query_opts[field_facet_opt]
 
     def test_query(self):
         mocksolr = Mock(spec=SolrClient)
@@ -195,22 +203,44 @@ class TestSolrQuerySet:
         facet_list = ['person_type', 'item_type']
         faceted_qs = sqs.facet(*facet_list)
         # faceting should be set on
-        assert faceted_qs.facet_field == facet_list
+        assert faceted_qs.facet_field_list == facet_list
         # facet opts and field for original queryset should be unchanged
         assert not sqs.facet_opts
-        assert not sqs.facet_field
+        assert not sqs.facet_field_list
 
         # a call to another method should leave facet options as is
         faceted_qs = faceted_qs.filter(foo='bar')
-        assert faceted_qs.facet_field== facet_list
+        assert faceted_qs.facet_field_list == facet_list
         # subsequents calls to facet should simply reset list
         facet_list = ['foobars']
         faceted_qs = faceted_qs.facet(*facet_list)
-        assert faceted_qs.facet_field == facet_list
+        assert faceted_qs.facet_field_list == facet_list
         # kwargs should simply be set in facet opts
         faceted_qs = faceted_qs.facet(*facet_list, sort='count')
-        assert faceted_qs.facet_field == facet_list
+        assert faceted_qs.facet_field_list == facet_list
         assert faceted_qs.facet_opts['sort'] == 'count'
+
+    def test_facet_field(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+
+        # add single facet with no extra args
+        facet_sqs = sqs.facet_field('sort')
+        # should be in field list
+        assert 'sort' in facet_sqs.facet_field_list
+        # not in original
+        assert 'sort' not in sqs.facet_field_list
+
+        # multiple field facets add
+        multifacet_sqs = facet_sqs.facet_field('title')
+        assert 'sort' in multifacet_sqs.facet_field_list
+        assert 'title' in multifacet_sqs.facet_field_list
+
+        # facet with field-specific options
+        facet_sqs = sqs.facet_field('sort', missing=True)
+        assert 'sort' in facet_sqs.facet_field_list
+        assert 'f.sort.facet.missing' in facet_sqs.facet_opts
+
 
     def test_search(self):
         mocksolr = Mock(spec=SolrClient)
