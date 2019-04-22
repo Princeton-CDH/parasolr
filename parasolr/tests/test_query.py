@@ -37,7 +37,7 @@ class TestSolrQuerySet:
         sqs.field_list = ['title', 'author', 'date:pubyear_i']
         sqs.highlight_field = 'content'
         sqs.highlight_opts = {'snippets': 3, 'method': 'unified'}
-        sqs.facet_field = ['item_type', 'member_type']
+        sqs.facet_field_list = ['item_type', 'member_type']
         sqs.facet_opts = {'sort': 'count'}
         query_opts = sqs.query_opts()
 
@@ -55,8 +55,16 @@ class TestSolrQuerySet:
         assert query_opts['hl.method'] == 'unified'
         # make sure faceting opts are preserved
         assert query_opts['facet'] is True
-        assert query_opts['facet.field'] == sqs.facet_field
+        assert query_opts['facet.field'] == sqs.facet_field_list
         assert query_opts['facet.sort'] == 'count'
+
+        # field-specific facet unchanged
+        field_facet_opt = 'f.sort.facet.missing'
+        sqs.facet_opts = {field_facet_opt: True}
+        query_opts = sqs.query_opts()
+        # included unchanged, without extra facet prefix
+        assert field_facet_opt in query_opts
+        assert query_opts[field_facet_opt]
 
     def test_query(self):
         mocksolr = Mock(spec=SolrClient)
@@ -173,20 +181,23 @@ class TestSolrQuerySet:
         # original queryset is unchanged
         assert not sqs.filter_qs
 
-        # keyword arg options converted into filters
-        filtered_qs = sqs.filter(item_type='work', date=1500)
+        # keyword arg options converted into filters, except tag, which
+        # is prepended as a special case.
+        filtered_qs = sqs.filter(item_type='work', date=1500, tag='workDate')
         # returned queryset has the filters
-        assert 'item_type:work' in filtered_qs.filter_qs
-        assert 'date:1500' in filtered_qs.filter_qs
+        assert '{!tag=workDate}item_type:work' in filtered_qs.filter_qs
+        assert '{!tag=workDate}date:1500' in filtered_qs.filter_qs
         # original queryset is unchanged
         assert not sqs.filter_qs
 
-        # chaining adds to the filters
+        # chaining adds to the filters, tag is optional and not appended
+        # if not supplied
         filtered_qs = sqs.filter(item_type='work').filter(date=1500) \
                          .filter('name:he*')
         assert 'item_type:work' in filtered_qs.filter_qs
         assert 'date:1500' in filtered_qs.filter_qs
         assert 'name:he*' in filtered_qs.filter_qs
+
 
     def test_facet(self):
         mocksolr = Mock(spec=SolrClient)
@@ -195,22 +206,48 @@ class TestSolrQuerySet:
         facet_list = ['person_type', 'item_type']
         faceted_qs = sqs.facet(*facet_list)
         # faceting should be set on
-        assert faceted_qs.facet_field == facet_list
+        assert faceted_qs.facet_field_list == facet_list
         # facet opts and field for original queryset should be unchanged
         assert not sqs.facet_opts
-        assert not sqs.facet_field
+        assert not sqs.facet_field_list
 
         # a call to another method should leave facet options as is
         faceted_qs = faceted_qs.filter(foo='bar')
-        assert faceted_qs.facet_field== facet_list
+        assert faceted_qs.facet_field_list == facet_list
         # subsequents calls to facet should simply reset list
         facet_list = ['foobars']
         faceted_qs = faceted_qs.facet(*facet_list)
-        assert faceted_qs.facet_field == facet_list
+        assert faceted_qs.facet_field_list == facet_list
         # kwargs should simply be set in facet opts
         faceted_qs = faceted_qs.facet(*facet_list, sort='count')
-        assert faceted_qs.facet_field == facet_list
+        assert faceted_qs.facet_field_list == facet_list
         assert faceted_qs.facet_opts['sort'] == 'count'
+
+    def test_facet_field(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+
+        # add single facet with no extra args
+        facet_sqs = sqs.facet_field('sort')
+        # should be in field list
+        assert 'sort' in facet_sqs.facet_field_list
+        # not in original
+        assert 'sort' not in sqs.facet_field_list
+
+        # multiple field facets add
+        multifacet_sqs = facet_sqs.facet_field('title')
+        assert 'sort' in multifacet_sqs.facet_field_list
+        assert 'title' in multifacet_sqs.facet_field_list
+
+        # facet with field-specific options
+        facet_sqs = sqs.facet_field('sort', missing=True)
+        assert 'sort' in facet_sqs.facet_field_list
+        assert 'f.sort.facet.missing' in facet_sqs.facet_opts
+
+        # facet with ex field for exclusions
+        facet_sqs = sqs.facet_field('sort', exclude='sort')
+        assert '{!ex=sort}sort' in facet_sqs.facet_field_list
+
 
     def test_search(self):
         mocksolr = Mock(spec=SolrClient)
@@ -419,8 +456,45 @@ class TestSolrQuerySet:
         assert 'name:hem*' in search_sqs.search_qs
 
     def test__lookup_to_filter(self):
+        # simple key-value
         assert SolrQuerySet._lookup_to_filter('item_type', 'work') == \
             'item_type:work'
+        # exists
+        assert SolrQuerySet._lookup_to_filter('item_type__exists', True) == \
+            'item_type:[* TO *]'
+        # does not exist
+        assert SolrQuerySet._lookup_to_filter('item_type__exists', False) == \
+            '-item_type:[* TO *]'
+        # simple __in query
+        assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b']) == \
+            'item_type:(a OR b)'
+        # complex __in query with a negation
+        assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b', '']) == \
+            '-(item_type:[* TO *] OR -item_type:(a OR b))'
+        # __in query with just a negation
+        assert SolrQuerySet._lookup_to_filter('item_type__in', ['']) == \
+            '-item_type:[* TO *]'
+
+        # test cases with tag
+        # simple key-value
+        assert SolrQuerySet._lookup_to_filter('item_type', 'work', tag='type') == \
+            '{!tag=type}item_type:work'
+          # exists
+        assert SolrQuerySet._lookup_to_filter('item_type__exists', True, tag='type') == \
+            '{!tag=type}item_type:[* TO *]'
+        # does not exist
+        assert SolrQuerySet._lookup_to_filter('item_type__exists', False, tag='type') == \
+            '{!tag=type}-item_type:[* TO *]'
+        # simple __in query
+        assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b'], tag='type') == \
+            '{!tag=type}item_type:(a OR b)'
+        # complex __in query with a negation
+        assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b', ''], tag='type') == \
+            '{!tag=type}-(item_type:[* TO *] OR -item_type:(a OR b))'
+        # __in query with just a negation
+        assert SolrQuerySet._lookup_to_filter('item_type__in', [''], tag='type') == \
+            '{!tag=type}-item_type:[* TO *]'
+
 
     def test_iter(self):
         mocksolr = Mock(spec=SolrClient)

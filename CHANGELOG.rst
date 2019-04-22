@@ -3,6 +3,12 @@
 CHANGELOG
 =========
 
+0.3
+---
+
+* Add support for `__in` queries with `filter` method of SolrQuerySet
+* Add support for searching for missing/unset values in `filter` method of
+  SolrQuerySet.
 
 0.2
 ---
