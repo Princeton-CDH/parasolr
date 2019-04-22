@@ -1,0 +1,1 @@
+from parasolr.query.queryset import SolrQuerySet

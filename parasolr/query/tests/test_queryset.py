@@ -126,7 +126,7 @@ class TestSolrQuerySet:
         # cache should not be populated
         assert not sqs._result_cache
 
-    @patch('parasolr.query.QueryResponse')
+    @patch('parasolr.query.queryset.QueryResponse')
     def test_get_facets(self, mockQR):
         mocksolr = Mock(spec=SolrClient)
         # mock cached solr response
