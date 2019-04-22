@@ -284,7 +284,7 @@ class SolrQuerySet:
 
         return qs_copy
 
-    def facet_field(self, field: str, ex: str='', **kwargs) -> 'SolrQuerySet':
+    def facet_field(self, field: str, exclude: str='', **kwargs) -> 'SolrQuerySet':
         """
         Request faceting for a single field. Returns a new SolrQuerySet
         with Solr faceting enabled and the field added to
@@ -297,8 +297,8 @@ class SolrQuerySet:
         """
         qs_copy = self._clone()
         # append exclude tag if specified
-        qs_copy.facet_field_list.append('{!ex=%s}%s' % (ex, field)
-                                         if ex else field)
+        qs_copy.facet_field_list.append('{!ex=%s}%s' % (exclude, field)
+                                         if exclude else field)
         # prefix any keyword args with the field name
         # (facet. prefix added in query_opts)
 

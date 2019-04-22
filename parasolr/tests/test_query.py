@@ -245,7 +245,7 @@ class TestSolrQuerySet:
         assert 'f.sort.facet.missing' in facet_sqs.facet_opts
 
         # facet with ex field for exclusions
-        facet_sqs = sqs.facet_field('sort', ex='sort')
+        facet_sqs = sqs.facet_field('sort', exclude='sort')
         assert '{!ex=sort}sort' in facet_sqs.facet_field_list
 
 
