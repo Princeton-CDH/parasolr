@@ -85,3 +85,7 @@ if django:
             # use passed-in solr client if there is one;
             # otherwise, initialize a django solr client
             super().__init__(solr or SolrClient())
+
+
+    class AliasedSolrQuerySet(SolrQuerySet, query.AliasedSolrQuerySet):
+        pass
