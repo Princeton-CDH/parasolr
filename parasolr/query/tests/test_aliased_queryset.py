@@ -15,6 +15,7 @@ class MyAliasedSolrQuerySet(AliasedSolrQuerySet):
         'has_info':'has_info_b',
     }
 
+
 class TestAliasedSolrQuerySet(TestCase):
 
     def setUp(self):
@@ -26,6 +27,12 @@ class TestAliasedSolrQuerySet(TestCase):
         assert len(self.mysqs.field_list) == len(MyAliasedSolrQuerySet.field_aliases.keys())
         for key, val in self.mysqs.field_aliases.items():
             assert '%s:%s' % (key, val) in self.mysqs.field_list
+
+        # reverse lookup should be populated
+        assert self.mysqs.reverse_aliases
+        assert len(self.mysqs.reverse_aliases.keys()) == \
+            len(MyAliasedSolrQuerySet.field_aliases.keys())
+        assert self.mysqs.reverse_aliases['name_t'] == 'name'
 
     def test_unalias_args(self):
         """list of aliased args should be converted to solr field"""
@@ -117,3 +124,54 @@ class TestAliasedSolrQuerySet(TestCase):
         # unknown should be ignored
         self.mysqs.highlight('foo_b')
         mock_highlight.assert_called_with('foo_b')
+
+    @patch('parasolr.query.queryset.SolrQuerySet.get_facets')
+    def test_get_facets(self, mock_get_facets):
+        sample_facet_result = {
+            "facet_fields":{
+                "has_info_b":[
+                    "false", 5967,
+                    "true", 632],
+                "other":[
+                    "false", 6,
+                    "true", 4]},
+            "facet_ranges":{
+                "year_i":{
+                    "counts":[
+                        "1900", 100,
+                        "1920", 5939,
+                        "1940", 477,
+                        "1960", 6],
+                    "gap":20,
+                    "start":1900,
+                    "end":1980},
+                "birth":{
+                    "counts":[
+                        "1900", 100,
+                        "1920", 5939,
+                        "1940", 477,
+                        "1960", 6],
+                    "gap":20,
+                    "start":1900,
+                    "end":1980}
+            }
+        }
+        mock_get_facets.return_value = sample_facet_result.copy()
+
+        # known keys should be converted to alias
+        facets = self.mysqs.get_facets()
+        mock_get_facets.assert_called_with()
+        # known field alias is updated
+        assert 'has_info' in facets['facet_fields']
+        assert facets['facet_fields']['has_info'] == \
+            sample_facet_result['facet_fields']['has_info_b']
+        # non-aliased field is ignored
+        assert 'other' in facets['facet_fields']
+
+        # range fields updated with aliases also
+        assert 'year' in facets['facet_ranges']
+        assert facets['facet_ranges']['year'] == \
+            sample_facet_result['facet_ranges']['year_i']
+        # non-aliased field is ignored
+        assert 'birth' in facets['facet_ranges']
+

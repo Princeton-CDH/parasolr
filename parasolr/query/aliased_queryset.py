@@ -1,3 +1,5 @@
+from typing import Any, Dict, List
+
 from parasolr.query.queryset import SolrQuerySet
 
 
@@ -20,6 +22,9 @@ class AliasedSolrQuerySet(SolrQuerySet):
         # set default field list based on field_aliases
         self.field_list = ['%s:%s' % (key, value)
                            for key, value in self.field_aliases.items()]
+
+        # generate reverse lookup for updating facets & highlights
+        self.reverse_aliases = {val: key for key, val in self.field_aliases.items()}
 
     def _unalias_args(self, *args):
         '''convert alias name to solr field for list of args'''
@@ -84,8 +89,21 @@ class AliasedSolrQuerySet(SolrQuerySet):
         field = self.field_aliases.get(field, field)
         return super().highlight(field, **kwargs)
 
-    # should get facets map solr field back to alias?
-    # def get_facets(self) -> Dict[str, int]:
+    def get_facets(self) -> Dict[str, int]:
+        '''Extend :meth:`parasolr.query.queryset.SolrQuerySet.get_facets``
+        to use aliased field names for facet and range facet keys.'''
+        facets = super().get_facets()
 
-    # should get highlighting map solr field back to alias?
-    # def get_highlighting(self):
+        # replace field names in facet field and facet range
+        # with aliased field names
+        for section in ['facet_fields', 'facet_ranges']:
+            facets[section] = {
+                self.reverse_aliases.get(field, field): val
+                for field, val in facets[section].items()
+            }
+
+        return facets
+
+    # NOTE: may want to do the same for highlighting also eventually,
+    # but no immediate need and it's structured differently so
+    # not as obvious how to handle
