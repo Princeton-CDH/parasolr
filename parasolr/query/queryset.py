@@ -146,16 +146,17 @@ class SolrQuerySet:
         query_opts['hl'] = False
         return self.solr.query(**query_opts).numFound
 
-    def get_facets(self) -> Dict[str, int]:
-        """Return a dictionary of facets and their values and
-        counts as key/value pairs.
+    def get_facets(self) -> Dict[str, Dict]:
+        """Return a dictionary of facet information included in the
+        Solr response. Includes facet fields, facet ranges, etc. Facet
+        field results are returned as an ordered dict of value and count.
         """
         if self._result_cache is not None:
             # wrap to process facets and return as dictionary
             # for Django template support
             qr = QueryResponse(self._result_cache)
             # NOTE: using dictionary syntax preserves OrderedDict
-            return qr.facet_counts['facet_fields']
+            return qr.facet_counts
         # since we just want a dictionary of facet fields, don't populate
         # the result cache, no rows needed
 
