@@ -88,4 +88,5 @@ if django:
 
 
     class AliasedSolrQuerySet(SolrQuerySet, query.AliasedSolrQuerySet):
-        pass
+        """Combination of :class:SolrQuerySet` and
+        :class:`~parasolr.query.alias_queryset.AliasedSolrQuerySet`"""
