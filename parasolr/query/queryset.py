@@ -165,7 +165,7 @@ class SolrQuerySet:
         query_opts['hl'] = False
         # setting these by dictionary assignment, because conflicting
         # kwargs results in a Python exception
-        return self.solr.query(**query_opts).facet_counts['facet_fields']
+        return self.solr.query(**query_opts).facet_counts
 
     @staticmethod
     def _lookup_to_filter(key: str, value: Any, tag: str='') -> str:

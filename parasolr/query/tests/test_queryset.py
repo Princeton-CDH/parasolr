@@ -164,10 +164,12 @@ class TestSolrQuerySet:
         name, args, kwargs = mocksolr.query.mock_calls[0]
         assert kwargs['rows'] == 0
         assert not kwargs['hl']
-        # casts return to an OrderedDict
-        assert isinstance(ret, OrderedDict)
+        # returns a dict
+        assert isinstance(ret, dict)
+        # casts facet fields to an OrderedDict
+        assert isinstance(ret['facet_fields'], OrderedDict)
         # return should be the return value of facet_counts.facet_fields
-        assert ret == OrderedDict(b=2)
+        assert ret['facet_fields'] == OrderedDict(b=2)
 
     def test_filter(self):
         mocksolr = Mock(spec=SolrClient)
