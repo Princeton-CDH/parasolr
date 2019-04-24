@@ -6,21 +6,22 @@ CHANGELOG
 0.3
 ---
 
-* Add support for `__in` queries with `filter` method of SolrQuerySet
-* Add support for searching for missing/unset values in `filter` method of
-  SolrQuerySet.
+* Add support for ``__in`` queries to ``filter`` method of ``SolrQuerySet``
+* Add support for ``__exists`` queries to `Filter to determine if a field is empty or missing.
+* Add ``facet_field`` method to ``SolrQuerySet`` to configure facet fields individual.
+* Add support for `tag` and `exclude` to ``filter`` and ``facet_field`` methods of ``SolrQuerySet``.
 
 0.2
 ---
 
-* Subquent calls to SolrQuerySet.only() now *replaces* field limit options
+* Subquent calls to ``SolrQuerySet.only()`` now *replaces* field limit options
   rather than adding to them.
-* New SolrQuerySet method `raw_query_parameters`
-* SolrQuerySet now has support for faceting via `facet` method to configure
-  facets on the request and `get_facets` to retrieve them from the response.
-* Update `ping` method of `parasolr.solr.admin.CoreAdmin` so that
+* New SolrQuerySet method ``raw_query_parameters``
+* SolrQuerySet now has support for faceting via ``facet`` method to configure
+  facets on the request and ``get_facets`` to retrieve them from the response.
+* Update ``ping`` method of ``parasolr.solr.admin.CoreAdmin`` so that
   a 404 response is not logged as an error.
-* Refactor `parsolr.solr` tests into submodules
+* Refactor ``parsolr.solr`` tests into submodules
 
 0.1.1
 -----
