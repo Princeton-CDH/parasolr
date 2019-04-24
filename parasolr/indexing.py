@@ -69,6 +69,18 @@ class Indexable:
         in index manage command. """
         return cls._meta.verbose_name
 
+    @classmethod
+    def items_to_index(cls):
+        """Get all items to be indexed for a single class of Indexable
+        content. Subclasses can override this method to return a custom
+        iterable, e.g. a Django `QuerySet` that takes advantage of
+        prefetching. By default, returns all Django objects for a model.
+        Raises NotImplementedError if that fails."""
+        try:
+            return cls.objects.all()
+        except AttributeError:
+            raise NotImplementedError
+
     def index_id(self):
         """Solr identifier. By default, combines :meth:`index item_type`
         and :attr:`id` with :attr:ID_SEPARATOR`."""
