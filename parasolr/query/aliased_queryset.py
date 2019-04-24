@@ -80,8 +80,14 @@ class AliasedSolrQuerySet(SolrQuerySet):
     def only(self, *args, **kwargs) -> 'AliasedSolrQuerySet':
         '''Extend :meth:`parasolr.query.queryset.SolrQuerySet.only``
         to support using aliased field names for args (but not kwargs).'''
-        args = self._unalias_args(*args)
-        return super().only(*args, **kwargs)
+
+        # convert args to aliased args, switching them to keyword
+        # args; unknown fields are treated the same way
+        kwargs.update({arg: self.field_aliases.get(arg, arg)
+                       for arg in args})
+        return super().only(**kwargs)
+
+    # also method does not need to be extended, since it runs through only
 
     def highlight(self, field: str, **kwargs) -> 'AliasedSolrQuerySet':
         '''Extend :meth:`parasolr.query.queryset.SolrQuerySet.highlight``

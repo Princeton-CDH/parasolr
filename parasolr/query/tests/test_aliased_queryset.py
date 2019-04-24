@@ -109,8 +109,12 @@ class TestAliasedSolrQuerySet(TestCase):
     def test_only(self, mock_only):
         # args should be unaliased
         self.mysqs.only('name', 'year')
-        mock_only.assert_called_with(self.mysqs.field_aliases['name'],
-                                     self.mysqs.field_aliases['year'])
+        mock_only.assert_called_with(name=self.mysqs.field_aliases['name'],
+                                     year=self.mysqs.field_aliases['year'])
+
+        # field with no alias passed through as kwarg
+        self.mysqs.only('foo')
+        mock_only.assert_called_with(foo='foo')
 
         # kwargs should be ignored
         self.mysqs.only(end_year_i='end_year')
