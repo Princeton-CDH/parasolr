@@ -347,7 +347,7 @@ class SolrQuerySet:
         qs_copy.get_results(**kwargs)
         return qs_copy
 
-    def only(self, *args, **kwargs) -> 'SolrQuerySet':
+    def only(self, *args, replace=True, **kwargs) -> 'SolrQuerySet':
         """Use field limit option to return only the specified fields.
         Optionally provide aliases for them in the return. Subsequent
         calls will *replace* any previous field limits. Example::
@@ -358,11 +358,24 @@ class SolrQuerySet:
         """
         qs_copy = self._clone()
         # *replace* any existing field list with the current values
-        qs_copy.field_list = list(args)
+        if replace:
+            qs_copy.field_list = list(args)
+        # unless specified, in which case append
+        else:
+            qs_copy.field_list.extend(list(args))
+
         for key, value in kwargs.items():
             qs_copy.field_list.append('%s:%s' % (key, value))
 
         return qs_copy
+
+    def also(self, *args, **kwargs) -> 'SolrQuerySet':
+        """Use field limit option to return the specified fields,
+        optionally provide aliases for them in the return. Works
+        exactly the same way as :meth:`only` except that it
+        does not any previously specified field limits.
+        """
+        return self.only(*args, replace=False, **kwargs)
 
     def highlight(self, field: str, **kwargs) -> 'SolrQuerySet':
         """"Configure highlighting. Takes arbitrary Solr highlight

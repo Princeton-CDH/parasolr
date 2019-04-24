@@ -327,6 +327,30 @@ class TestSolrQuerySet:
         fields_sqs = sqs.only(title='title_i')
         assert 'title:title_i' in fields_sqs.field_list
 
+    def test_also(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        also_fields = ['title', 'author', 'date']
+        # field names, single list
+        fields_sqs = sqs.also(*also_fields)
+        # field list refined
+        assert fields_sqs.field_list == also_fields
+        # original field list unchanged
+        assert not sqs.field_list
+
+        # chaining is equivalent, since it adds
+        fields_sqs = sqs.also('title').also('author').also('date')
+        # field list refined
+        assert fields_sqs.field_list == also_fields
+        # original field list unchanged
+        assert not sqs.field_list
+
+        # with field alias
+        fields_sqs = fields_sqs.also(title='title_i')
+        # still includes previous
+        assert 'author' in fields_sqs.field_list
+        assert 'title:title_i' in fields_sqs.field_list
+
     def test_highlight(self):
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
