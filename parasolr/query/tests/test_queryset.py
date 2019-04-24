@@ -505,20 +505,26 @@ class TestSolrQuerySet:
         # simple key-value
         assert SolrQuerySet._lookup_to_filter('item_type', 'work', tag='type') == \
             '{!tag=type}item_type:work'
-          # exists
+        # exists
         assert SolrQuerySet._lookup_to_filter('item_type__exists', True, tag='type') == \
             '{!tag=type}item_type:[* TO *]'
         # does not exist
         assert SolrQuerySet._lookup_to_filter('item_type__exists', False, tag='type') == \
             '{!tag=type}-item_type:[* TO *]'
-        # simple __in query
+        # in list query with tag
         assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b'], tag='type') == \
             '{!tag=type}item_type:(a OR b)'
-        # complex __in query with a negation
+        # in list query with a None value
+        assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b', None]) == \
+            '-(item_type:[* TO *] OR -item_type:(a OR b))'
+        # in list query with a negation
         assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b', ''], tag='type') == \
             '{!tag=type}-(item_type:[* TO *] OR -item_type:(a OR b))'
-        # __in query with just a negation
+        # in list query with only a negation
         assert SolrQuerySet._lookup_to_filter('item_type__in', [''], tag='type') == \
+            '{!tag=type}-item_type:[* TO *]'
+        # range query - start and end
+        assert SolrQuerySet._lookup_to_filter('year__range', (1900, 2000)) == \
             '{!tag=type}-item_type:[* TO *]'
 
 

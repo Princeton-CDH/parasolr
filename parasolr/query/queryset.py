@@ -177,52 +177,55 @@ class SolrQuerySet:
             Returns: A propertly formatted Solr query string.
         """
         # check for a lookup separator and split
-        lookup = ''
-        # format tag for inclusion if tag
-        if tag:
-            tag = '{!tag=%s}' % tag
-        split_key = key.split(SolrQuerySet.LOOKUP_SEP)
+        lookup = None
+        solr_query = ''
+
+        # split once on lookup separator; assumes only one
+        split_key = key.split(SolrQuerySet.LOOKUP_SEP, 1)
         if len(split_key) == 1:
             # simple lookup, return key,value pair
-            return '%s%s:%s' % (tag, key, value)
-        # Implementations of Django-style filters such as __in=[a, b, c]
-        # or __range=(start, end)
+            solr_query = '%s:%s' % (key, value)
 
-        # NOTE: Assuming there is only one LOOKUP_SEP without error handling
-        key, lookup = split_key
+        else:
+            key, lookup = split_key
 
-        # __in=[a, b, c] filter
-        if lookup == 'in':
-            # value is a list, join with OR logic for all values in list,
-            # treat '' or None values as flagging an exists query
-            not_exists = False
-            if '' in value or None in value:
-                not_exists = True
-            value = list(filter(lambda x: x not in ['', None], value))
-            # if we have a case where the list was just a falsy value
-            # return as if __exists=False
-            if not value:
-                return '%s-%s:%s' % (tag, key, SolrQuerySet.ANY_VALUE)
-            _filter = '%s:(%s)' % (key, ' OR '.join(value))
-            if not not_exists:
-                return '%s%s' % (tag, _filter)
-            else:
-                # This query handles the fact that query syntax does not
-                # support the simpler positive case. Instead, we do a
-                # negative lookup that negates a positive lookup for
-                # all possible values and double-negates a lookup
-                # for any filtered values (thus producing a positive)
-                # The final output is something like:
-                # -(item_type:[* TO *] OR item_type: book OR periodical)
-                return '%s-(%s:%s OR -%s)' % (tag, key, SolrQuerySet.ANY_VALUE,
-                                              _filter)
+            # list filter (field__in=[a, b, c])
+            if lookup == 'in':
+                # value is a list, join with OR logic for all values in list,
+                # treat '' or None values as flagging an exists query
+                not_exists = '' in value or None in value
+                value = list(filter(lambda x: x not in ['', None], value))
+
+                # if we have a case where the list was just a single falsy value
+                # treat as if __exists=False
+                if not value:
+                    solr_query = '-%s:%s' % (key, SolrQuerySet.ANY_VALUE)
+                # otherwise, field lookup on any value by OR
+                else:
+                    # FIXME: do we need quotes around strings here?
+                    solr_query = '%s:(%s)' % (key, ' OR '.join(value))
+
+                    if not_exists:
+                        # To search for no value OR specified values,
+                        # do a negative lookup that negates a positive lookup
+                        # for any value and double-negates a lookup
+                        # for the requested values
+                        # The final output is something like:
+                        # -(item_type:[* TO *] OR item_type:(book OR periodical))
+                        solr_query = '-(%s:%s OR -%s)' % \
+                            (key, SolrQuerySet.ANY_VALUE, solr_query)
 
         # exists=True/False filter
         if lookup == 'exists':
-            # Look for all possible values, and either negative or not,
-            # depending on the boolean of value.
-            negate = '' if value else '-'
-            return '%s%s%s:%s' % (tag, negate, key, SolrQuerySet.ANY_VALUE)
+            # query for any value if exists is true; otherwise no value
+            solr_query = '%s%s:%s' %  \
+                ('' if value else '-', key, SolrQuerySet.ANY_VALUE)
+
+        # format tag for inclusion and add to query if set
+        if tag:
+            solr_query = '{!tag=%s}%s' % (tag, solr_query)
+
+        return solr_query
 
     def filter(self, *args, tag: str='', **kwargs) -> 'SolrQuerySet':
         """
@@ -234,12 +237,7 @@ class SolrQuerySet:
             queryset.filter(item_type='person').filter(birth_year=1900)
             queryset.filter(item_type='person', birth_year=1900)
 
-        You can also search for pre-defined using lookups (in, exists)::
-
-            queryset.filter(item_type__in=['person', 'book'])
-            queryset.filter(item_type__exists=False)
-
-        Tags may be specified for the filter to be used with facet.field
+        A tag may be specified for the filter to be used with facet.field
         exclusions::
 
             queryset.filter(item_type='person', tag='person')
@@ -249,7 +247,17 @@ class SolrQuerySet:
 
             queryset.filter('birth_year:[1800 TO *]')
 
+        You can also search for pre-defined using lookups on a field,
+        for example::
 
+            queryset.filter(item_type__in=['person', 'book'])
+            queryset.filter(item_type__exists=False)
+
+        Currently supported field lookups:
+
+            * **in** : takes a list of values; supports '' or None to match
+              on field not set
+            * **exists**: boolean filter to look for any value / no value
 
         """
         qs_copy = self._clone()
