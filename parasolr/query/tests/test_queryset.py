@@ -66,6 +66,16 @@ class TestSolrQuerySet:
         assert field_facet_opt in query_opts
         assert query_opts[field_facet_opt]
 
+        # range facet fields
+        sqs.facet_field_list = []
+        sqs.range_facet_fields = ['year']
+        range_facet_opt = 'f.facet.range.start'
+        sqs.facet_opts = {range_facet_opt: 100}
+        query_opts = sqs.query_opts()
+        assert query_opts['facet'] is True
+        assert query_opts['facet.range'] == sqs.range_facet_fields
+        assert range_facet_opt in query_opts
+
     def test_query(self):
         mocksolr = Mock(spec=SolrClient)
         mocksolr.query.return_value.docs = []
@@ -200,14 +210,13 @@ class TestSolrQuerySet:
         assert 'date:1500' in filtered_qs.filter_qs
         assert 'name:he*' in filtered_qs.filter_qs
 
-
     def test_facet(self):
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
         # facet a search
         facet_list = ['person_type', 'item_type']
         faceted_qs = sqs.facet(*facet_list)
-        # faceting should be set on
+        # faceting should be set
         assert faceted_qs.facet_field_list == facet_list
         # facet opts and field for original queryset should be unchanged
         assert not sqs.facet_opts
@@ -224,6 +233,23 @@ class TestSolrQuerySet:
         faceted_qs = faceted_qs.facet(*facet_list, sort='count')
         assert faceted_qs.facet_field_list == facet_list
         assert faceted_qs.facet_opts['sort'] == 'count'
+
+    def test_facet_range(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        faceted_qs = sqs.facet_range('year', start=100, end=1900, gap=100)
+
+        # faceting should be set
+        assert faceted_qs.range_facet_fields == ['year']
+        # three options stecified
+        assert len(faceted_qs.facet_opts) == 3
+        # added as field specific
+        assert 'f.year.facet.range.start' in faceted_qs.facet_opts
+        assert faceted_qs.facet_opts['f.year.facet.range.start'] == 100
+
+        # facet opts and field for original queryset should be unchanged
+        assert not sqs.facet_opts
+        assert not sqs.range_facet_fields
 
     def test_facet_field(self):
         mocksolr = Mock(spec=SolrClient)
@@ -247,9 +273,9 @@ class TestSolrQuerySet:
         assert 'f.sort.facet.missing' in facet_sqs.facet_opts
 
         # facet with ex field for exclusions
-        facet_sqs = sqs.facet_field('sort', exclude='sort')
+        facet_sqs = sqs.facet_field('sort', exclude='sort', missing=True)
         assert '{!ex=sort}sort' in facet_sqs.facet_field_list
-
+        assert 'f.sort.facet.missing' in facet_sqs.facet_opts
 
     def test_search(self):
         mocksolr = Mock(spec=SolrClient)

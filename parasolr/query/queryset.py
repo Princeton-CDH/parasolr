@@ -16,7 +16,6 @@ If you are working with Django you should use
 which will automatically initialize a new :class:`parasolr.django.SolrClient`
 if one is not passed in.
 """
-from collections import OrderedDict
 import re
 from typing import Any, Dict, List
 
@@ -40,6 +39,7 @@ class SolrQuerySet:
     field_list = []
     highlight_field = None
     facet_field_list = []
+    range_facet_fields = []
     facet_opts = {}
     highlight_opts = {}
     raw_params = {}
@@ -114,10 +114,11 @@ class SolrQuerySet:
             for key, val in self.highlight_opts.items():
                 query_opts['hl.%s' % key] = val
 
-        if self.facet_field_list:
+        if self.facet_field_list or self.range_facet_fields:
             query_opts.update({
                 'facet': True,
-                'facet.field': self.facet_field_list
+                'facet.field': self.facet_field_list,
+                'facet.range': self.range_facet_fields
             })
             for key, val in self.facet_opts.items():
                 # use key as is if it starts with "f."
@@ -304,8 +305,8 @@ class SolrQuerySet:
         """
         Request faceting for a single field. Returns a new SolrQuerySet
         with Solr faceting enabled and the field added to
-        the list of facet fields.  Any keyword arguments will be set
-        as field-specific facet  configurations.
+        the list of facet fields. Any keyword arguments will be set
+        as field-specific facet configurations.
 
         ``ex`` will specify a related filter query tag to exclude when
         generating counts for the facet.
@@ -314,7 +315,7 @@ class SolrQuerySet:
         qs_copy = self._clone()
         # append exclude tag if specified
         qs_copy.facet_field_list.append('{!ex=%s}%s' % (exclude, field)
-                                         if exclude else field)
+                                        if exclude else field)
         # prefix any keyword args with the field name
         # (facet. prefix added in query_opts)
 
@@ -322,6 +323,25 @@ class SolrQuerySet:
             'f.%s.facet.%s' % (field, opt) : value
             for opt, value in kwargs.items()})
 
+        return qs_copy
+
+    def facet_range(self, field: str, **kwargs) -> 'SolrQuerySet':
+        """
+        Request range faceting for a single field. Returns a new SolrQuerySet
+        with Solr range faceting enabled and the field added to
+        the list of facet fields. Keyword arguments such as start, end, and gap
+        will be set as field-specific facet configurations.
+        """
+        # start, end, gap are required by Solr, but we don't actually
+        # treat them any differently so it's easier to include as kwargs
+        qs_copy = self._clone()
+        # add field to list of range facet fields
+        qs_copy.range_facet_fields.append(field)
+
+        # configure facet options for this field (start, end, gap)
+        qs_copy.facet_opts.update({
+            'f.%s.facet.range.%s' % (field, opt) : value
+            for opt, value in kwargs.items()})
         return qs_copy
 
     def search(self, *args, **kwargs) -> 'SolrQuerySet':
@@ -446,6 +466,7 @@ class SolrQuerySet:
         qs_copy.filter_qs = list(self.filter_qs)
         qs_copy.sort_options = list(self.sort_options)
         qs_copy.field_list = list(self.field_list)
+        qs_copy.range_facet_fields = list(self.range_facet_fields)
         qs_copy.highlight_opts = dict(self.highlight_opts)
         qs_copy.raw_params = dict(self.raw_params)
         qs_copy.facet_field_list = list(self.facet_field_list)
