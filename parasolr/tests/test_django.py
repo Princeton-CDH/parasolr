@@ -6,7 +6,8 @@ try:
     from django.core.exceptions import ImproperlyConfigured
     from django.test import override_settings
 
-    from parasolr.django import SolrClient, SolrQuerySet
+    from parasolr.django import SolrClient, SolrQuerySet, \
+        AliasedSolrQuerySet
 
 except ImportError:
     pass
@@ -83,3 +84,28 @@ def test_django_solrqueryset(mocksolrclient):
     sqs = SolrQuerySet(solr=mymocksolr)
     assert sqs.solr == mymocksolr
     mocksolrclient.assert_not_called()
+
+
+@skipif_no_django
+@patch('parasolr.django.SolrClient')
+def test_django_aliasedsolrqueryset(mocksolrclient):
+
+    class MyAliasedSolrQuerySet(AliasedSolrQuerySet):
+        """extended version of AliasedSolrQuerySet for testing"""
+
+        #: map app/readable field names to actual solr fields
+        field_aliases = {
+            'name': 'name_t',
+            'year':'year_i',
+            'has_info':'has_info_b',
+        }
+
+    # django queryset behavior: auto-initialize solr connection if not specified
+    mysqs = MyAliasedSolrQuerySet()
+    mocksolrclient.assert_called_with()
+    assert mysqs.solr == mocksolrclient.return_value
+    mocksolrclient.reset_mock()
+
+    # alias queryset init: field list and reverse alias lookup populated
+    assert mysqs.field_list
+    assert mysqs.reverse_aliases

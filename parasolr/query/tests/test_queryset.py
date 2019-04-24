@@ -126,7 +126,7 @@ class TestSolrQuerySet:
         # cache should not be populated
         assert not sqs._result_cache
 
-    @patch('parasolr.query.QueryResponse')
+    @patch('parasolr.query.queryset.QueryResponse')
     def test_get_facets(self, mockQR):
         mocksolr = Mock(spec=SolrClient)
         # mock cached solr response
@@ -143,10 +143,10 @@ class TestSolrQuerySet:
         assert mockQR.called
         # called with the cached response
         mockQR.assert_called_with(mock_response)
-        # casts return to an OrderedDict
-        assert isinstance(ret, OrderedDict)
+        # facet fields should be an OrderedDict
+        assert isinstance(ret['facet_fields'], OrderedDict)
         # return the value of facet_counts.facet_fields
-        assert ret == OrderedDict(a=1)
+        assert ret == {'facet_fields': OrderedDict(a=1)}
 
         # now test no cached result
         mocksolr.query.return_value = Mock()
