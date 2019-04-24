@@ -215,11 +215,15 @@ class SolrQuerySet:
                         solr_query = '-(%s:%s OR -%s)' % \
                             (key, SolrQuerySet.ANY_VALUE, solr_query)
 
-        # exists=True/False filter
-        if lookup == 'exists':
-            # query for any value if exists is true; otherwise no value
-            solr_query = '%s%s:%s' %  \
-                ('' if value else '-', key, SolrQuerySet.ANY_VALUE)
+            # exists=True/False filter
+            elif lookup == 'exists':
+                # query for any value if exists is true; otherwise no value
+                solr_query = '%s%s:%s' %  \
+                    ('' if value else '-', key, SolrQuerySet.ANY_VALUE)
+
+            elif lookup == 'range':
+                start, end = value
+                solr_query = '%s:[%s TO %s]' % (key, start or '*', end or '*')
 
         # format tag for inclusion and add to query if set
         if tag:
@@ -258,6 +262,9 @@ class SolrQuerySet:
             * **in** : takes a list of values; supports '' or None to match
               on field not set
             * **exists**: boolean filter to look for any value / no value
+            * **range**: range query. Takes a list or tuple of two values
+               for the start and end of the range. Either value can
+               be unset for an open-ended range (e.g. `year__range=(1800, None)`)
 
         """
         qs_copy = self._clone()

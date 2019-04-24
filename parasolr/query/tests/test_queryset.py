@@ -525,8 +525,13 @@ class TestSolrQuerySet:
             '{!tag=type}-item_type:[* TO *]'
         # range query - start and end
         assert SolrQuerySet._lookup_to_filter('year__range', (1900, 2000)) == \
-            '{!tag=type}-item_type:[* TO *]'
-
+            'year:[1900 TO 2000]'
+        # range query - no start
+        assert SolrQuerySet._lookup_to_filter('year__range', ('', 10)) == \
+            'year:[* TO 10]'
+        # range query - no end
+        assert SolrQuerySet._lookup_to_filter('year__range', (500, None)) == \
+            'year:[500 TO *]'
 
     def test_iter(self):
         mocksolr = Mock(spec=SolrClient)
