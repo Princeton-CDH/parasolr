@@ -29,8 +29,22 @@ configuration and indexing content.
    :alt: Maintainability
 
 .. image:: https://requires.io/github/Princeton-CDH/parasolr/requirements.svg?branch=master
-     :target: https://requires.io/github/Princeton-CDH/parasolr/requirements/?branch=master
-     :alt: Requirements Status
+    :target: https://requires.io/github/Princeton-CDH/parasolr/requirements/?branch=master
+    :alt: Requirements Status
+
+
+
+.. image:: https://badge.fury.io/py/parasolr.svg
+    :target: https://badge.fury.io/py/parasolr
+
+.. image:: https://img.shields.io/pypi/pyversions/parasolr.svg
+  :alt: PyPI - Python Version
+
+.. image:: https://img.shields.io/pypi/djversions/parasolr.svg
+    :alt: PyPI - Django Version
+
+.. image:: https://img.shields.io/pypi/l/parasolr.svg
+  :alt: PyPI - License
 
 Currently tested against Python 3.5 and 3.6, Solr 6.6.5, and Django 1.11,
 2.0, and 2.1, and without Django.
