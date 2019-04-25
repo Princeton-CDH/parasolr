@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Dict
 
 from parasolr.query.queryset import SolrQuerySet
 
