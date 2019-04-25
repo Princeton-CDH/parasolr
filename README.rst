@@ -12,26 +12,40 @@ configuration and indexing content.
 .. _Django: https://www.djangoproject.com/
 .. _Apache Solr: http://lucene.apache.org/solr/
 
-.. image:: https://travis-ci.org/Princeton-CDH/parasolr.svg?branch=master
+   
+* .. image:: https://badge.fury.io/py/parasolr.svg
+   :target: https://badge.fury.io/py/parasolr
+   :alt: PyPI version
+   
+  .. image:: https://img.shields.io/pypi/pyversions/parasolr.svg
+   :alt: PyPI - Python Version
+   
+  .. image:: https://img.shields.io/pypi/djversions/parasolr.svg
+   :alt: PyPI - Django Version
+   
+  .. image:: https://img.shields.io/pypi/l/parasolr.svg?color=blue   
+   :alt: PyPI - License
+
+* .. image:: https://travis-ci.org/Princeton-CDH/parasolr.svg?branch=master
    :target: https://travis-ci.org/Princeton-CDH/parasolr
    :alt: Build status
 
-.. image:: https://codecov.io/gh/Princeton-CDH/parasolr/branch/master/graph/badge.svg
+  .. image:: https://codecov.io/gh/Princeton-CDH/parasolr/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/Princeton-CDH/parasolr
    :alt: Code coverage
 
-.. image:: https://readthedocs.org/projects/parasolr/badge/?version=latest
-  :target: https://parasolr.readthedocs.io/en/latest/?badge=latest
-  :alt: Documentation Status
+  .. image:: https://readthedocs.org/projects/parasolr/badge/?version=latest
+   :target: https://parasolr.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 
-.. image:: https://api.codeclimate.com/v1/badges/73394d05decdf32f12f3/maintainability
+  .. image:: https://api.codeclimate.com/v1/badges/73394d05decdf32f12f3/maintainability
    :target: https://codeclimate.com/github/Princeton-CDH/parasolr/maintainability
    :alt: Maintainability
 
-.. image:: https://requires.io/github/Princeton-CDH/parasolr/requirements.svg?branch=master
-     :target: https://requires.io/github/Princeton-CDH/parasolr/requirements/?branch=master
-     :alt: Requirements Status
-
+  .. image:: https://requires.io/github/Princeton-CDH/parasolr/requirements.svg?branch=master
+    :target: https://requires.io/github/Princeton-CDH/parasolr/requirements/?branch=master
+    :alt: Requirements Status
+ 
 Currently tested against Python 3.5 and 3.6, Solr 6.6.5, and Django 1.11,
 2.0, and 2.1, and without Django.
 

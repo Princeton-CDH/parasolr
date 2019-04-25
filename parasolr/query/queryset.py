@@ -16,11 +16,12 @@ If you are working with Django you should use
 which will automatically initialize a new :class:`parasolr.django.SolrClient`
 if one is not passed in.
 """
-from collections import OrderedDict
-from typing import Dict, List
+import re
+from typing import Any, Dict, List
 
 from parasolr.solr import SolrClient
 from parasolr.solr.client import QueryResponse
+
 
 class SolrQuerySet:
     """A Solr queryset object that allows for object oriented
@@ -37,14 +38,19 @@ class SolrQuerySet:
     filter_qs = []
     field_list = []
     highlight_field = None
-    facet_field = []
+    facet_field_list = []
+    range_facet_fields = []
     facet_opts = {}
     highlight_opts = {}
     raw_params = {}
 
-
     #: by default, combine search queries with AND
     default_search_operator = 'AND'
+
+    #: any value constant
+    ANY_VALUE = '[* TO *]'
+    #: lookup separator
+    LOOKUP_SEP = '__'
 
     def __init__(self, solr: SolrClient):
         # requires solr client so that this version can be django-agnostic
@@ -108,13 +114,16 @@ class SolrQuerySet:
             for key, val in self.highlight_opts.items():
                 query_opts['hl.%s' % key] = val
 
-        if self.facet_field:
+        if self.facet_field_list or self.range_facet_fields:
             query_opts.update({
                 'facet': True,
-                'facet.field': self.facet_field
+                'facet.field': self.facet_field_list,
+                'facet.range': self.range_facet_fields
             })
             for key, val in self.facet_opts.items():
-                query_opts['facet.%s' % key] = val
+                # use key as is if it starts with "f."
+                # (field-specific facet options); otherwise prepend "facet."
+                query_opts[key if key.startswith('f.') else 'facet.%s' % key] = val
 
         # include any raw query parameters
         query_opts.update(self.raw_params)
@@ -138,16 +147,17 @@ class SolrQuerySet:
         query_opts['hl'] = False
         return self.solr.query(**query_opts).numFound
 
-    def get_facets(self) -> Dict[str, int]:
-        """Return a dictionary of facets and their values and
-        counts as key/value pairs.
+    def get_facets(self) -> Dict[str, Dict]:
+        """Return a dictionary of facet information included in the
+        Solr response. Includes facet fields, facet ranges, etc. Facet
+        field results are returned as an ordered dict of value and count.
         """
         if self._result_cache is not None:
             # wrap to process facets and return as dictionary
             # for Django template support
             qr = QueryResponse(self._result_cache)
             # NOTE: using dictionary syntax preserves OrderedDict
-            return qr.facet_counts['facet_fields']
+            return qr.facet_counts
         # since we just want a dictionary of facet fields, don't populate
         # the result cache, no rows needed
 
@@ -156,18 +166,73 @@ class SolrQuerySet:
         query_opts['hl'] = False
         # setting these by dictionary assignment, because conflicting
         # kwargs results in a Python exception
-        return self.solr.query(**query_opts).facet_counts['facet_fields']
+        return self.solr.query(**query_opts).facet_counts
 
     @staticmethod
-    def _lookup_to_filter(key, value) -> str:
-        """Convert keyword argument key=value pair into a Solr filter.
-        Currently only supports simple case of field:value."""
+    def _lookup_to_filter(key: str, value: Any, tag: str='') -> str:
+        """Convert keyword/value argument, with optional lookups separated by
+        ``__``, including: in and exists. Field names should *NOT* include
+        double-underscores by convention. Accepts an optional tag argument
+        to specify an exclude tag as needed.
 
-        # NOTE: as needed, we can start implementing django-style filters
-        # such as __in=[a, b, c] or __range=(start, end)
-        return '%s:%s' % (key, value)
+            Returns: A propertly formatted Solr query string.
+        """
+        # check for a lookup separator and split
+        lookup = None
+        solr_query = ''
 
-    def filter(self, *args, **kwargs) -> 'SolrQuerySet':
+        # split once on lookup separator; assumes only one
+        split_key = key.split(SolrQuerySet.LOOKUP_SEP, 1)
+        if len(split_key) == 1:
+            # simple lookup, return key,value pair
+            solr_query = '%s:%s' % (key, value)
+
+        else:
+            key, lookup = split_key
+
+            # list filter (field__in=[a, b, c])
+            if lookup == 'in':
+                # value is a list, join with OR logic for all values in list,
+                # treat '' or None values as flagging an exists query
+                not_exists = '' in value or None in value
+                value = list(filter(lambda x: x not in ['', None], value))
+
+                # if we have a case where the list was just a single falsy value
+                # treat as if __exists=False
+                if not value:
+                    solr_query = '-%s:%s' % (key, SolrQuerySet.ANY_VALUE)
+                # otherwise, field lookup on any value by OR
+                else:
+                    # FIXME: do we need quotes around strings here?
+                    solr_query = '%s:(%s)' % (key, ' OR '.join(value))
+
+                    if not_exists:
+                        # To search for no value OR specified values,
+                        # do a negative lookup that negates a positive lookup
+                        # for any value and double-negates a lookup
+                        # for the requested values
+                        # The final output is something like:
+                        # -(item_type:[* TO *] OR item_type:(book OR periodical))
+                        solr_query = '-(%s:%s OR -%s)' % \
+                            (key, SolrQuerySet.ANY_VALUE, solr_query)
+
+            # exists=True/False filter
+            elif lookup == 'exists':
+                # query for any value if exists is true; otherwise no value
+                solr_query = '%s%s:%s' %  \
+                    ('' if value else '-', key, SolrQuerySet.ANY_VALUE)
+
+            elif lookup == 'range':
+                start, end = value
+                solr_query = '%s:[%s TO %s]' % (key, start or '*', end or '*')
+
+        # format tag for inclusion and add to query if set
+        if tag:
+            solr_query = '{!tag=%s}%s' % (tag, solr_query)
+
+        return solr_query
+
+    def filter(self, *args, tag: str='', **kwargs) -> 'SolrQuerySet':
         """
         Return a new SolrQuerySet with Solr filter queries added.
         Multiple filters can be combined either in a single
@@ -177,20 +242,38 @@ class SolrQuerySet:
             queryset.filter(item_type='person').filter(birth_year=1900)
             queryset.filter(item_type='person', birth_year=1900)
 
-        To provide a filter that should be used in modified, provide
+        A tag may be specified for the filter to be used with facet.field
+        exclusions::
+
+            queryset.filter(item_type='person', tag='person')
+
+        To provide a filter that should be used unmodified, provide
         the exact string of your filter query::
 
             queryset.filter('birth_year:[1800 TO *]')
+
+        You can also search for pre-defined using lookups on a field,
+        for example::
+
+            queryset.filter(item_type__in=['person', 'book'])
+            queryset.filter(item_type__exists=False)
+
+        Currently supported field lookups:
+
+            * **in** : takes a list of values; supports '' or None to match
+              on field not set
+            * **exists**: boolean filter to look for any value / no value
+            * **range**: range query. Takes a list or tuple of two values
+               for the start and end of the range. Either value can
+               be unset for an open-ended range (e.g. `year__range=(1800, None)`)
 
         """
         qs_copy = self._clone()
 
         # any args are treated as filter queries without modification
         qs_copy.filter_qs.extend(args)
-
         for key, value in kwargs.items():
-            qs_copy.filter_qs.append(self._lookup_to_filter(key, value))
-
+            qs_copy.filter_qs.append(self._lookup_to_filter(key, value, tag=tag))
         return qs_copy
 
     def facet(self, *args: str, **kwargs) -> 'SolrQuerySet':
@@ -212,10 +295,53 @@ class SolrQuerySet:
         qs_copy = self._clone()
 
         # cast args tuple to list for consistency with other iterable fields
-        qs_copy.facet_field = list(args)
+        qs_copy.facet_field_list = list(args)
         # add other kwargs to be prefixed in query_opts
         qs_copy.facet_opts.update(kwargs)
 
+        return qs_copy
+
+    def facet_field(self, field: str, exclude: str='', **kwargs) -> 'SolrQuerySet':
+        """
+        Request faceting for a single field. Returns a new SolrQuerySet
+        with Solr faceting enabled and the field added to
+        the list of facet fields. Any keyword arguments will be set
+        as field-specific facet configurations.
+
+        ``ex`` will specify a related filter query tag to exclude when
+        generating counts for the facet.
+
+        """
+        qs_copy = self._clone()
+        # append exclude tag if specified
+        qs_copy.facet_field_list.append('{!ex=%s}%s' % (exclude, field)
+                                        if exclude else field)
+        # prefix any keyword args with the field name
+        # (facet. prefix added in query_opts)
+
+        qs_copy.facet_opts.update({
+            'f.%s.facet.%s' % (field, opt) : value
+            for opt, value in kwargs.items()})
+
+        return qs_copy
+
+    def facet_range(self, field: str, **kwargs) -> 'SolrQuerySet':
+        """
+        Request range faceting for a single field. Returns a new SolrQuerySet
+        with Solr range faceting enabled and the field added to
+        the list of facet fields. Keyword arguments such as start, end, and gap
+        will be set as field-specific facet configurations.
+        """
+        # start, end, gap are required by Solr, but we don't actually
+        # treat them any differently so it's easier to include as kwargs
+        qs_copy = self._clone()
+        # add field to list of range facet fields
+        qs_copy.range_facet_fields.append(field)
+
+        # configure facet options for this field (start, end, gap)
+        qs_copy.facet_opts.update({
+            'f.%s.facet.range.%s' % (field, opt) : value
+            for opt, value in kwargs.items()})
         return qs_copy
 
     def search(self, *args, **kwargs) -> 'SolrQuerySet':
@@ -256,7 +382,7 @@ class SolrQuerySet:
         qs_copy.get_results(**kwargs)
         return qs_copy
 
-    def only(self, *args, **kwargs) -> 'SolrQuerySet':
+    def only(self, *args, replace=True, **kwargs) -> 'SolrQuerySet':
         """Use field limit option to return only the specified fields.
         Optionally provide aliases for them in the return. Subsequent
         calls will *replace* any previous field limits. Example::
@@ -267,11 +393,24 @@ class SolrQuerySet:
         """
         qs_copy = self._clone()
         # *replace* any existing field list with the current values
-        qs_copy.field_list = list(args)
+        if replace:
+            qs_copy.field_list = list(args)
+        # unless specified, in which case append
+        else:
+            qs_copy.field_list.extend(list(args))
+
         for key, value in kwargs.items():
             qs_copy.field_list.append('%s:%s' % (key, value))
 
         return qs_copy
+
+    def also(self, *args, **kwargs) -> 'SolrQuerySet':
+        """Use field limit option to return the specified fields,
+        optionally provide aliases for them in the return. Works
+        exactly the same way as :meth:`only` except that it
+        does not any previously specified field limits.
+        """
+        return self.only(*args, replace=False, **kwargs)
 
     def highlight(self, field: str, **kwargs) -> 'SolrQuerySet':
         """"Configure highlighting. Takes arbitrary Solr highlight
@@ -327,11 +466,11 @@ class SolrQuerySet:
         qs_copy.filter_qs = list(self.filter_qs)
         qs_copy.sort_options = list(self.sort_options)
         qs_copy.field_list = list(self.field_list)
+        qs_copy.range_facet_fields = list(self.range_facet_fields)
         qs_copy.highlight_opts = dict(self.highlight_opts)
         qs_copy.raw_params = dict(self.raw_params)
-        qs_copy.facet_field = list(self.facet_field)
+        qs_copy.facet_field_list = list(self.facet_field_list)
         qs_copy.facet_opts = dict(self.facet_opts)
-
 
         return qs_copy
 

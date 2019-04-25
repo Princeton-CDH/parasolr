@@ -114,3 +114,23 @@ class TestIndexable:
         mockqueryset = MagicMock(spec=QuerySet)
         Indexable.index_items(mockqueryset)
         mockqueryset.iterator.assert_called_with()
+
+    def test_items_to_index(self, mocksolr):
+        # assumes django model manager interface by default
+
+        # simple object with objects.all interface
+        simple_items_to_index = SimpleIndexable.items_to_index()
+        assert len(simple_items_to_index) == 5
+        assert isinstance(simple_items_to_index[0], SimpleIndexable)
+
+        # model-ish object
+        model_items_to_index = ModelIndexable.items_to_index()
+        assert len(model_items_to_index) == 1
+        assert isinstance(model_items_to_index[0], ModelIndexable)
+
+        class NonModelIndexable(Indexable):
+            pass
+
+        # raises not implemented if objects.all fails
+        with pytest.raises(NotImplementedError):
+            NonModelIndexable.items_to_index()
