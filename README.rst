@@ -21,8 +21,8 @@ configuration and indexing content.
    :alt: Code coverage
 
 .. image:: https://readthedocs.org/projects/parasolr/badge/?version=latest
-  :target: https://parasolr.readthedocs.io/en/latest/?badge=latest
-  :alt: Documentation Status
+   :target: https://parasolr.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 
 .. image:: https://api.codeclimate.com/v1/badges/73394d05decdf32f12f3/maintainability
    :target: https://codeclimate.com/github/Princeton-CDH/parasolr/maintainability
@@ -33,18 +33,19 @@ configuration and indexing content.
     :alt: Requirements Status
 
 
-
 .. image:: https://badge.fury.io/py/parasolr.svg
-    :target: https://badge.fury.io/py/parasolr
-
+   :target: https://badge.fury.io/py/parasolr
+   :alt: PyPI version
+   
 .. image:: https://img.shields.io/pypi/pyversions/parasolr.svg
-  :alt: PyPI - Python Version
-
+   :alt: PyPI - Python Version
+   
 .. image:: https://img.shields.io/pypi/djversions/parasolr.svg
-    :alt: PyPI - Django Version
+   :alt: PyPI - Django Version
+   
+.. image:: https://img.shields.io/pypi/l/parasolr.svg?color=blue   
+   :alt: PyPI - License
 
-.. image:: https://img.shields.io/pypi/l/parasolr.svg
-  :alt: PyPI - License
 
 Currently tested against Python 3.5 and 3.6, Solr 6.6.5, and Django 1.11,
 2.0, and 2.1, and without Django.
