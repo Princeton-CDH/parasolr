@@ -6,10 +6,27 @@ CHANGELOG
 0.3
 ---
 
-* Add support for ``__in`` queries to ``filter`` method of ``SolrQuerySet``
-* Add support for ``__exists`` queries to `Filter to determine if a field is empty or missing.
-* Add ``facet_field`` method to ``SolrQuerySet`` to configure facet fields individual.
-* Add support for `tag` and `exclude` to ``filter`` and ``facet_field`` methods of ``SolrQuerySet``.
+* ``parasolr.query.SolrQuerySet`` additional support for faceting:
+    * New method ``facet_field`` for more fine-grained facet feature
+      control for a single facet field
+    * New method ``facet_range`` for enabling range faceting
+    * Supports tag and exclusion logic via ``tag`` option on
+      ``facet_field`` method and ``exclude`` option on ``filter``
+    * ``get_facets`` now returns the entire facet response, including
+      facet fields, range facets, etc.
+* ``SolrQuerySet.filter()`` method now supports the following advanced lookups:
+    * **in**: filter on a list of values
+    * **exists**: filter on empty or not-empty
+    * **range**: filter on a numeric range
+* New method ``SolrQuerySet.also()`` that functions just like ``only()``
+  except it adds instead of replacing field limit options.
+* New ``parasolr.query.AliasedSolrQuerySet`` supports
+  aliasing Solr fields to local names for use across all queryset methods
+  and return values
+* ``parasolr.indexing.Indexable`` now provides ``items_to_index()`` method
+  to support customizing retrieving items for indexing with ``index``
+  manage command.
+
 
 0.2
 ---
