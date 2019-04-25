@@ -8,19 +8,19 @@ CHANGELOG
 
 * ``parasolr.query.SolrQuerySet`` additional support for faceting: 
 
-    * New method ``facet_field`` for more fine-grained facet feature
-      control for a single facet field
-    * New method ``facet_range`` for enabling range faceting
-    * Supports tag and exclusion logic via ``tag`` option on
-      ``facet_field`` method and ``exclude`` option on ``filter``
-    * ``get_facets`` now returns the entire facet response, including
-      facet fields, range facets, etc.
+  * New method ``facet_field`` for more fine-grained facet feature
+    control for a single facet field
+  * New method ``facet_range`` for enabling range faceting
+  * Supports tag and exclusion logic via ``tag`` option on
+    ``facet_field`` method and ``exclude`` option on ``filter``
+  * ``get_facets`` now returns the entire facet response, including
+    facet fields, range facets, etc.
       
 * ``SolrQuerySet.filter()`` method now supports the following advanced lookups:
 
-    * **in**: filter on a list of values
-    * **exists**: filter on empty or not-empty
-    * **range**: filter on a numeric range
+  * **in**: filter on a list of values
+  * **exists**: filter on empty or not-empty
+  * **range**: filter on a numeric range
     
 * New method ``SolrQuerySet.also()`` that functions just like ``only()``
   except it adds instead of replacing field limit options.
