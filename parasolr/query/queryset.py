@@ -16,7 +16,6 @@ If you are working with Django you should use
 which will automatically initialize a new :class:`parasolr.django.SolrClient`
 if one is not passed in.
 """
-from collections import OrderedDict
 import re
 from typing import Any, Dict, List
 
@@ -40,6 +39,7 @@ class SolrQuerySet:
     field_list = []
     highlight_field = None
     facet_field_list = []
+    range_facet_fields = []
     facet_opts = {}
     highlight_opts = {}
     raw_params = {}
@@ -114,10 +114,11 @@ class SolrQuerySet:
             for key, val in self.highlight_opts.items():
                 query_opts['hl.%s' % key] = val
 
-        if self.facet_field_list:
+        if self.facet_field_list or self.range_facet_fields:
             query_opts.update({
                 'facet': True,
-                'facet.field': self.facet_field_list
+                'facet.field': self.facet_field_list,
+                'facet.range': self.range_facet_fields
             })
             for key, val in self.facet_opts.items():
                 # use key as is if it starts with "f."
@@ -177,52 +178,59 @@ class SolrQuerySet:
             Returns: A propertly formatted Solr query string.
         """
         # check for a lookup separator and split
-        lookup = ''
-        # format tag for inclusion if tag
-        if tag:
-            tag = '{!tag=%s}' % tag
-        split_key = key.split(SolrQuerySet.LOOKUP_SEP)
+        lookup = None
+        solr_query = ''
+
+        # split once on lookup separator; assumes only one
+        split_key = key.split(SolrQuerySet.LOOKUP_SEP, 1)
         if len(split_key) == 1:
             # simple lookup, return key,value pair
-            return '%s%s:%s' % (tag, key, value)
-        # Implementations of Django-style filters such as __in=[a, b, c]
-        # or __range=(start, end)
+            solr_query = '%s:%s' % (key, value)
 
-        # NOTE: Assuming there is only one LOOKUP_SEP without error handling
-        key, lookup = split_key
+        else:
+            key, lookup = split_key
 
-        # __in=[a, b, c] filter
-        if lookup == 'in':
-            # value is a list, join with OR logic for all values in list,
-            # treat '' or None values as flagging an exists query
-            not_exists = False
-            if '' in value or None in value:
-                not_exists = True
-            value = list(filter(lambda x: x not in ['', None], value))
-            # if we have a case where the list was just a falsy value
-            # return as if __exists=False
-            if not value:
-                return '%s-%s:%s' % (tag, key, SolrQuerySet.ANY_VALUE)
-            _filter = '%s:(%s)' % (key, ' OR '.join(value))
-            if not not_exists:
-                return '%s%s' % (tag, _filter)
-            else:
-                # This query handles the fact that query syntax does not
-                # support the simpler positive case. Instead, we do a
-                # negative lookup that negates a positive lookup for
-                # all possible values and double-negates a lookup
-                # for any filtered values (thus producing a positive)
-                # The final output is something like:
-                # -(item_type:[* TO *] OR item_type: book OR periodical)
-                return '%s-(%s:%s OR -%s)' % (tag, key, SolrQuerySet.ANY_VALUE,
-                                              _filter)
+            # list filter (field__in=[a, b, c])
+            if lookup == 'in':
+                # value is a list, join with OR logic for all values in list,
+                # treat '' or None values as flagging an exists query
+                not_exists = '' in value or None in value
+                value = list(filter(lambda x: x not in ['', None], value))
 
-        # exists=True/False filter
-        if lookup == 'exists':
-            # Look for all possible values, and either negative or not,
-            # depending on the boolean of value.
-            negate = '' if value else '-'
-            return '%s%s%s:%s' % (tag, negate, key, SolrQuerySet.ANY_VALUE)
+                # if we have a case where the list was just a single falsy value
+                # treat as if __exists=False
+                if not value:
+                    solr_query = '-%s:%s' % (key, SolrQuerySet.ANY_VALUE)
+                # otherwise, field lookup on any value by OR
+                else:
+                    # FIXME: do we need quotes around strings here?
+                    solr_query = '%s:(%s)' % (key, ' OR '.join(value))
+
+                    if not_exists:
+                        # To search for no value OR specified values,
+                        # do a negative lookup that negates a positive lookup
+                        # for any value and double-negates a lookup
+                        # for the requested values
+                        # The final output is something like:
+                        # -(item_type:[* TO *] OR item_type:(book OR periodical))
+                        solr_query = '-(%s:%s OR -%s)' % \
+                            (key, SolrQuerySet.ANY_VALUE, solr_query)
+
+            # exists=True/False filter
+            elif lookup == 'exists':
+                # query for any value if exists is true; otherwise no value
+                solr_query = '%s%s:%s' %  \
+                    ('' if value else '-', key, SolrQuerySet.ANY_VALUE)
+
+            elif lookup == 'range':
+                start, end = value
+                solr_query = '%s:[%s TO %s]' % (key, start or '*', end or '*')
+
+        # format tag for inclusion and add to query if set
+        if tag:
+            solr_query = '{!tag=%s}%s' % (tag, solr_query)
+
+        return solr_query
 
     def filter(self, *args, tag: str='', **kwargs) -> 'SolrQuerySet':
         """
@@ -234,12 +242,7 @@ class SolrQuerySet:
             queryset.filter(item_type='person').filter(birth_year=1900)
             queryset.filter(item_type='person', birth_year=1900)
 
-        You can also search for pre-defined using lookups (in, exists)::
-
-            queryset.filter(item_type__in=['person', 'book'])
-            queryset.filter(item_type__exists=False)
-
-        Tags may be specified for the filter to be used with facet.field
+        A tag may be specified for the filter to be used with facet.field
         exclusions::
 
             queryset.filter(item_type='person', tag='person')
@@ -249,7 +252,20 @@ class SolrQuerySet:
 
             queryset.filter('birth_year:[1800 TO *]')
 
+        You can also search for pre-defined using lookups on a field,
+        for example::
 
+            queryset.filter(item_type__in=['person', 'book'])
+            queryset.filter(item_type__exists=False)
+
+        Currently supported field lookups:
+
+            * **in** : takes a list of values; supports '' or None to match
+              on field not set
+            * **exists**: boolean filter to look for any value / no value
+            * **range**: range query. Takes a list or tuple of two values
+               for the start and end of the range. Either value can
+               be unset for an open-ended range (e.g. `year__range=(1800, None)`)
 
         """
         qs_copy = self._clone()
@@ -289,8 +305,8 @@ class SolrQuerySet:
         """
         Request faceting for a single field. Returns a new SolrQuerySet
         with Solr faceting enabled and the field added to
-        the list of facet fields.  Any keyword arguments will be set
-        as field-specific facet  configurations.
+        the list of facet fields. Any keyword arguments will be set
+        as field-specific facet configurations.
 
         ``ex`` will specify a related filter query tag to exclude when
         generating counts for the facet.
@@ -299,7 +315,7 @@ class SolrQuerySet:
         qs_copy = self._clone()
         # append exclude tag if specified
         qs_copy.facet_field_list.append('{!ex=%s}%s' % (exclude, field)
-                                         if exclude else field)
+                                        if exclude else field)
         # prefix any keyword args with the field name
         # (facet. prefix added in query_opts)
 
@@ -307,6 +323,25 @@ class SolrQuerySet:
             'f.%s.facet.%s' % (field, opt) : value
             for opt, value in kwargs.items()})
 
+        return qs_copy
+
+    def facet_range(self, field: str, **kwargs) -> 'SolrQuerySet':
+        """
+        Request range faceting for a single field. Returns a new SolrQuerySet
+        with Solr range faceting enabled and the field added to
+        the list of facet fields. Keyword arguments such as start, end, and gap
+        will be set as field-specific facet configurations.
+        """
+        # start, end, gap are required by Solr, but we don't actually
+        # treat them any differently so it's easier to include as kwargs
+        qs_copy = self._clone()
+        # add field to list of range facet fields
+        qs_copy.range_facet_fields.append(field)
+
+        # configure facet options for this field (start, end, gap)
+        qs_copy.facet_opts.update({
+            'f.%s.facet.range.%s' % (field, opt) : value
+            for opt, value in kwargs.items()})
         return qs_copy
 
     def search(self, *args, **kwargs) -> 'SolrQuerySet':
@@ -431,6 +466,7 @@ class SolrQuerySet:
         qs_copy.filter_qs = list(self.filter_qs)
         qs_copy.sort_options = list(self.sort_options)
         qs_copy.field_list = list(self.field_list)
+        qs_copy.range_facet_fields = list(self.range_facet_fields)
         qs_copy.highlight_opts = dict(self.highlight_opts)
         qs_copy.raw_params = dict(self.raw_params)
         qs_copy.facet_field_list = list(self.facet_field_list)
