@@ -69,15 +69,9 @@ class TestQueryResponse:
             },
             'stats': {
                 'stats_fields': {
-                    'accoount_start_i': {
+                    'account_start_i': {
                         'min': 1919.0,
                         'max': 2018.0,
-                        'count': 6506,
-                        'missing': 10873,
-                        'sum': 1.2550833E7,
-                        'sumofSquares': 2.4212293087E10,
-                        'mean': 1929.116661543191,
-                        'stddev': 6.466735718386481
                     }
                 }
             }
