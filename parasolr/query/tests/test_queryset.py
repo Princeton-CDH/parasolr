@@ -191,6 +191,36 @@ class TestSolrQuerySet:
         # return should be the return value of facet_counts.facet_fields
         assert ret['facet_fields'] == OrderedDict(b=2)
 
+    @patch('parasolr.query.queryset.QueryResponse')
+    def test_get_stats(self, mockQR):
+        mocksolr = Mock(spec=SolrClient)
+        # mock cached solr response
+        mock_response = Mock()
+        sqs = SolrQuerySet(mocksolr)
+        sqs._result_cache = mock_response
+        ret = sqs.get_stats()
+        # QueryResponse called to wrap mock_response
+        assert mockQR.called
+        # called with the cached response
+        mockQR.assert_called_with(mock_response)
+        # return should be stats property of the mockQR
+        assert ret == mockQR.return_value.stats
+
+        # Now check that get_stats makes solr query if no cached results
+        sqs._result_cache = None
+        mockQR.reset_mock()
+        mocksolr.query.return_value = Mock()
+
+        ret = sqs.get_stats()
+        # QR not called
+        assert not mockQR.called
+        # should be called with rows=0 and hl=False
+        name, args, kwargs = mocksolr.query.mock_calls[0]
+        assert kwargs['rows'] == 0
+        assert kwargs['hl'] is False
+        # returns the stats property of query call
+        assert ret == mocksolr.query.return_value.stats
+
     def test_filter(self):
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
@@ -243,6 +273,30 @@ class TestSolrQuerySet:
         faceted_qs = faceted_qs.facet(*facet_list, sort='count')
         assert faceted_qs.facet_field_list == facet_list
         assert faceted_qs.facet_opts['sort'] == 'count'
+
+    def test_stats(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        # facet a search
+        stats_list = ['item_number', 'year']
+        stats_qs = sqs.stats(*stats_list)
+        # faceting should be set
+        assert stats_qs.stats_field_list == stats_list
+        # facet opts and field for original queryset should be unchanged
+        assert not sqs.stats_field_list
+        assert not sqs.stats_opts
+
+        # a call to another method should leave facet options as is
+        stats_qs = stats_qs.filter(foo='bar')
+        assert stats_qs.stats_field_list == stats_list
+        # subsequents calls to facet should simply reset list
+        stats_list = ['foobars']
+        stats_qs = stats_qs.stats(*stats_list)
+        assert stats_qs.stats_field_list == stats_list
+        # kwargs should simply be set in facet opts
+        stats_qs = stats_qs.stats(*stats_list, calcdistinct=True)
+        assert stats_qs.stats_field_list == stats_list
+        assert stats_qs.stats_opts['calcdistinct'] is True
 
     def test_facet_range(self):
         mocksolr = Mock(spec=SolrClient)

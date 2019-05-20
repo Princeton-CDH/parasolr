@@ -203,7 +203,7 @@ class SolrQuerySet:
             return qr.stats
         query_opts = self.query_opts()
         query_opts['rows'] = 0
-        query_opts['h1'] = False
+        query_opts['hl'] = False
 
         return self.solr.query(**query_opts).stats
 

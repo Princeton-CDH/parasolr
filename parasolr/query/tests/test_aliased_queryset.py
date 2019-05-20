@@ -87,6 +87,17 @@ class TestAliasedSolrQuerySet(TestCase):
         mock_filter.assert_called_with(self.mysqs.field_aliases['name'],
                                        missing=True)
 
+    @patch('parasolr.query.queryset.SolrQuerySet.stats')
+    def test_stats(self, mock_stats):
+        # args should be unaliasted
+        self.mysqs.stats('year')
+        mock_stats.assert_called_with(self.mysqs.field_aliases['year'])
+
+        # kwargs should be passed as is
+        self.mysqs.stats('year', calcdistinct=True)
+        mock_stats.assert_called_with(self.mysqs.field_aliases['year'],
+                                      calcdistinct=True)
+
     @patch('parasolr.query.queryset.SolrQuerySet.facet_field')
     def test_facet_field(self, mock_facet_field):
         # field name should be unaliased
@@ -178,4 +189,46 @@ class TestAliasedSolrQuerySet(TestCase):
             sample_facet_result['facet_ranges']['year_i']
         # non-aliased field is ignored
         assert 'birth' in facets['facet_ranges']
+
+    @patch('parasolr.query.queryset.SolrQuerySet.get_stats')
+    def test_get_stats(self, mock_get_stats):
+
+        sample_stats = {
+            'stats_fields': {
+                'year_i': {
+                    'min': 1919.0,
+                    'max': 2018.0,
+                    'count': 6506,
+                    'missing': 10873,
+                    'sum': 1.2550833E7,
+                    'sumofSquares': 2.4212293087E10,
+                    'mean': 1929.116661543191,
+                    'stddev': 6.466735718386481
+                },
+                'start_i': {
+                    'min': 1919.0,
+                    'max': 2018.0,
+                    'count': 6506,
+                    'missing': 10873,
+                    'sum': 1.2550833E7,
+                    'sumofSquares': 2.4212293087E10,
+                    'mean': 1929.116661543191,
+                    'stddev': 6.466735718386481
+                }
+            }
+        }
+        mock_get_stats.return_value = sample_stats
+        stats = self.mysqs.get_stats()
+        # aliased field is changed to unaliased form
+        assert 'year_i' not in stats['stats_fields']
+        assert 'year' in stats['stats_fields']
+        # value of field is preserved without change
+        assert stats['stats_fields']['year'] \
+            == sample_stats['stats_fields']['year']
+        # unaliased field is left alone
+        assert 'start_i' in stats['stats_fields']
+        assert stats['stats_fields']['start_i'] \
+            == sample_stats['stats_fields']['start_i']
+
+
 
