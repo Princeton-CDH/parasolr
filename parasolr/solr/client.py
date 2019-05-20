@@ -47,6 +47,7 @@ class QueryResponse:
         self.start = int(response.response.start)
         self.docs = response.response.docs
         self.params = response.responseHeader.params
+        self.stats = response.stats if 'stats' in response else {}
         self.facet_counts = {}
         if 'docs' in response.response:
             self.docs = response.response.docs
