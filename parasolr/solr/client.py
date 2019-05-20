@@ -59,7 +59,7 @@ class QueryResponse:
         # convert).
 
     def _process_facet_counts(self, facet_counts: AttrDict) \
-            -> AttrDict:
+            -> OrderedDict:
         """Convert facet_fields and facet_ranges to OrderedDict.
 
         Args:
