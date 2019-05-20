@@ -362,11 +362,10 @@ class SolrQuerySet:
         qs_copy = self._clone()
         # cast args tuple to list for consistency with other iterable fields
         qs_copy.stats_field_list = list(args)
-        # add other kwargs to be prefixed query_opts
+        # add other kwargs to be prefixed in query_opts
         qs_copy.stats_opts.update(kwargs)
 
         return qs_copy
-
 
     def facet_field(self, field: str, exclude: str='', **kwargs) -> 'SolrQuerySet':
         """
