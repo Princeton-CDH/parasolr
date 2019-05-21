@@ -16,7 +16,6 @@ If you are working with Django you should use
 which will automatically initialize a new :class:`parasolr.django.SolrClient`
 if one is not passed in.
 """
-import re
 from typing import Any, Dict, List, Optional
 
 from parasolr.solr import SolrClient
@@ -85,7 +84,8 @@ class SolrQuerySet:
         return [doc.as_dict() for doc in self._result_cache.docs]
 
     def _configure_highlighting(self, query_opts: Dict) -> None:
-        """Configure highlighting attributes on query_opts."""
+        """Configure highlighting attributes on query_opts. Modifies
+        dictionary directly."""
         if self.highlight_field:
             query_opts.update({
                 'hl': True,
@@ -95,7 +95,8 @@ class SolrQuerySet:
                 query_opts['hl.%s' % key] = val
 
     def _configure_faceting(self, query_opts: Dict) -> None:
-        """Configure faceting attributes on query_opts."""
+        """Configure faceting attributes directly on query_opts. Modifies
+        dictionary directly."""
         if self.facet_field_list or self.range_facet_fields:
             query_opts.update({
                 'facet': True,
@@ -109,7 +110,8 @@ class SolrQuerySet:
                            else 'facet.%s' % key] = val
 
     def _configure_stats(self, query_opts: Dict) -> None:
-        """Configure faceting attributes on query_opts."""
+        """Configure faceting attributes directly on query_opts. Modifies
+        dictionary directly."""
         if self.stats_field_list:
             query_opts.update({
                 'stats': True,
@@ -126,20 +128,18 @@ class SolrQuerySet:
         """
         query_opts = {
             'start': self.start,
+            # filter query
+            'fq': self.filter_qs,
+            # field list
+            'fl': ','.join(self.field_list),
+            # main query; if no query is defined, find everything
+            'q': self._search_op.join(self.search_qs) or '*:*',
+            'sort': ','.join(self.sort_options)
         }
-
-        # Opts that need to be filtered for empty
-        query_opts['fq'] = self.filter_qs if self.filter_qs else ''
-        query_opts['fl'] = ','.join(self.field_list)
-        query_opts['sort'] = ','.join(self.sort_options)
 
         # use stop if set to limit row numbers
         if self.stop:
             query_opts['rows'] = self.stop - self.start
-
-        # main query; if no query is defined, find everything
-        q = self._search_op.join(self.search_qs)
-        query_opts['q'] = q if q else '*:*'
 
         # highlighting
         self._configure_highlighting(query_opts)
@@ -154,7 +154,7 @@ class SolrQuerySet:
         query_opts.update(self.raw_params)
 
         # remove any empty string values
-        query_opts = {k: v for k, v in query_opts.items() if v != ''}
+        query_opts = {k: v for k, v in query_opts.items() if v not in ['', []]}
 
         return query_opts
 
@@ -197,7 +197,8 @@ class SolrQuerySet:
         return self.solr.query(**query_opts).facet_counts
 
     def get_stats(self) -> Optional[Dict[str, 'ParasolrDict']]:
-        """Return a dictionary of stats information in Solr format."""
+        """Return a dictionary of stats information in Solr format or None
+        on error."""
         if self._result_cache is not None:
             qr = QueryResponse(self._result_cache)
             return qr.stats
@@ -205,7 +206,9 @@ class SolrQuerySet:
         query_opts['rows'] = 0
         query_opts['hl'] = False
 
-        return self.solr.query(**query_opts).stats
+        response = self.solr.query(**query_opts)
+        if response:
+            return response.stats
 
     @staticmethod
     def _lookup_to_filter(key: str, value: Any, tag: str='') -> str:
@@ -539,7 +542,6 @@ class SolrQuerySet:
         qs_copy.facet_opts = dict(self.facet_opts)
         qs_copy.stats_field_list = list(self.stats_field_list)
         qs_copy.stats_opts = dict(self.stats_opts)
-
 
         return qs_copy
 
