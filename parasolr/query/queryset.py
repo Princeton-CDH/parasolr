@@ -83,7 +83,7 @@ class SolrQuerySet:
         self._result_cache = self.solr.query(**query_opts)
         return [doc.as_dict() for doc in self._result_cache.docs]
 
-    def _configure_highlighting(self, query_opts: Dict) -> None:
+    def _set_highlighting_opts(self, query_opts: Dict) -> None:
         """Configure highlighting attributes on query_opts. Modifies
         dictionary directly."""
         if self.highlight_field:
@@ -94,7 +94,7 @@ class SolrQuerySet:
             for key, val in self.highlight_opts.items():
                 query_opts['hl.%s' % key] = val
 
-    def _configure_faceting(self, query_opts: Dict) -> None:
+    def _set_faceting_opts(self, query_opts: Dict) -> None:
         """Configure faceting attributes directly on query_opts. Modifies
         dictionary directly."""
         if self.facet_field_list or self.range_facet_fields:
@@ -109,8 +109,8 @@ class SolrQuerySet:
                 query_opts[key if key.startswith('f.')
                            else 'facet.%s' % key] = val
 
-    def _configure_stats(self, query_opts: Dict) -> None:
-        """Configure faceting attributes directly on query_opts. Modifies
+    def _set_stats_opts(self, query_opts: Dict) -> None:
+        """Configure stats attributes directly on query_opts. Modifies
         dictionary directly."""
         if self.stats_field_list:
             query_opts.update({
@@ -142,13 +142,13 @@ class SolrQuerySet:
             query_opts['rows'] = self.stop - self.start
 
         # highlighting
-        self._configure_highlighting(query_opts)
+        self._set_highlighting_opts(query_opts)
 
         # faceting
-        self._configure_faceting(query_opts)
+        self._set_faceting_opts(query_opts)
 
         # stats
-        self._configure_stats(query_opts)
+        self._set_stats_opts(query_opts)
 
         # include any raw query parameters
         query_opts.update(self.raw_params)
