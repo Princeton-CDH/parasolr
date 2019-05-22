@@ -16,8 +16,7 @@ If you are working with Django you should use
 which will automatically initialize a new :class:`parasolr.django.SolrClient`
 if one is not passed in.
 """
-import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from parasolr.solr import SolrClient
 from parasolr.solr.client import QueryResponse
@@ -39,8 +38,10 @@ class SolrQuerySet:
     field_list = []
     highlight_field = None
     facet_field_list = []
+    stats_field_list = []
     range_facet_fields = []
     facet_opts = {}
+    stats_opts = {}
     highlight_opts = {}
     raw_params = {}
 
@@ -82,30 +83,9 @@ class SolrQuerySet:
         self._result_cache = self.solr.query(**query_opts)
         return [doc.as_dict() for doc in self._result_cache.docs]
 
-    def query_opts(self) -> Dict[str, str]:
-        """Construct query options based on current queryset configuration.
-        Includes filter queries, start and rows, sort, and search query.
-        """
-        query_opts = {
-            'start': self.start,
-        }
-
-        if self.filter_qs:
-            query_opts['fq'] = self.filter_qs
-        if self.stop:
-            query_opts['rows'] = self.stop - self.start
-        if self.sort_options:
-            query_opts['sort'] = ','.join(self.sort_options)
-
-        # main query; if no query is defined, find everything
-        if self.search_qs:
-            query_opts['q'] = self._search_op.join(self.search_qs)
-        else:
-            query_opts['q'] = '*:*'
-
-        if self.field_list:
-            query_opts['fl'] = ','.join(self.field_list)
-
+    def _set_highlighting_opts(self, query_opts: Dict) -> None:
+        """Configure highlighting attributes on query_opts. Modifies
+        dictionary directly."""
         if self.highlight_field:
             query_opts.update({
                 'hl': True,
@@ -114,6 +94,9 @@ class SolrQuerySet:
             for key, val in self.highlight_opts.items():
                 query_opts['hl.%s' % key] = val
 
+    def _set_faceting_opts(self, query_opts: Dict) -> None:
+        """Configure faceting attributes directly on query_opts. Modifies
+        dictionary directly."""
         if self.facet_field_list or self.range_facet_fields:
             query_opts.update({
                 'facet': True,
@@ -123,10 +106,55 @@ class SolrQuerySet:
             for key, val in self.facet_opts.items():
                 # use key as is if it starts with "f."
                 # (field-specific facet options); otherwise prepend "facet."
-                query_opts[key if key.startswith('f.') else 'facet.%s' % key] = val
+                query_opts[key if key.startswith('f.')
+                           else 'facet.%s' % key] = val
+
+    def _set_stats_opts(self, query_opts: Dict) -> None:
+        """Configure stats attributes directly on query_opts. Modifies
+        dictionary directly."""
+        if self.stats_field_list:
+            query_opts.update({
+                'stats': True,
+                'stats.field': self.stats_field_list
+            })
+            for key, val in self.stats_opts.items():
+                # use key as if it starts with stats, otherwise prepend
+                query_opts[key if key.startswith('stats')
+                           else 'stats.%s' % key] = val
+
+    def query_opts(self) -> Dict[str, str]:
+        """Construct query options based on current queryset configuration.
+        Includes filter queries, start and rows, sort, and search query.
+        """
+        query_opts = {
+            'start': self.start,
+            # filter query
+            'fq': self.filter_qs,
+            # field list
+            'fl': ','.join(self.field_list),
+            # main query; if no query is defined, find everything
+            'q': self._search_op.join(self.search_qs) or '*:*',
+            'sort': ','.join(self.sort_options)
+        }
+
+        # use stop if set to limit row numbers
+        if self.stop:
+            query_opts['rows'] = self.stop - self.start
+
+        # highlighting
+        self._set_highlighting_opts(query_opts)
+
+        # faceting
+        self._set_faceting_opts(query_opts)
+
+        # stats
+        self._set_stats_opts(query_opts)
 
         # include any raw query parameters
         query_opts.update(self.raw_params)
+
+        # remove any empty string values
+        query_opts = {k: v for k, v in query_opts.items() if v not in ['', []]}
 
         return query_opts
 
@@ -167,6 +195,20 @@ class SolrQuerySet:
         # setting these by dictionary assignment, because conflicting
         # kwargs results in a Python exception
         return self.solr.query(**query_opts).facet_counts
+
+    def get_stats(self) -> Optional[Dict[str, 'ParasolrDict']]:
+        """Return a dictionary of stats information in Solr format or None
+        on error."""
+        if self._result_cache is not None:
+            qr = QueryResponse(self._result_cache)
+            return qr.stats
+        query_opts = self.query_opts()
+        query_opts['rows'] = 0
+        query_opts['hl'] = False
+
+        response = self.solr.query(**query_opts)
+        if response:
+            return response.stats
 
     @staticmethod
     def _lookup_to_filter(key: str, value: Any, tag: str='') -> str:
@@ -290,7 +332,7 @@ class SolrQuerySet:
             qs = queryset.facet('person_type', 'age')
             qs = qs.facet('item_type')
 
-        would result in `item_type` being the only facet field.
+        would result in ``item_type`` being the only facet field.
         """
         qs_copy = self._clone()
 
@@ -298,6 +340,33 @@ class SolrQuerySet:
         qs_copy.facet_field_list = list(args)
         # add other kwargs to be prefixed in query_opts
         qs_copy.facet_opts.update(kwargs)
+
+        return qs_copy
+
+    def stats(self, *args: str, **kwargs) -> 'SolrQuerySet':
+        """
+        Request stats for specified fields. Returns a new SolrQuerySet
+        with Solr faceting enabled and stats.field parameter set.
+
+        Subsequent calls will reset the stats.field to the last set of
+        args in the chain.
+
+        For example::
+
+            qs = queryset.stats('person_type', 'age')
+            qs = qs.stats('account_start_i')
+
+        would result in ``account_start_i`` being the only facet field.
+
+        Any kwargs will be prepended with ``stats.``. You may also pass local
+        parameters along with field names, i.e. ``{!ex=filterA}account_start_i``.
+        """
+
+        qs_copy = self._clone()
+        # cast args tuple to list for consistency with other iterable fields
+        qs_copy.stats_field_list = list(args)
+        # add other kwargs to be prefixed in query_opts
+        qs_copy.stats_opts.update(kwargs)
 
         return qs_copy
 
@@ -471,6 +540,8 @@ class SolrQuerySet:
         qs_copy.raw_params = dict(self.raw_params)
         qs_copy.facet_field_list = list(self.facet_field_list)
         qs_copy.facet_opts = dict(self.facet_opts)
+        qs_copy.stats_field_list = list(self.stats_field_list)
+        qs_copy.stats_opts = dict(self.stats_opts)
 
         return qs_copy
 

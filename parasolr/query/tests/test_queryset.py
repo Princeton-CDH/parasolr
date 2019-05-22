@@ -25,7 +25,8 @@ class TestSolrQuerySet:
         assert query_opts['start'] == 0
         assert query_opts['q'] == '*:*'
         # don't include unset options
-        for opt in ['fq', 'rows', 'sort', 'fl', 'hl', 'hl.field', 'facet']:
+        for opt in ['fq', 'rows', 'sort', 'fl', 'hl',
+                    'hl.field', 'facet', 'stats', 'stats.field']:
             assert opt not in query_opts
 
         # customized query opts
@@ -39,6 +40,9 @@ class TestSolrQuerySet:
         sqs.highlight_opts = {'snippets': 3, 'method': 'unified'}
         sqs.facet_field_list = ['item_type', 'member_type']
         sqs.facet_opts = {'sort': 'count'}
+        sqs.stats_field_list = ['item_type', 'account_start_i']
+        # check that both prepended and not get stats. prefix appropriately
+        sqs.stats_opts = {'calcdistinct': True, 'stats.facet': 'mean'}
         query_opts = sqs.query_opts()
 
         assert query_opts['start'] == sqs.start
@@ -57,6 +61,12 @@ class TestSolrQuerySet:
         assert query_opts['facet'] is True
         assert query_opts['facet.field'] == sqs.facet_field_list
         assert query_opts['facet.sort'] == 'count'
+        # stats should be turned on
+        assert query_opts['stats'] is True
+        assert query_opts['stats.field'] == sqs.stats_field_list
+        # stats opts should be added with stats prefix (and no doubling of prefix)
+        assert query_opts['stats.calcdistinct'] is True
+        assert query_opts['stats.facet'] == 'mean'
 
         # field-specific facet unchanged
         field_facet_opt = 'f.sort.facet.missing'
@@ -181,6 +191,36 @@ class TestSolrQuerySet:
         # return should be the return value of facet_counts.facet_fields
         assert ret['facet_fields'] == OrderedDict(b=2)
 
+    @patch('parasolr.query.queryset.QueryResponse')
+    def test_get_stats(self, mockQR):
+        mocksolr = Mock(spec=SolrClient)
+        # mock cached solr response
+        mock_response = Mock()
+        sqs = SolrQuerySet(mocksolr)
+        sqs._result_cache = mock_response
+        ret = sqs.get_stats()
+        # QueryResponse called to wrap mock_response
+        assert mockQR.called
+        # called with the cached response
+        mockQR.assert_called_with(mock_response)
+        # return should be stats property of the mockQR
+        assert ret == mockQR.return_value.stats
+
+        # Now check that get_stats makes solr query if no cached results
+        sqs._result_cache = None
+        mockQR.reset_mock()
+        mocksolr.query.return_value = Mock()
+
+        ret = sqs.get_stats()
+        # QR not called
+        assert not mockQR.called
+        # should be called with rows=0 and hl=False
+        name, args, kwargs = mocksolr.query.mock_calls[0]
+        assert kwargs['rows'] == 0
+        assert kwargs['hl'] is False
+        # returns the stats property of query call
+        assert ret == mocksolr.query.return_value.stats
+
     def test_filter(self):
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
@@ -233,6 +273,30 @@ class TestSolrQuerySet:
         faceted_qs = faceted_qs.facet(*facet_list, sort='count')
         assert faceted_qs.facet_field_list == facet_list
         assert faceted_qs.facet_opts['sort'] == 'count'
+
+    def test_stats(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        # facet a search
+        stats_list = ['item_number', 'year']
+        stats_qs = sqs.stats(*stats_list)
+        # faceting should be set
+        assert stats_qs.stats_field_list == stats_list
+        # facet opts and field for original queryset should be unchanged
+        assert not sqs.stats_field_list
+        assert not sqs.stats_opts
+
+        # a call to another method should leave facet options as is
+        stats_qs = stats_qs.filter(foo='bar')
+        assert stats_qs.stats_field_list == stats_list
+        # subsequents calls to facet should simply reset list
+        stats_list = ['foobars']
+        stats_qs = stats_qs.stats(*stats_list)
+        assert stats_qs.stats_field_list == stats_list
+        # kwargs should simply be set in facet opts
+        stats_qs = stats_qs.stats(*stats_list, calcdistinct=True)
+        assert stats_qs.stats_field_list == stats_list
+        assert stats_qs.stats_opts['calcdistinct'] is True
 
     def test_facet_range(self):
         mocksolr = Mock(spec=SolrClient)
@@ -468,10 +532,15 @@ class TestSolrQuerySet:
         assert cloned_sqs.search_qs == []
         assert cloned_sqs.filter_qs == []
         assert cloned_sqs.sort_options == []
+        assert cloned_sqs.facet_field_list == []
+        assert cloned_sqs.facet_opts == {}
+        assert cloned_sqs.stats_field_list == []
+        assert cloned_sqs.stats_opts == {}
 
         # set everything
         custom_sqs = sqs.filter(item_type='person').search(name='he*') \
-                        .order_by('birth_year')
+                        .order_by('birth_year').facet('item_type')\
+                        .stats('item_type')
         custom_sqs.set_limits(10, 100)
         custom_clone = custom_sqs._clone()
         assert custom_clone.start == 10
@@ -483,6 +552,16 @@ class TestSolrQuerySet:
         assert not custom_clone.filter_qs is custom_sqs.filter_qs
         assert custom_clone.sort_options == custom_sqs.sort_options
         assert not custom_clone.sort_options is custom_sqs.sort_options
+        # facet and stats opts should be equal, but not the same object
+        assert custom_clone.facet_field_list == custom_sqs.facet_field_list
+        assert not custom_clone.facet_field_list is custom_sqs.facet_field_list
+        assert custom_clone.facet_opts == custom_sqs.facet_opts
+        assert not custom_clone.facet_opts is custom_sqs.facet_opts
+        assert custom_clone.stats_field_list == custom_sqs.stats_field_list
+        assert not custom_clone.stats_field_list is custom_sqs.stats_field_list
+        assert custom_clone.stats_opts == custom_sqs.stats_opts
+        assert not custom_clone.stats_opts is custom_sqs.stats_opts
+
 
         # subclass clone should return subclass
 

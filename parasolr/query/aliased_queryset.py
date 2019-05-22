@@ -65,6 +65,12 @@ class AliasedSolrQuerySet(SolrQuerySet):
         args = self._unalias_args(*args)
         return super().facet(*args, **kwargs)
 
+    def stats(self, *args, **kwargs) -> 'AliasedSolrQuerySet':
+        """Extend :methd:`parasolr.query.queryset.SolrQuerySet.stats
+        to support using aliased field names in args."""
+        args = self._unalias_args(*args)
+        return super().stats(*args, **kwargs)
+
     def facet_field(self, field: str, exclude: str='', **kwargs) -> 'AlaisedSolrQuerySet':
         '''Extend :meth:`parasolr.query.queryset.SolrQuerySet.facet_field``
         to support using aliased field names for field parameter.'''
@@ -90,13 +96,13 @@ class AliasedSolrQuerySet(SolrQuerySet):
     # also method does not need to be extended, since it runs through only
 
     def highlight(self, field: str, **kwargs) -> 'AliasedSolrQuerySet':
-        '''Extend :meth:`parasolr.query.queryset.SolrQuerySet.highlight``
+        '''Extend :meth:`parasolr.query.queryset.SolrQuerySet.highlight`
         to support using aliased field names in kwargs.'''
         field = self.field_aliases.get(field, field)
         return super().highlight(field, **kwargs)
 
     def get_facets(self) -> Dict[str, int]:
-        '''Extend :meth:`parasolr.query.queryset.SolrQuerySet.get_facets``
+        '''Extend :meth:`parasolr.query.queryset.SolrQuerySet.get_facets`
         to use aliased field names for facet and range facet keys.'''
         facets = super().get_facets()
 
@@ -109,6 +115,16 @@ class AliasedSolrQuerySet(SolrQuerySet):
             }
 
         return facets
+
+    def get_stats(self) -> Dict[str, Dict]:
+        """Extend :meth:`parasolr.query.queryset.SolrQuerySet.get_stats` to
+        return return aliased field names for field_list keys."""
+        stats = super().get_stats()
+        stats['stats_fields'] = {
+            self.reverse_aliases.get(field, field): val
+            for field, val in stats['stats_fields'].items()
+        }
+        return stats
 
     # NOTE: may want to do the same for highlighting also eventually,
     # but no immediate need and it's structured differently so
