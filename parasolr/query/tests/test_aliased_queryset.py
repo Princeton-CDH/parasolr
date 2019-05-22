@@ -196,7 +196,7 @@ class TestAliasedSolrQuerySet(TestCase):
 
         sample_stats = {
             # In setup for tests, year_i is aliased to year and
-            # start_i is aliased to start
+            # start_i is unaliased
             'stats_fields': {
                 'year_i': {
                     'min': 1918.0,
