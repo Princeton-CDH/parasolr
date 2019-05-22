@@ -1,3 +1,4 @@
+import copy
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
@@ -194,6 +195,8 @@ class TestAliasedSolrQuerySet(TestCase):
     def test_get_stats(self, mock_get_stats):
 
         sample_stats = {
+            # In setup for tests, year_i is aliased to year and
+            # start_i is aliased to start
             'stats_fields': {
                 'year_i': {
                     'min': 1918.0,
@@ -205,14 +208,16 @@ class TestAliasedSolrQuerySet(TestCase):
                 }
             }
         }
-        mock_get_stats.return_value = sample_stats
+        # Deepcopy to avoid the dictionaries being passed by reference
+        # so we can check against the original object later
+        mock_get_stats.return_value = copy.deepcopy(sample_stats)
         stats = self.mysqs.get_stats()
         # aliased field is changed to unaliased form
         assert 'year_i' not in stats['stats_fields']
         assert 'year' in stats['stats_fields']
-        # value of field is preserved without change
+        # value of field is preserved without chang
         assert stats['stats_fields']['year'] \
-            == sample_stats['stats_fields']['year']
+            == sample_stats['stats_fields']['year_i']
         # unaliased field is left alone
         assert 'start_i' in stats['stats_fields']
         assert stats['stats_fields']['start_i'] \

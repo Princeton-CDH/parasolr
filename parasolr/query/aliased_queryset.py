@@ -120,10 +120,10 @@ class AliasedSolrQuerySet(SolrQuerySet):
         """Extend :meth:`parasolr.query.queryset.SolrQuerySet.get_stats` to
         return return aliased field names for field_list keys."""
         stats = super().get_stats()
-        for field in stats['stats_fields']:
-            stats['stats_fields'][self.reverse_aliases.get(field, field)] \
-                = stats['stats_fields'].pop(field)
-
+        stats['stats_fields'] = {
+            self.reverse_aliases.get(field, field): val
+            for field, val in stats['stats_fields'].items()
+        }
         return stats
 
     # NOTE: may want to do the same for highlighting also eventually,
