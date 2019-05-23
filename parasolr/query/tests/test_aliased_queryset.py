@@ -222,6 +222,11 @@ class TestAliasedSolrQuerySet(TestCase):
         assert 'start_i' in stats['stats_fields']
         assert stats['stats_fields']['start_i'] \
             == sample_stats['stats_fields']['start_i']
+        # ensure that if get_stats returns None on error,
+        # we don't have a key error when try to realias fields
+        mock_get_stats.return_value = None
+        assert self.mysqs.get_stats() is None
+
 
 
 
