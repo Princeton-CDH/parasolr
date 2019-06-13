@@ -67,12 +67,21 @@ class TestQueryResponse:
                         }
                     }
             },
+            'stats': {
+                'stats_fields': {
+                    'account_start_i': {
+                        'min': 1919.0,
+                        'max': 2018.0,
+                    }
+                }
+            }
         })
         qr = QueryResponse(response)
         assert qr.params == response.responseHeader.params
         assert qr.start == response.response.start
         assert qr.docs == response.response.docs
         assert qr.numFound == response.response.numFound
+        assert qr.stats == response.stats
         assert isinstance(qr.facet_counts['facet_fields']['A'],
                           OrderedDict)
         assert isinstance(qr.facet_counts['facet_ranges']['A']['counts'],
