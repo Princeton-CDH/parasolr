@@ -12,18 +12,18 @@ configuration and indexing content.
 .. _Django: https://www.djangoproject.com/
 .. _Apache Solr: http://lucene.apache.org/solr/
 
-   
+
 * .. image:: https://badge.fury.io/py/parasolr.svg
    :target: https://badge.fury.io/py/parasolr
    :alt: PyPI version
-   
+
   .. image:: https://img.shields.io/pypi/pyversions/parasolr.svg
    :alt: PyPI - Python Version
-   
+
   .. image:: https://img.shields.io/pypi/djversions/parasolr.svg
    :alt: PyPI - Django Version
-   
-  .. image:: https://img.shields.io/pypi/l/parasolr.svg?color=blue   
+
+  .. image:: https://img.shields.io/pypi/l/parasolr.svg?color=blue
    :alt: PyPI - License
 
 * .. image:: https://travis-ci.org/Princeton-CDH/parasolr.svg?branch=master
@@ -38,6 +38,10 @@ configuration and indexing content.
    :target: https://parasolr.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
+  .. image:: https://www.codefactor.io/repository/github/princeton-cdh/parasolr/badge
+   :target: https://www.codefactor.io/repository/github/princeton-cdh/parasolr
+   :alt: CodeFactor
+
   .. image:: https://api.codeclimate.com/v1/badges/73394d05decdf32f12f3/maintainability
    :target: https://codeclimate.com/github/Princeton-CDH/parasolr/maintainability
    :alt: Maintainability
@@ -45,7 +49,7 @@ configuration and indexing content.
   .. image:: https://requires.io/github/Princeton-CDH/parasolr/requirements.svg?branch=master
     :target: https://requires.io/github/Princeton-CDH/parasolr/requirements/?branch=master
     :alt: Requirements Status
- 
+
 Currently tested against Python 3.5 and 3.6, Solr 6.6.5, and Django 1.11,
 2.0, and 2.1, and without Django.
 
@@ -93,14 +97,14 @@ Initial setup and installation:
 
 - *Recommmended*: create and activate a Python 3.6 virtualenv::
 
-   virtualenv parasolr -p python3.6
+   python3 -m venv parasolr
    source parasolr/bin/activate
 
 - Install the package with its dependencies as well as development
   dependencies::
 
    pip install -e .
-   pip install -e '.[dev]''
+   pip install -e '.[dev]'
 
 Unit testing
 ------------
