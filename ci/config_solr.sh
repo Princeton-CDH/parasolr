@@ -1,7 +1,7 @@
 # Config variables local to the script
 version=${SOLR_VERSION}
 file="solr-${version}.tgz"
-url="http://mirror.reverse.net/pub/apache/lucene/solr/${version}/${file}"
+url="http://lib-solr-mirror.princeton.edu/dist/lucene/solr/${version}/${file}"
 
 # Make a downloads dir to cache and change working dir to it
 mkdir -p downloads
