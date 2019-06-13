@@ -9,7 +9,7 @@ CHANGELOG
 * ``parasolr.query.SolrQuery`` additional support for stats:
 
   * New method ``stats`` to enable stats for a set of field names.
-  * New method ``get_stats` to return the entire stats reponse.
+  * New method ``get_stats`` to return the entire stats reponse.
 
 
 0.3
