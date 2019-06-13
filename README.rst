@@ -38,7 +38,7 @@ configuration and indexing content.
    :target: https://parasolr.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
-.. image:: https://www.codefactor.io/repository/github/princeton-cdh/parasolr/badge
+  .. image:: https://www.codefactor.io/repository/github/princeton-cdh/parasolr/badge
    :target: https://www.codefactor.io/repository/github/princeton-cdh/parasolr
    :alt: CodeFactor
 
