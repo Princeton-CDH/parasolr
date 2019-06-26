@@ -601,7 +601,7 @@ class SolrQuerySet:
 class InstanceCheckMeta(type):
     def __instancecheck__(self, instance):
         # allows for SolrQuerySets that are empty to behave as EmptySolrQuerySet
-        # checks that result cache is empty using __bool__
+        # checks that queryset is empty using __bool__
         return isinstance(instance, SolrQuerySet) and not instance
 
 
@@ -616,4 +616,3 @@ class EmptySolrQuerySet(metaclass=InstanceCheckMeta):
 
     def __init__(self, *args, **kwargs):
         raise TypeError("EmptySolrQuerySet can't be instantiated")
-
