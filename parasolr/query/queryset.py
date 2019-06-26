@@ -596,3 +596,24 @@ class SolrQuerySet:
         # single item
         qs_copy.set_limits(k, k + 1)
         return qs_copy.get_results()[0]
+
+
+class InstanceCheckMeta(type):
+    def __instancecheck__(self, instance):
+        # allows for SolrQuerySets that are empty to behave as EmptySolrQuerySet
+        # checks that result cache is empty using __bool__
+        return isinstance(instance, SolrQuerySet) and not instance
+
+
+class EmptySolrQuerySet(metaclass=InstanceCheckMeta):
+    """
+    Marker class that can be used to check if a given queryset is empty via
+    :meth:`isinstance`::
+
+        assert isinstance(SolrQuerySet().none(), EmptySolrQuerySet) -> True
+        assert isinstance(queryset, EmptySolrQuerySet) # True if empty
+    """
+
+    def __init__(self, *args, **kwargs):
+        raise TypeError("EmptySolrQuerySet can't be instantiated")
+

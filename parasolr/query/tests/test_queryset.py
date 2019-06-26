@@ -5,7 +5,7 @@ import pytest
 
 from parasolr.solr import SolrClient
 from parasolr.solr.client import QueryResponse, ParasolrDict
-from parasolr.query import SolrQuerySet
+from parasolr.query import SolrQuerySet, EmptySolrQuerySet
 
 
 class TestSolrQuerySet:
@@ -736,3 +736,23 @@ class TestSolrQuerySet:
 
         with pytest.raises(AssertionError):
             assert sqs[:-1]
+
+
+class TestEmptySolrQuerySet:
+
+    def test_init(self):
+        # Can't be instantiated
+        with pytest.raises(TypeError):
+            EmptySolrQuerySet()
+
+    def test_is_instance(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        results = Mock()
+        results.docs = ParasolrDict() # empty response
+        sqs.solr.query = Mock(return_value=results)
+        # Queries that have zero results are an EmptySolrQuerySet
+        assert isinstance(sqs, EmptySolrQuerySet)
+        # Calling none() on a queryset returns an EmptySolrQuerySet
+        assert isinstance(sqs.none(), EmptySolrQuerySet)
+        
