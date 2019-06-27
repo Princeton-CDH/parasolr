@@ -211,7 +211,7 @@ class SolrQuerySet:
             return response.stats
 
     @staticmethod
-    def _lookup_to_filter(key: str, value: Any, tag: str='') -> str:
+    def _lookup_to_filter(key: str, value: Any, tag: str = '') -> str:
         """Convert keyword/value argument, with optional lookups separated by
         ``__``, including: in and exists. Field names should *NOT* include
         double-underscores by convention. Accepts an optional tag argument
@@ -274,7 +274,7 @@ class SolrQuerySet:
 
         return solr_query
 
-    def filter(self, *args, tag: str='', **kwargs) -> 'SolrQuerySet':
+    def filter(self, *args, tag: str = '', **kwargs) -> 'SolrQuerySet':
         """
         Return a new SolrQuerySet with Solr filter queries added.
         Multiple filters can be combined either in a single
@@ -315,7 +315,8 @@ class SolrQuerySet:
         # any args are treated as filter queries without modification
         qs_copy.filter_qs.extend(args)
         for key, value in kwargs.items():
-            qs_copy.filter_qs.append(self._lookup_to_filter(key, value, tag=tag))
+            qs_copy.filter_qs.append(
+                self._lookup_to_filter(key, value, tag=tag))
         return qs_copy
 
     def facet(self, *args: str, **kwargs) -> 'SolrQuerySet':
@@ -370,7 +371,7 @@ class SolrQuerySet:
 
         return qs_copy
 
-    def facet_field(self, field: str, exclude: str='', **kwargs) -> 'SolrQuerySet':
+    def facet_field(self, field: str, exclude: str = '', **kwargs) -> 'SolrQuerySet':
         """
         Request faceting for a single field. Returns a new SolrQuerySet
         with Solr faceting enabled and the field added to
@@ -389,7 +390,7 @@ class SolrQuerySet:
         # (facet. prefix added in query_opts)
 
         qs_copy.facet_opts.update({
-            'f.%s.facet.%s' % (field, opt) : value
+            'f.%s.facet.%s' % (field, opt): value
             for opt, value in kwargs.items()})
 
         return qs_copy
@@ -409,7 +410,7 @@ class SolrQuerySet:
 
         # configure facet options for this field (start, end, gap)
         qs_copy.facet_opts.update({
-            'f.%s.facet.range.%s' % (field, opt) : value
+            'f.%s.facet.range.%s' % (field, opt): value
             for opt, value in kwargs.items()})
         return qs_copy
 
@@ -596,6 +597,12 @@ class SolrQuerySet:
         # single item
         qs_copy.set_limits(k, k + 1)
         return qs_copy.get_results()[0]
+
+
+# EmptySolrQuerySet instance checking is adapted from Django's solution:
+# https://github.com/django/django/blob/master/django/db/models/query.py#L1313-L1325
+# see also:
+# https://docs.djangoproject.com/en/2.2/ref/models/querysets/#none
 
 
 class InstanceCheckMeta(type):
