@@ -35,6 +35,7 @@ class ParasolrDict(AttrDict):
         return copy
 
     def __repr__(self):
+        """Print a dict-like :meth:`repr`, without including 'AttrDict'."""
         return 'ParasolrDict(%s)' % super(AttrDict, self).__repr__()
 
 
