@@ -40,7 +40,7 @@ class TestParasolrDict:
         assert isinstance(as_dict['b']['c'], list)
 
     def test_repr(self):
-        data = {'a': 1, 'b': 2}
+        data = {'a': 1,}
         para_dict = ParasolrDict(data)
         assert repr(para_dict) == 'ParasolrDict(%s)' % repr(data)
 
