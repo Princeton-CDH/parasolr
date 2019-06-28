@@ -15,7 +15,7 @@ from parasolr.solr.admin import CoreAdmin
 logger = logging.getLogger(__name__)
 
 
-## NOTE: As a rule, Solr parameters that are camelcased are retained that way
+# NOTE: As a rule, Solr parameters that are camelcased are retained that way
 # despite not being hugely Pythonic, for consistency with Solr's responses
 # and API documentation.
 
@@ -34,12 +34,18 @@ class ParasolrDict(AttrDict):
                 copy[k] = v
         return copy
 
+    def __repr__(self):
+        """Print a dict-like :meth:`repr`, without including 'AttrDict'."""
+        return 'ParasolrDict(%s)' % super(AttrDict, self).__repr__()
+
+
 class QueryResponse:
     """Thin wrapper to give access to Solr select responses.
 
     Args:
         response: A Solr query response
     """
+
     def __init__(self, response: Dict) -> None:
         # cast to ParasolrDict for any dict-like object
         response = ParasolrDict(response)
@@ -74,8 +80,8 @@ class QueryResponse:
                     OrderedDict(zip(v[::2], v[1::2]))
         if 'facet_ranges' in facet_counts:
             for k, v in facet_counts.facet_ranges.items():
-               facet_counts['facet_ranges'][k]['counts'] = \
-                   OrderedDict(zip(v['counts'][::2], v['counts'][1::2]))
+                facet_counts['facet_ranges'][k]['counts'] = \
+                    OrderedDict(zip(v['counts'][::2], v['counts'][1::2]))
         return facet_counts
 
 
@@ -102,7 +108,6 @@ class SolrClient(ClientBase):
     #: commitWithin time in ms
     commitWithin = 1000
 
-
     def __init__(self, solr_url: str, collection: str,
                  commitWithin: Optional[int] = None,
                  session: Optional[requests.Session] = None) -> None:
@@ -114,8 +119,8 @@ class SolrClient(ClientBase):
         if commitWithin:
             self.commitWithin = commitWithin
         self.session.headers = {
-            'User-Agent': 'parasolr/%s (python-requests/%s)' % \
-                (parasol_version, requests.__version__)
+            'User-Agent': 'parasolr/%s (python-requests/%s)' %
+            (parasol_version, requests.__version__)
         }
 
         # attach remainder of API using a common session

@@ -5,7 +5,7 @@ import pytest
 
 from parasolr.solr import SolrClient
 from parasolr.solr.client import QueryResponse, ParasolrDict
-from parasolr.query import SolrQuerySet
+from parasolr.query import SolrQuerySet, EmptySolrQuerySet
 
 
 class TestSolrQuerySet:
@@ -98,7 +98,6 @@ class TestSolrQuerySet:
         # result cache not set on original
         assert not sqs._result_cache
 
-
     def test_get_results(self):
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
@@ -170,7 +169,8 @@ class TestSolrQuerySet:
 
         # now test no cached result
         mocksolr.query.return_value = Mock()
-        mocksolr.query.return_value.facet_counts = {'facet_fields': OrderedDict(b=2)}
+        mocksolr.query.return_value.facet_counts = {
+            'facet_fields': OrderedDict(b=2)}
         sqs._result_cache = None
         # clear the previous mocks
         mockQR.reset_mock()
@@ -562,7 +562,6 @@ class TestSolrQuerySet:
         assert custom_clone.stats_opts == custom_sqs.stats_opts
         assert not custom_clone.stats_opts is custom_sqs.stats_opts
 
-
         # subclass clone should return subclass
 
         class CustomSolrQuerySet(SolrQuerySet):
@@ -736,3 +735,26 @@ class TestSolrQuerySet:
 
         with pytest.raises(AssertionError):
             assert sqs[:-1]
+
+
+class TestEmptySolrQuerySet:
+
+    def test_no_init(self):
+        # Can't be instantiated
+        with pytest.raises(TypeError):
+            EmptySolrQuerySet()
+
+    def test_empty_qs_is_instance(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        # Queries that have zero results are an EmptySolrQuerySet
+        mocksolr.query.return_value.docs = ParasolrDict()
+        assert isinstance(sqs, EmptySolrQuerySet)
+
+    def test_non_empty_qs_is_not_instance(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        # Populated querysets are not an EmptySolrQuerySet
+        response = ParasolrDict({'docs': [{}, {}]})
+        mocksolr.query.return_value = response
+        assert not isinstance(sqs, EmptySolrQuerySet)
