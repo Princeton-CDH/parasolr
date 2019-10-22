@@ -2,6 +2,8 @@ language: python
 python:
 - '3.5'
 - '3.6'
+jdk:
+  - openjdk8 # recommended jdk for solr < 7
 env:
 - SOLR_VERSION=6.6.5
 - DJANGO=1.11 SOLR_VERSION=6.6.5
