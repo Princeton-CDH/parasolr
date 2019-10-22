@@ -5,11 +5,12 @@ python:
 jdk:
   - openjdk8 # recommended jdk for solr < 7
 env:
-- SOLR_VERSION=6.6.5
-- DJANGO=1.11 SOLR_VERSION=6.6.5
-- DJANGO=2.0 SOLR_VERSION=6.6.5
-- DJANGO=2.1 SOLR_VERSION=6.6.5
-- JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64 # otherwise jdk11 will be used
+  global:
+	  - SOLR_VERSION=6.6.5
+	  - JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64  # otherwise jdk11 will be used
+	- DJANGO=1.11
+  - DJANGO=2.0
+  - DJANGO=2.1
 before_install:
 - pip install --upgrade pip
 - pip install --upgrade pytest
