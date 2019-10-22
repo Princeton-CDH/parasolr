@@ -5,9 +5,12 @@ import pytest
 try:
     from django.core.exceptions import ImproperlyConfigured
     from django.test import override_settings
+    from django.db import models
 
     from parasolr.django import SolrClient, SolrQuerySet, \
         AliasedSolrQuerySet
+
+    from parasolr.django.indexing import ModelIndexable
 
 except ImportError:
     pass
@@ -109,3 +112,31 @@ def test_django_aliasedsolrqueryset(mocksolrclient):
     # alias queryset init: field list and reverse alias lookup populated
     assert mysqs.field_list
     assert mysqs.reverse_aliases
+
+@skipif_no_django
+@patch('parasolr.django.SolrClient')
+def test_identify_index_dependencies(mocksolrclient):
+
+    # an empty model that can have many TestItem as members
+    class Collection(models.Model):
+        pass
+
+    # an indexable django model that has dependencies
+    class TestItem(models.Model, ModelIndexable):
+        collections = models.ManyToManyField(Collection)
+
+        index_depends_on = {
+            'collections': {
+                'save': 1, # values are irrelevant, could be any handler
+                'delete': 2
+            }
+        }
+
+    ModelIndexable.identify_index_dependencies()
+
+    # collection model should be in related object config
+    assert Collection in ModelIndexable.related
+    # save/delete handler config options saved
+    assert ModelIndexable.related[Collection] == TestItem.index_depends_on['collections']
+    # through model added to m2m list
+    assert TestItem.collections.through in ModelIndexable.m2m

@@ -19,16 +19,19 @@ if django:
 
         index_params = {'commitWithin': index_within * 1000}
 
+        @staticmethod
         def handle_save(sender, instance, **kwargs):
             if isinstance(instance, ModelIndexable):
                 logger.debug('Indexing %r', instance)
                 instance.index(params=IndexableSignalHandler.index_params)
 
+        @staticmethod
         def handle_delete(sender, instance, **kwargs):
             logger.debug('Deleting %r from index', instance)
             if isinstance(instance, ModelIndexable):
                 instance.remove_from_index(params=IndexableSignalHandler.index_params)
 
+        @staticmethod
         def handle_relation_change(sender, instance, action, **kwargs):
             # handle add, remove, and clear for ModelIndexable instances
             if action in ['post_add', 'post_remove', 'post_clear']:
@@ -36,6 +39,7 @@ if django:
                     logger.debug('Indexing %r (m2m change)', instance)
                     instance.index(params=IndexableSignalHandler.index_params)
 
+        @staticmethod
         def connect():
             '''bind indexing signal handlers to save and delete signals for
             :class:`~ppa.archive.solr.Indexable` subclassess and any
@@ -61,6 +65,7 @@ if django:
                     logger.debug('Registering delete signal handler for %s', model)
                     models.signals.pre_delete.connect(options['delete'], sender=model)
 
+        @staticmethod
         def disconnect():
             '''disconnect indexing signal handlers'''
             for model in ModelIndexable.__subclasses__():
