@@ -74,7 +74,7 @@ def test_no_django_solrclient():
 
 
 @skipif_no_django
-@patch('parasolr.django.SolrClient')
+@patch('parasolr.django.queryset.SolrClient')
 def test_django_solrqueryset(mocksolrclient):
     # auto-initialize solr connection if not specified
     sqs = SolrQuerySet()
@@ -90,7 +90,7 @@ def test_django_solrqueryset(mocksolrclient):
 
 
 @skipif_no_django
-@patch('parasolr.django.SolrClient')
+@patch('parasolr.django.queryset.SolrClient')
 def test_django_aliasedsolrqueryset(mocksolrclient):
 
     class MyAliasedSolrQuerySet(AliasedSolrQuerySet):
@@ -114,12 +114,13 @@ def test_django_aliasedsolrqueryset(mocksolrclient):
     assert mysqs.reverse_aliases
 
 @skipif_no_django
-@patch('parasolr.django.SolrClient')
+@patch('parasolr.django.queryset.SolrClient')
 def test_identify_index_dependencies(mocksolrclient):
 
     # an empty model that can have many TestItem as members
     class Collection(models.Model):
-        pass
+        class Meta:
+            abstract = True
 
     # an indexable django model that has dependencies
     class TestItem(models.Model, ModelIndexable):
@@ -131,6 +132,9 @@ def test_identify_index_dependencies(mocksolrclient):
                 'delete': 2
             }
         }
+
+        class Meta:
+            abstract = True
 
     ModelIndexable.identify_index_dependencies()
 

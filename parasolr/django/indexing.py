@@ -10,6 +10,11 @@ if django:
 
     class ModelIndexable(Indexable):
 
+        # these start out as None until they're calculated when identifying
+        # dependencies below
+        related = None
+        m2m = None
+
         @classmethod
         def identify_index_dependencies(cls):
             '''Identify and set lists of index dependencies for the subclass
@@ -23,7 +28,10 @@ if django:
 
             related = {}
             m2m = []
-            for model in Indexable.__subclasses__():
+            for model in cls.__subclasses__():
+                # if no dependencies specified, skip
+                if not hasattr(model, 'index_depends_on'):
+                    continue
                 for dep, opts in model.index_depends_on.items():
                     # if a string, assume attribute of model
                     if isinstance(dep, str):
@@ -36,3 +44,8 @@ if django:
 
             cls.related = related
             cls.m2m = m2m
+
+        # Prevent ModelIndexable from itself being indexed - only subclasses
+        # should be considered for `Indexable.all_indexables`
+        class Meta:
+            abstract = True
