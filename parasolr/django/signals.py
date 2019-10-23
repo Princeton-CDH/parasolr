@@ -15,21 +15,17 @@ if django:
 
     class IndexableSignalHandler:
 
-        index_within = 3
-
-        index_params = {'commitWithin': index_within * 1000}
-
         @staticmethod
         def handle_save(sender, instance, **kwargs):
             if isinstance(instance, ModelIndexable):
                 logger.debug('Indexing %r', instance)
-                instance.index(params=IndexableSignalHandler.index_params)
+                instance.index()
 
         @staticmethod
         def handle_delete(sender, instance, **kwargs):
             logger.debug('Deleting %r from index', instance)
             if isinstance(instance, ModelIndexable):
-                instance.remove_from_index(params=IndexableSignalHandler.index_params)
+                instance.remove_from_index()
 
         @staticmethod
         def handle_relation_change(sender, instance, action, **kwargs):
@@ -37,7 +33,7 @@ if django:
             if action in ['post_add', 'post_remove', 'post_clear']:
                 if isinstance(instance, ModelIndexable):
                     logger.debug('Indexing %r (m2m change)', instance)
-                    instance.index(params=IndexableSignalHandler.index_params)
+                    instance.index()
 
         @staticmethod
         def connect():
