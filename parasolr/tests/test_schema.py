@@ -31,6 +31,7 @@ def test_solr_fields():
     with pytest.raises(AttributeError):
         TestySolrFields().mystring = 'foo'
 
+
 class TestAnalyzer(schema.SolrAnalyzer):
     """ test analyzer for checking analyzer and field type logic"""
     tokenizer = 'solr.StandardTokenizerFactory'
@@ -70,9 +71,9 @@ class TestSchema:
 
     def test_get_configuration__none(self):
         # error if no subclass defined
-        with pytest.raises(Exception) as err:
+        with pytest.raises(Exception) as excinfo:
             schema.SolrSchema.get_configuration()
-        assert 'No Solr schema configuration found' in str(err)
+        assert 'No Solr schema configuration found' in str(excinfo.value)
 
     def test_get_configuration__one(self):
         # define one subclass
@@ -88,9 +89,10 @@ class TestSchema:
         class SchemaTwo(schema.SolrSchema):
             pass
 
-        with pytest.raises(Exception) as err:
+        with pytest.raises(Exception) as excinfo:
             schema.SolrSchema.get_configuration()
-        assert 'Currently only one Solr schema configuration is supported' in str(err)
+        assert 'Currently only one Solr schema configuration is supported' \
+            in str(excinfo.value)
 
     def test_get_field_names(self):
 

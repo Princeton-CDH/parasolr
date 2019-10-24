@@ -1,6 +1,6 @@
 import os
-import sys
 from setuptools import find_packages, setup
+
 from parasolr import __version__
 
 with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
@@ -11,11 +11,11 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 REQUIREMENTS = ['requests', 'attrdict', 'progressbar2']
 # NOTE: progressbar only needed for django index script; make optional?
-TEST_REQUIREMENTS = ['pytest', 'pytest-cov']
+TEST_REQUIREMENTS = ['pytest>5.2', 'pytest-cov']
 DEV_REQUIREMENTS = ['sphinx', 'sphinxcontrib-napoleon',
                     'sphinx-autodoc-typehints']
 # django integration is optional
-DJANGO_REQUIREMENTS = ['django>=1.11', 'pytest-django']
+DJANGO_REQUIREMENTS = ['django>=1.11', 'pytest-django>=3.6']
 
 setup(
     name='parasolr',
@@ -24,7 +24,7 @@ setup(
     include_package_data=True,
     license='Apache License, Version 2.0',
     description='Lightweight python library for Solr indexing, searching' +
-        ' and schema management with optional Django integration.',
+                ' and schema management with optional Django integration.',
     long_description=README,
     url='https://github.com/Princeton-CDH/parasolr',
     install_requires=REQUIREMENTS,
