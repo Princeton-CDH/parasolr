@@ -25,21 +25,23 @@ def test_django_solrclient():
 
     # no config
     with override_settings(SOLR_CONNECTIONS=None):
-        with pytest.raises(ImproperlyConfigured) as err:
+        with pytest.raises(ImproperlyConfigured) as excinfo:
             SolrClient()
-        assert 'requires SOLR_CONNECTIONS in settings' in str(err)
+        assert 'requires SOLR_CONNECTIONS in settings' in str(excinfo.value)
 
     # config but no default
     with override_settings(SOLR_CONNECTIONS={'foo': 'bar'}):
-        with pytest.raises(ImproperlyConfigured) as err:
+        with pytest.raises(ImproperlyConfigured) as excinfo:
             SolrClient()
-        assert 'No "default" section in SOLR_CONNECTIONS configuration' in str(err)
+        assert 'No "default" section in SOLR_CONNECTIONS configuration' \
+            in str(excinfo.value)
 
     # default config but no URL
     with override_settings(SOLR_CONNECTIONS={'default': {'foo': 'bar'}}):
-        with pytest.raises(ImproperlyConfigured) as err:
+        with pytest.raises(ImproperlyConfigured) as excinfo:
             SolrClient()
-        assert 'No URL in default SOLR_CONNECTIONS configuration' in str(err)
+        assert 'No URL in default SOLR_CONNECTIONS configuration' in \
+            str(excinfo.value)
 
     # url but no collection
     config = {'URL': 'http://my.solr.com:8943/solr'}

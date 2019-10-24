@@ -111,9 +111,9 @@ class TestSolrSchemaCommand:
         err_msg = 'No Solr schema configuration found'
         mocksolrschema.get_configuration.side_effect = Exception(err_msg)
 
-        with pytest.raises(CommandError) as err:
+        with pytest.raises(CommandError) as excinfo:
             solr_schema.Command().handle()
-        assert err_msg in str(err)
+        assert err_msg in str(excinfo.value)
 
     @patch('parasolr.management.commands.solr_schema.SolrClient')
     @patch('parasolr.management.commands.solr_schema.SolrSchema')
@@ -219,17 +219,17 @@ class TestIndexCommand:
 
             # handle id with unknown index label
             mock_index_meth.reset_mock()
-            with pytest.raises(CommandError) as err:
+            with pytest.raises(CommandError) as excinfo:
                 cmd.handle(index_ids=['foo.1'], clear=None, no_progress=True)
             assert not mock_index_meth.call_count
-            assert "Unrecognized index id 'foo.1'" in str(err)
+            assert "Unrecognized index id 'foo.1'" in str(excinfo.value)
 
             # handle id without separator
             mock_index_meth.reset_mock()
-            with pytest.raises(CommandError) as err:
+            with pytest.raises(CommandError) as excinfo:
                 cmd.handle(index_ids=['foo:1'], clear=None, no_progress=True)
             assert not mock_index_meth.call_count
-            assert "Unrecognized index id 'foo:1'" in str(err)
+            assert "Unrecognized index id 'foo:1'" in str(excinfo.value)
 
     @patch('parasolr.management.commands.index.progressbar')
     @patch('parasolr.management.commands.index.SolrClient')
