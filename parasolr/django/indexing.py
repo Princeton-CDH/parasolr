@@ -10,6 +10,11 @@ if django:
 
     class ModelIndexable(Indexable):
 
+        # Prevent ModelIndexable from itself being indexed - only subclasses
+        # should be included in  `Indexable.all_indexables`
+        class Meta:
+            abstract = True
+
         # these start out as None until they're calculated when identifying
         # dependencies below
         related = None
@@ -37,15 +42,17 @@ if django:
                     if isinstance(dep, str):
                         attr = getattr(model, dep)
                         if isinstance(attr, ManyToManyDescriptor):
-                            # store related model and options with signal handlers
-                            related[attr.rel.model] = opts
+                            # store related model and options
+                            # get related model from the many-to-many relation
+                            related_model = attr.rel.model
+                            # if rel.model is *this* model (i.e., this is a
+                            # reverse many to many), get the other model
+                            if attr.rel.model == model:
+                                related_model = attr.rel.related_model
+
+                            related[related_model] = opts
                             # add through model to many to many list
                             m2m.append(attr.through)
 
             cls.related = related
             cls.m2m = m2m
-
-        # Prevent ModelIndexable from itself being indexed - only subclasses
-        # should be considered for `Indexable.all_indexables`
-        class Meta:
-            abstract = True
