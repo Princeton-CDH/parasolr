@@ -1,10 +1,16 @@
+import logging
+
 from parasolr.indexing import Indexable
 
 try:
-    from django.db.models.fields.related_descriptors import ManyToManyDescriptor
+    from django.apps import apps
+    from django.db.models.fields import related_descriptors
     django = True
 except ImportError:
     django = None
+
+
+logger = logging.getLogger(__name__)
 
 if django:
 
@@ -19,6 +25,44 @@ if django:
         # dependencies below
         related = None
         m2m = None
+        separator = '__'
+
+        @staticmethod
+        def get_related_model(model, name):
+
+            # support app.Model notation
+            if '.' in name:
+                app, model_name = name.split('.')
+                return apps.get_app_config(app).get_model(model_name)
+
+            related_model = None
+
+            # if __ in str, split and recurse
+            if ModelIndexable.separator in name:
+                current, rest = name.split(ModelIndexable.separator, 1)
+                related_model = ModelIndexable.get_related_model(model, current)
+                return ModelIndexable.get_related_model(related_model, rest)
+
+            attr = getattr(model, name)
+
+            if isinstance(attr, related_descriptors.ManyToManyDescriptor):
+                # store related model and options
+                # get related model from the many-to-many relation
+                related_model = attr.rel.model
+                # if rel.model is *this* model (i.e., this is a
+                # reverse many to many), get the other model
+                if attr.rel.model == model:
+                    related_model = attr.rel.related_model
+
+            elif isinstance(attr,
+                            related_descriptors.ReverseManyToOneDescriptor):
+                related_model = attr.rel.related_model
+
+            if related_model:
+                return related_model
+            else:
+                logger.warn('Unhandled related model: %s on %r' %
+                            (name, model))
 
         @classmethod
         def identify_index_dependencies(cls):
@@ -38,19 +82,14 @@ if django:
                 if not hasattr(model, 'index_depends_on'):
                     continue
                 for dep, opts in model.index_depends_on.items():
-                    # if a string, assume attribute of model
-                    if isinstance(dep, str):
-                        attr = getattr(model, dep)
-                        if isinstance(attr, ManyToManyDescriptor):
-                            # store related model and options
-                            # get related model from the many-to-many relation
-                            related_model = attr.rel.model
-                            # if rel.model is *this* model (i.e., this is a
-                            # reverse many to many), get the other model
-                            if attr.rel.model == model:
-                                related_model = attr.rel.related_model
+                    # get related model
+                    related_model = cls.get_related_model(model, dep)
+                    related[related_model] = opts
 
-                            related[related_model] = opts
+                    # check for through model
+                    if hasattr(model, dep):
+                        attr = getattr(model, dep)
+                        if isinstance(attr, related_descriptors.ManyToManyDescriptor):
                             # add through model to many to many list
                             m2m.append(attr.through)
 
