@@ -115,34 +115,79 @@ def test_django_aliasedsolrqueryset(mocksolrclient):
     assert mysqs.field_list
     assert mysqs.reverse_aliases
 
+
+# test models for testing dependency logic
+
+# an empty model that can have many TestItem as members
+class Collection(models.Model):
+    class Meta:
+        app_label = 'parasolr'
+
+
+# an indexable django model that has dependencies
+class IndexItem(models.Model, ModelIndexable):
+    collections = models.ManyToManyField(Collection)
+
+    index_depends_on = {
+        'collections': {
+            'save': 1,  # values are irrelevant, could be any handler
+            'delete': 2
+        }
+    }
+
+    class Meta:
+        app_label = 'parasolr'
+
+
+# model with a reverse many to many to the indexable item
+class Owner(models.Model):
+    items = models.ManyToManyField(IndexItem)
+    collections = models.ManyToManyField(Collection)
+
+    class Meta:
+        app_label = 'parasolr'
+
+
+# item with no index_depends_on declared should not cause an error
+class IndependentItem(models.Model, ModelIndexable):
+    class Meta:
+        abstract = True
+
+
 @skipif_no_django
 @patch('parasolr.django.queryset.SolrClient')
 def test_identify_index_dependencies(mocksolrclient):
-
-    # an empty model that can have many TestItem as members
-    class Collection(models.Model):
-        class Meta:
-            abstract = True
-
-    # an indexable django model that has dependencies
-    class TestItem(models.Model, ModelIndexable):
-        collections = models.ManyToManyField(Collection)
-
-        index_depends_on = {
-            'collections': {
-                'save': 1, # values are irrelevant, could be any handler
-                'delete': 2
-            }
-        }
-
-        class Meta:
-            abstract = True
 
     ModelIndexable.identify_index_dependencies()
 
     # collection model should be in related object config
     assert Collection in ModelIndexable.related
     # save/delete handler config options saved
-    assert ModelIndexable.related[Collection] == TestItem.index_depends_on['collections']
+    assert ModelIndexable.related[Collection] == \
+        IndexItem.index_depends_on['collections']
     # through model added to m2m list
-    assert TestItem.collections.through in ModelIndexable.m2m
+    assert IndexItem.collections.through in ModelIndexable.m2m
+
+    # dependencies should be cached on thef irst run and not regenerated
+    with patch.object(ModelIndexable, '__subclasses__') as mockgetsubs:
+        ModelIndexable.identify_index_dependencies()
+        assert mockgetsubs.call_count == 0
+
+
+@skipif_no_django
+def test_get_related_model():
+    # test app.Model notation with stock django model
+    from django.contrib.auth.models import User
+    assert ModelIndexable.get_related_model(IndexItem, 'auth.User') == User
+
+    # many to many
+    assert ModelIndexable.get_related_model(IndexItem, 'collections') == \
+        Collection
+
+    # reverse many to many
+    assert ModelIndexable.get_related_model(IndexItem, 'owner_set') == \
+        Owner
+
+    # multipart path
+    assert ModelIndexable.get_related_model(
+        IndexItem, 'owner_set__collections') == Collection

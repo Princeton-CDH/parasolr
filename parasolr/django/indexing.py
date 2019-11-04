@@ -40,7 +40,8 @@ if django:
             # if __ in str, split and recurse
             if ModelIndexable.separator in name:
                 current, rest = name.split(ModelIndexable.separator, 1)
-                related_model = ModelIndexable.get_related_model(model, current)
+                related_model = ModelIndexable.get_related_model(model,
+                                                                 current)
                 return ModelIndexable.get_related_model(related_model, rest)
 
             attr = getattr(model, name)
@@ -89,7 +90,8 @@ if django:
                     # check for through model
                     if hasattr(model, dep):
                         attr = getattr(model, dep)
-                        if isinstance(attr, related_descriptors.ManyToManyDescriptor):
+                        if isinstance(
+                           attr, related_descriptors.ManyToManyDescriptor):
                             # add through model to many to many list
                             m2m.append(attr.through)
 
