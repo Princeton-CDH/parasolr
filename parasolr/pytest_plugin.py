@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 if django:
 
-
     def get_test_solr_config():
         '''Get configuration for test Solr connection based on
         default and test options in django settings. Any test configuration
@@ -36,7 +35,7 @@ if django:
         # if test collection is not explicitly configured,
         # set it based on default collection
         if 'TEST' not in test_config or \
-         'COLLECTION' not in settings.SOLR_CONNECTIONS['default']['TEST']:
+           'COLLECTION' not in settings.SOLR_CONNECTIONS['default']['TEST']:
             test_config['COLLECTION'] = 'test_%s' % \
                 settings.SOLR_CONNECTIONS['default']['COLLECTION']
 
@@ -99,3 +98,8 @@ if django:
                 deleteIndex=True,
                 deleteDataDir=True
             )
+
+    @pytest.fixture
+    def empty_solr():
+        # pytest solr fixture; updates solr schema
+        django.SolrClient().update.delete_by_query('*:*')
