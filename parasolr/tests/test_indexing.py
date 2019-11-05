@@ -41,6 +41,7 @@ class MockModelIndexable(Indexable):
     class objects:
         def count():
             return 1
+
         def all():
             return [MockModelIndexable()]
 
@@ -53,7 +54,7 @@ class AbstractIndexable(Indexable):
 
 
 @skipif_no_django
-@patch('parasolr.indexing.SolrClient')
+@patch.object(Indexable, 'solr')
 class TestIndexable:
 
     def test_all_indexables(self, mocksolr):

@@ -5,12 +5,13 @@ import pytest
 try:
     from django.core.exceptions import ImproperlyConfigured
     from django.test import override_settings
-    from django.db import models
 
     from parasolr.django import SolrClient, SolrQuerySet, \
         AliasedSolrQuerySet
 
     from parasolr.django.indexing import ModelIndexable
+    from parasolr.django.tests.test_models import Collection, \
+        IndependentItem, IndexItem, Owner
 
 except ImportError:
     pass
@@ -101,8 +102,8 @@ def test_django_aliasedsolrqueryset(mocksolrclient):
         #: map app/readable field names to actual solr fields
         field_aliases = {
             'name': 'name_t',
-            'year':'year_i',
-            'has_info':'has_info_b',
+            'year': 'year_i',
+            'has_info': 'has_info_b',
         }
 
     # django queryset behavior: auto-initialize solr connection if not specified
@@ -114,44 +115,6 @@ def test_django_aliasedsolrqueryset(mocksolrclient):
     # alias queryset init: field list and reverse alias lookup populated
     assert mysqs.field_list
     assert mysqs.reverse_aliases
-
-
-# test models for testing dependency logic
-
-# an empty model that can have many TestItem as members
-class Collection(models.Model):
-    class Meta:
-        app_label = 'parasolr'
-
-
-# an indexable django model that has dependencies
-class IndexItem(models.Model, ModelIndexable):
-    collections = models.ManyToManyField(Collection)
-
-    index_depends_on = {
-        'collections': {
-            'save': 1,  # values are irrelevant, could be any handler
-            'delete': 2
-        }
-    }
-
-    class Meta:
-        app_label = 'parasolr'
-
-
-# model with a reverse many to many to the indexable item
-class Owner(models.Model):
-    items = models.ManyToManyField(IndexItem)
-    collections = models.ManyToManyField(Collection)
-
-    class Meta:
-        app_label = 'parasolr'
-
-
-# item with no index_depends_on declared should not cause an error
-class IndependentItem(models.Model, ModelIndexable):
-    class Meta:
-        abstract = True
 
 
 @skipif_no_django
