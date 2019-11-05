@@ -62,8 +62,8 @@ if django:
             if related_model:
                 return related_model
             else:
-                logger.warn('Unhandled related model: %s on %r' %
-                            (name, model))
+                logger.warning('Unhandled related model: %s on %r' %
+                               (name, model))
 
         @classmethod
         def identify_index_dependencies(cls):

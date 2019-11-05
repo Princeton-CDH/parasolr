@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import Mock, patch
 
 import pytest
@@ -11,12 +12,12 @@ try:
 
     from parasolr.django.indexing import ModelIndexable
     from parasolr.django.tests.test_models import Collection, \
-        IndependentItem, IndexItem, Owner
+        IndexItem, Owner
 
 except ImportError:
     pass
 
-from parasolr.tests.utils import skipif_no_django, skipif_django
+from parasolr.tests.utils import skipif_django, skipif_no_django
 
 
 @skipif_no_django
@@ -73,7 +74,28 @@ def test_django_solrclient():
 def test_no_django_solrclient():
     # should not be defined when django is not installed
     with pytest.raises(ImportError):
-        from parasolr.solr.django import SolrClient
+        from parasolr.django import SolrClient
+
+
+@skipif_django
+def test_no_django_solr_solrclient():
+    # should not be defined when django is not installed
+    with pytest.raises(ImportError):
+        from parasolr.solr.django.solr import SolrClient
+
+
+@skipif_django
+def test_no_django_queryset():
+    # should not be defined when django is not installed
+    with pytest.raises(ImportError):
+        from parasolr.django.queryset import SolrQuerySet
+
+
+@skipif_django
+def test_no_django_modelindexable():
+    # should not be defined when django is not installed
+    with pytest.raises(ImportError):
+        from parasolr.django.indexing import ModelIndexable
 
 
 @skipif_no_django
@@ -138,7 +160,7 @@ def test_identify_index_dependencies(mocksolrclient):
 
 
 @skipif_no_django
-def test_get_related_model():
+def test_get_related_model(caplog):
     # test app.Model notation with stock django model
     from django.contrib.auth.models import User
     assert ModelIndexable.get_related_model(IndexItem, 'auth.User') == User
@@ -154,3 +176,8 @@ def test_get_related_model():
     # multipart path
     assert ModelIndexable.get_related_model(
         IndexItem, 'owner_set__collections') == Collection
+
+    # foreign key is not currently supported; shoudl warn
+    with caplog.at_level(logging.WARNING):
+        assert not ModelIndexable.get_related_model(IndexItem, 'primary')
+        assert 'Unhandled related model' in caplog.text

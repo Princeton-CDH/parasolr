@@ -9,19 +9,28 @@ try:
     from parasolr.django.signals import IndexableSignalHandler
     from parasolr.django.tests import test_models
 except ImportError:
-    pass
+    IndexableSignalHandler = None
 
-from parasolr.tests.utils import skipif_no_django
+from parasolr.tests.utils import skipif_django, skipif_no_django
 
 
 def setup_module():
     # connect indexing signal handlers for this test module only
-    IndexableSignalHandler.connect()
+    if IndexableSignalHandler:
+        IndexableSignalHandler.connect()
 
 
 def teardown_module():
     # disconnect indexing signal handlers
-    IndexableSignalHandler.disconnect()
+    if IndexableSignalHandler:
+        IndexableSignalHandler.disconnect()
+
+
+@skipif_django
+def test_no_django_indexable():
+    # should not be defined when django is not installed
+    with pytest.raises(ImportError):
+        from parasolr.django.signals import IndexableSignalHandler
 
 
 @skipif_no_django
