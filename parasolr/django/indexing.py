@@ -21,10 +21,10 @@ if django:
         class Meta:
             abstract = True
 
-        # these start out as None until they're calculated when identifying
+        # these start out empty; calculated when identifying
         # dependencies below
-        related = None
-        m2m = None
+        related = {}
+        m2m = []
         separator = '__'
 
         @staticmethod
@@ -73,7 +73,8 @@ if django:
             # determine and document index dependencies
             # for indexable models based on index_depends_on field
 
-            if cls.related is not None and cls.m2m is not None:
+            # if index dependencies have already been gathered, do nothing
+            if cls.related or cls.m2m:
                 return
 
             related = {}
