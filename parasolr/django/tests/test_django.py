@@ -153,7 +153,7 @@ def test_identify_index_dependencies(mocksolrclient):
     # through model added to m2m list
     assert IndexItem.collections.through in ModelIndexable.m2m
 
-    # dependencies should be cached on thef irst run and not regenerated
+    # dependencies should be cached on the first run and not regenerated
     with patch.object(ModelIndexable, '__subclasses__') as mockgetsubs:
         ModelIndexable.identify_index_dependencies()
         assert mockgetsubs.call_count == 0
@@ -177,7 +177,7 @@ def test_get_related_model(caplog):
     assert ModelIndexable.get_related_model(
         IndexItem, 'owner_set__collections') == Collection
 
-    # foreign key is not currently supported; shoudl warn
+    # foreign key is not currently supported; should warn
     with caplog.at_level(logging.WARNING):
         assert not ModelIndexable.get_related_model(IndexItem, 'primary')
         assert 'Unhandled related model' in caplog.text
