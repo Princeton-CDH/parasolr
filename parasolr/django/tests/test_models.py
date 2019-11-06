@@ -28,14 +28,13 @@ if django:
 
         index_depends_on = {
             'collections': {
-                'save': signal_method,
-                'delete': signal_method
+                'post_save': signal_method,
+                'pre_delete': signal_method
             }
         }
 
         class Meta:
             app_label = 'parasolr'
-
 
     # model with a reverse many to many to the indexable item
     class Owner(models.Model):
@@ -44,7 +43,6 @@ if django:
 
         class Meta:
             app_label = 'parasolr'
-
 
     # item with no index_depends_on declared should not cause an error
     class IndependentItem(models.Model, ModelIndexable):

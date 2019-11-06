@@ -1,3 +1,54 @@
+"""
+
+This module provides on-demand reindexing of Django models when they
+change, based on Django signals. To use this signal handler, import
+import it in the `ready` method of a django app. This will
+automatically bind connect any configured signal handlers::
+
+    from django.apps import AppConfig
+
+    class MyAppConfig(AppConfig):
+        name = 'myapp'
+
+        def ready(self):
+            # import and connect signal handlers for Solr indexing
+            from parasolr.django.signals import IndexableSignalHandler
+
+To configure index dependencies, add a property on any
+:class:`~parasolr.django.indexing.ModelIndexable` subclass with the
+dependencies and signals that should trigger reindexing.  Example::
+
+    class MyModel(Model, ModelIndexable):
+
+        index_depends_on = {
+            'collections': {
+                'post_save': signal_method,
+                'pre_delete': signal_method
+            }
+        }
+
+The keys of the dependency dict can be:
+- an attribute on the indexable model (i.e., the name of a many-to-many
+  relationship); this will bind an additional signal handler on the m2m
+  relationship change.
+- an attribute on a related model using django queryset notation (use this
+  for a secondary many-to many relationship, e.g. `collections__authors`)
+- a string with the model name in app.ModelName notation, to find and
+  load a model directly
+
+The dictionaries for each related model or attribute should contain:
+- a key with the :mod:`django.db.models.signals` signal to bind
+- a signal handler to bind
+
+Currently attribute lookup only supports many-to-many and reverse
+many-to-many relationships.
+
+Typically you will want to bind post_save and pre_delete for many-to-many
+relationships.
+
+"""
+
+
 import logging
 
 try:
@@ -57,16 +108,11 @@ if django:
                     sender=m2m_rel)
 
             for model, options in ModelIndexable.related.items():
-                if 'save' in options:
-                    logger.debug('Registering save signal handler for %s',
-                                 model)
-                    models.signals.post_save.connect(options['save'],
-                                                     sender=model)
-                if 'delete' in options:
-                    logger.debug('Registering delete signal handler for %s',
-                                 model)
-                    models.signals.pre_delete.connect(options['delete'],
-                                                      sender=model)
+                for signal_name, handler in options.items():
+                    model_signal = getattr(models.signals, signal_name)
+                    logger.debug('Registering %s signal handler for %s',
+                                 signal_name, model)
+                    model_signal.connect(handler, sender=model)
 
         @staticmethod
         def disconnect():
