@@ -19,7 +19,7 @@ if one is not passed in.
 from typing import Any, Dict, List, Optional
 
 from parasolr.solr import SolrClient
-from parasolr.solr.client import QueryResponse
+from parasolr.solr.client import QueryResponse, ParasolrDict
 
 
 class SolrQuerySet:
@@ -196,7 +196,7 @@ class SolrQuerySet:
         # kwargs results in a Python exception
         return self.solr.query(**query_opts).facet_counts
 
-    def get_stats(self) -> Optional[Dict[str, 'ParasolrDict']]:
+    def get_stats(self) -> Optional[Dict[str, ParasolrDict]]:
         """Return a dictionary of stats information in Solr format or None
         on error."""
         if self._result_cache is not None:

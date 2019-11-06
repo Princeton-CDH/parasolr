@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import Mock, patch
 
 import pytest
@@ -9,10 +10,14 @@ try:
     from parasolr.django import SolrClient, SolrQuerySet, \
         AliasedSolrQuerySet
 
+    from parasolr.django.indexing import ModelIndexable
+    from parasolr.django.tests.test_models import Collection, \
+        IndexItem, Owner
+
 except ImportError:
     pass
 
-from parasolr.tests.utils import skipif_no_django, skipif_django
+from parasolr.tests.utils import skipif_django, skipif_no_django
 
 
 @skipif_no_django
@@ -69,11 +74,32 @@ def test_django_solrclient():
 def test_no_django_solrclient():
     # should not be defined when django is not installed
     with pytest.raises(ImportError):
-        from parasolr.solr.django import SolrClient
+        from parasolr.django import SolrClient
+
+
+@skipif_django
+def test_no_django_solr_solrclient():
+    # should not be defined when django is not installed
+    with pytest.raises(ImportError):
+        from parasolr.solr.django.solr import SolrClient
+
+
+@skipif_django
+def test_no_django_queryset():
+    # should not be defined when django is not installed
+    with pytest.raises(ImportError):
+        from parasolr.django.queryset import SolrQuerySet
+
+
+@skipif_django
+def test_no_django_modelindexable():
+    # should not be defined when django is not installed
+    with pytest.raises(ImportError):
+        from parasolr.django.indexing import ModelIndexable
 
 
 @skipif_no_django
-@patch('parasolr.django.SolrClient')
+@patch('parasolr.django.queryset.SolrClient')
 def test_django_solrqueryset(mocksolrclient):
     # auto-initialize solr connection if not specified
     sqs = SolrQuerySet()
@@ -89,7 +115,7 @@ def test_django_solrqueryset(mocksolrclient):
 
 
 @skipif_no_django
-@patch('parasolr.django.SolrClient')
+@patch('parasolr.django.queryset.SolrClient')
 def test_django_aliasedsolrqueryset(mocksolrclient):
 
     class MyAliasedSolrQuerySet(AliasedSolrQuerySet):
@@ -98,8 +124,8 @@ def test_django_aliasedsolrqueryset(mocksolrclient):
         #: map app/readable field names to actual solr fields
         field_aliases = {
             'name': 'name_t',
-            'year':'year_i',
-            'has_info':'has_info_b',
+            'year': 'year_i',
+            'has_info': 'has_info_b',
         }
 
     # django queryset behavior: auto-initialize solr connection if not specified
@@ -111,3 +137,47 @@ def test_django_aliasedsolrqueryset(mocksolrclient):
     # alias queryset init: field list and reverse alias lookup populated
     assert mysqs.field_list
     assert mysqs.reverse_aliases
+
+
+@skipif_no_django
+@patch('parasolr.django.queryset.SolrClient')
+def test_identify_index_dependencies(mocksolrclient):
+
+    ModelIndexable.identify_index_dependencies()
+
+    # collection model should be in related object config
+    assert Collection in ModelIndexable.related
+    # save/delete handler config options saved
+    assert ModelIndexable.related[Collection] == \
+        IndexItem.index_depends_on['collections']
+    # through model added to m2m list
+    assert IndexItem.collections.through in ModelIndexable.m2m
+
+    # dependencies should be cached on the first run and not regenerated
+    with patch.object(ModelIndexable, '__subclasses__') as mockgetsubs:
+        ModelIndexable.identify_index_dependencies()
+        assert mockgetsubs.call_count == 0
+
+
+@skipif_no_django
+def test_get_related_model(caplog):
+    # test app.Model notation with stock django model
+    from django.contrib.auth.models import User
+    assert ModelIndexable.get_related_model(IndexItem, 'auth.User') == User
+
+    # many to many
+    assert ModelIndexable.get_related_model(IndexItem, 'collections') == \
+        Collection
+
+    # reverse many to many
+    assert ModelIndexable.get_related_model(IndexItem, 'owner_set') == \
+        Owner
+
+    # multipart path
+    assert ModelIndexable.get_related_model(
+        IndexItem, 'owner_set__collections') == Collection
+
+    # foreign key is not currently supported; should warn
+    with caplog.at_level(logging.WARNING):
+        assert not ModelIndexable.get_related_model(IndexItem, 'primary')
+        assert 'Unhandled related model' in caplog.text

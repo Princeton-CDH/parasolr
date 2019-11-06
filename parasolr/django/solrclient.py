@@ -19,6 +19,8 @@ instance.
 import logging
 from typing import Any, Optional
 
+from parasolr.solr import client
+
 try:
     import django
     from django.conf import settings
@@ -26,8 +28,6 @@ try:
 except ImportError:
     django = None
 
-from parasolr.solr import client
-from parasolr import query
 
 
 logger = logging.getLogger(__name__)
@@ -70,23 +70,3 @@ if django:
 
             logger.info('Connecting to default Solr %s%s', url, collection)
             super().__init__(url, collection, *args, **kwargs)
-
-
-    class SolrQuerySet(query.SolrQuerySet):
-        """:class:`~parasolr.query.SolrQuerySet` subclass that
-        will automatically use :class:`~parasolr.django.SolrClient` if
-        no solr client is passed on.
-
-        Args:
-            Optional :class:`parasolr.solr.client.SolrClient`.
-        """
-
-        def __init__(self, solr: Optional[SolrClient] = None):
-            # use passed-in solr client if there is one;
-            # otherwise, initialize a django solr client
-            super().__init__(solr or SolrClient())
-
-
-    class AliasedSolrQuerySet(SolrQuerySet, query.AliasedSolrQuerySet):
-        """Combination of :class:SolrQuerySet` and
-        :class:`~parasolr.query.alias_queryset.AliasedSolrQuerySet`"""

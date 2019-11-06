@@ -9,6 +9,7 @@ env:
     - SOLR_VERSION=6.6.5
     - JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64  # otherwise jdk11 will be used
   jobs:
+    - DJANGO=
     - DJANGO=1.11
     - DJANGO=2.0
     - DJANGO=2.1

@@ -30,7 +30,7 @@ class SimpleIndexable(Indexable):
             return [SimpleIndexable() for i in range(5)]
 
 
-class ModelIndexable(Indexable):
+class MockModelIndexable(Indexable):
     """mock-model indexable subclass"""
     id = 1
 
@@ -41,29 +41,38 @@ class ModelIndexable(Indexable):
     class objects:
         def count():
             return 1
+
         def all():
-            return [ModelIndexable()]
+            return [MockModelIndexable()]
+
+
+class AbstractIndexable(Indexable):
+    """indexable subclass that should not (itself) be indexed"""
+
+    class Meta:
+        abstract = True
 
 
 @skipif_no_django
-@patch('parasolr.indexing.SolrClient')
+@patch.object(Indexable, 'solr')
 class TestIndexable:
 
     def test_all_indexables(self, mocksolr):
         indexables = Indexable.all_indexables()
         assert SimpleIndexable in indexables
-        assert ModelIndexable in indexables
+        assert MockModelIndexable in indexables
+        assert AbstractIndexable not in indexables
 
     def test_index_item_type(self, mocksolr):
         # use model verbose name by default
-        assert ModelIndexable().index_item_type() == 'model'
+        assert MockModelIndexable().index_item_type() == 'model'
 
     def test_index_id(self, mocksolr):
         assert SimpleIndexable().index_id() == 'simple.a'
-        assert ModelIndexable().index_id() == 'model.1'
+        assert MockModelIndexable().index_id() == 'model.1'
 
     def test_index_data(self, mocksolr):
-        model = ModelIndexable()
+        model = MockModelIndexable()
         data = model.index_data()
         assert data['id'] == model.index_id()
         assert data['item_type'] == model.index_item_type()
@@ -71,7 +80,7 @@ class TestIndexable:
 
     def test_index(self, mocksolr):
         # index method on a single object instance
-        model = ModelIndexable()
+        model = MockModelIndexable()
         model.index()
         # NOTE: because solr is stored on the class,
         # mocksolr.return_value is not the same object
@@ -79,7 +88,7 @@ class TestIndexable:
 
     def test_remove_from_index(self, mocksolr):
         # remove from index method on a single object instance
-        model = ModelIndexable()
+        model = MockModelIndexable()
         model.remove_from_index()
         model.solr.update.delete_by_id.assert_called_with([model.index_id()])
 
@@ -124,9 +133,9 @@ class TestIndexable:
         assert isinstance(simple_items_to_index[0], SimpleIndexable)
 
         # model-ish object
-        model_items_to_index = ModelIndexable.items_to_index()
+        model_items_to_index = MockModelIndexable.items_to_index()
         assert len(model_items_to_index) == 1
-        assert isinstance(model_items_to_index[0], ModelIndexable)
+        assert isinstance(model_items_to_index[0], MockModelIndexable)
 
         class NonModelIndexable(Indexable):
             pass
