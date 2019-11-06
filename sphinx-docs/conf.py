@@ -205,5 +205,7 @@ epub_exclude_files = ['search.html']
 intersphinx_mapping = {
     'https://docs.python.org/': None,
     'django': ('http://django.readthedocs.org/en/latest/', None),
-    'requests': ('http://docs.python-requests.org/en/master/', None),
-    }
+    # this url is no longer resolving
+    # 'requests': ('https://docs.python-requests.org/en/master/', None),
+    'requests': ('https://requests.kennethreitz.org/en/master/', None)
+}

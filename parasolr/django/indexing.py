@@ -1,3 +1,35 @@
+"""
+
+This module provides indexing support for Django models.  Also see
+:class:`~parasolr.indexing.Indexable`.
+
+To use, add :class:`ModelIndexable` as a mixin to the model class
+you want to be indexed.  At minimum, you'll want to extend the
+`index_data` method to include the data you want in the indexed::
+
+    def index_data(self):
+        index_data = super().index_data()
+
+        # if there are some records that should not be included
+        # return id only. This will blank out any previously indexed
+        # values, and item will not be findable by type.
+        # if not ...
+            # del index_data['item_type']
+            # return index_data
+
+        # add values to index data
+        index_data.update({
+            ...
+        })
+        return index_data
+
+You can optionally extend :meth:`~parasolr.indexing.Indexable.items_to_index`
+and :meth:`~parasolr.indexing.Indexable.index_item_type`.
+
+-------------------------
+
+"""
+
 import logging
 
 from parasolr.indexing import Indexable

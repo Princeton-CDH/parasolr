@@ -27,7 +27,7 @@ if django:
         no solr client is passed on.
 
         Args:
-            Optional :class:`parasolr.solr.client.SolrClient`.
+            Optional :class:`parasolr.solr.client.SolrClient`
         """
 
         def __init__(self, solr: Optional[SolrClient] = None):
@@ -37,5 +37,5 @@ if django:
 
 
     class AliasedSolrQuerySet(SolrQuerySet, query.AliasedSolrQuerySet):
-        """Combination of :class:SolrQuerySet` and
+        """Combination of :class:`SolrQuerySet` and
         :class:`~parasolr.query.alias_queryset.AliasedSolrQuerySet`"""

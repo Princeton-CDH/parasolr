@@ -27,7 +27,9 @@ dependencies and signals that should trigger reindexing.  Example::
             }
         }
 
+
 The keys of the dependency dict can be:
+
 - an attribute on the indexable model (i.e., the name of a many-to-many
   relationship); this will bind an additional signal handler on the m2m
   relationship change.
@@ -37,6 +39,7 @@ The keys of the dependency dict can be:
   load a model directly
 
 The dictionaries for each related model or attribute should contain:
+
 - a key with the :mod:`django.db.models.signals` signal to bind
 - a signal handler to bind
 
