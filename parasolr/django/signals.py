@@ -110,7 +110,7 @@ class IndexableSignalHandler:
                 IndexableSignalHandler.handle_relation_change,
                 sender=m2m_rel)
 
-        for model, options in ModelIndexable.related.items():
+        for model, options in ModelIndexable.related:
             for signal_name, handler in options.items():
                 model_signal = getattr(models.signals, signal_name)
                 logger.debug('Registering %s signal handler for %s',
@@ -134,7 +134,7 @@ class IndexableSignalHandler:
                 IndexableSignalHandler.handle_relation_change,
                 sender=m2m_rel)
 
-        for model, options in ModelIndexable.related.items():
+        for model, options in ModelIndexable.related:
             for signal_name, handler in options.items():
                 model_signal = getattr(models.signals, signal_name)
                 logger.debug('Disconnecting %s signal handler for %s',

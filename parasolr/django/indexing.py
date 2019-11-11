@@ -110,7 +110,7 @@ class ModelIndexable(Indexable):
         if cls.related or cls.m2m:
             return
 
-        related = {}
+        related = []
         m2m = []
         for model in cls.__subclasses__():
             # if no dependencies specified, skip
@@ -119,7 +119,7 @@ class ModelIndexable(Indexable):
             for dep, opts in model.index_depends_on.items():
                 # get related model
                 related_model = cls.get_related_model(model, dep)
-                related[related_model] = opts
+                related.append((related_model, opts))
 
                 # check for through model
                 if hasattr(model, dep):

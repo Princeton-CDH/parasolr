@@ -146,9 +146,12 @@ def test_identify_index_dependencies(mocksolrclient):
     ModelIndexable.identify_index_dependencies()
 
     # collection model should be in related object config
-    assert Collection in ModelIndexable.related
+    # convert list of tuples back into dict for testing
+    related_models = {model: opts for model, opts in ModelIndexable.related}
+    assert Collection in related_models
+    # assert Collection in ModelIndexable.related
     # save/delete handler config options saved
-    assert ModelIndexable.related[Collection] == \
+    assert related_models[Collection] == \
         IndexItem.index_depends_on['collections']
     # through model added to m2m list
     assert IndexItem.collections.through in ModelIndexable.m2m
