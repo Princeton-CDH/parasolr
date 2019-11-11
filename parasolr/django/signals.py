@@ -61,89 +61,86 @@ except ImportError:
     django = None
 
 from parasolr.django.indexing import ModelIndexable
+from parasolr.django.util import requires_django
 
 logger = logging.getLogger(__name__)
 
 
-if django:
+@requires_django
+class IndexableSignalHandler:
 
-    class IndexableSignalHandler:
+    @staticmethod
+    def handle_save(sender, instance, **kwargs):
+        if isinstance(instance, ModelIndexable):
+            logger.debug('Indexing %r', instance)
+            instance.index()
 
-        @staticmethod
-        def handle_save(sender, instance, **kwargs):
+    @staticmethod
+    def handle_delete(sender, instance, **kwargs):
+        logger.debug('Deleting %r from index', instance)
+        if isinstance(instance, ModelIndexable):
+            instance.remove_from_index()
+
+    @staticmethod
+    def handle_relation_change(sender, instance, action, **kwargs):
+        # handle add, remove, and clear for ModelIndexable instances
+        if action in ['post_add', 'post_remove', 'post_clear']:
             if isinstance(instance, ModelIndexable):
-                logger.debug('Indexing %r', instance)
+                logger.debug('Indexing %r (m2m change)', instance)
                 instance.index()
 
-        @staticmethod
-        def handle_delete(sender, instance, **kwargs):
-            logger.debug('Deleting %r from index', instance)
-            if isinstance(instance, ModelIndexable):
-                instance.remove_from_index()
+    @staticmethod
+    def connect():
+        '''bind indexing signal handlers to save and delete signals for
+        :class:`~ppa.archive.solr.Indexable` subclassess and any
+        indexing dependencies'''
 
-        @staticmethod
-        def handle_relation_change(sender, instance, action, **kwargs):
-            # handle add, remove, and clear for ModelIndexable instances
-            if action in ['post_add', 'post_remove', 'post_clear']:
-                if isinstance(instance, ModelIndexable):
-                    logger.debug('Indexing %r (m2m change)', instance)
-                    instance.index()
+        # bind to save and delete signals for ModelIndexable subclasses
+        for model in ModelIndexable.__subclasses__():
+            logger.debug('Registering signal handlers for %s', model)
+            models.signals.post_save.connect(
+                IndexableSignalHandler.handle_save, sender=model)
+            models.signals.post_delete.connect(
+                IndexableSignalHandler.handle_delete, sender=model)
 
-        @staticmethod
-        def connect():
-            '''bind indexing signal handlers to save and delete signals for
-            :class:`~ppa.archive.solr.Indexable` subclassess and any
-            indexing dependencies'''
+        ModelIndexable.identify_index_dependencies()
+        for m2m_rel in ModelIndexable.m2m:
+            logger.debug('Registering m2m signal handler for %s', m2m_rel)
+            models.signals.m2m_changed.connect(
+                IndexableSignalHandler.handle_relation_change,
+                sender=m2m_rel)
 
-            # bind to save and delete signals for ModelIndexable subclasses
-            for model in ModelIndexable.__subclasses__():
-                logger.debug('Registering signal handlers for %s', model)
-                models.signals.post_save.connect(
-                    IndexableSignalHandler.handle_save, sender=model)
-                models.signals.post_delete.connect(
-                    IndexableSignalHandler.handle_delete, sender=model)
+        for model, options in ModelIndexable.related.items():
+            for signal_name, handler in options.items():
+                model_signal = getattr(models.signals, signal_name)
+                logger.debug('Registering %s signal handler for %s',
+                             signal_name, model)
+                model_signal.connect(handler, sender=model)
 
-            ModelIndexable.identify_index_dependencies()
-            for m2m_rel in ModelIndexable.m2m:
-                logger.debug('Registering m2m signal handler for %s', m2m_rel)
-                models.signals.m2m_changed.connect(
-                    IndexableSignalHandler.handle_relation_change,
-                    sender=m2m_rel)
+    @staticmethod
+    def disconnect():
+        '''disconnect indexing signal handlers'''
+        for model in ModelIndexable.__subclasses__():
+            logger.debug('Disconnecting signal handlers for %s', model)
+            models.signals.post_save.disconnect(
+                IndexableSignalHandler.handle_save, sender=model)
+            models.signals.post_delete.disconnect(
+                IndexableSignalHandler.handle_delete, sender=model)
 
-            for model, options in ModelIndexable.related.items():
-                for signal_name, handler in options.items():
-                    model_signal = getattr(models.signals, signal_name)
-                    logger.debug('Registering %s signal handler for %s',
-                                 signal_name, model)
-                    model_signal.connect(handler, sender=model)
+        for m2m_rel in ModelIndexable.m2m:
+            logger.debug('Disconnecting m2m signal handler for %s',
+                         m2m_rel)
+            models.signals.m2m_changed.disconnect(
+                IndexableSignalHandler.handle_relation_change,
+                sender=m2m_rel)
 
-        @staticmethod
-        def disconnect():
-            '''disconnect indexing signal handlers'''
-            for model in ModelIndexable.__subclasses__():
-                logger.debug('Disconnecting signal handlers for %s', model)
-                models.signals.post_save.disconnect(
-                    IndexableSignalHandler.handle_save, sender=model)
-                models.signals.post_delete.disconnect(
-                    IndexableSignalHandler.handle_delete, sender=model)
+        for model, options in ModelIndexable.related.items():
+            for signal_name, handler in options.items():
+                model_signal = getattr(models.signals, signal_name)
+                logger.debug('Disconnecting %s signal handler for %s',
+                             signal_name, model)
+                model_signal.disconnect(handler, sender=model)
 
-            for m2m_rel in ModelIndexable.m2m:
-                logger.debug('Disconnecting m2m signal handler for %s',
-                             m2m_rel)
-                models.signals.m2m_changed.disconnect(
-                    IndexableSignalHandler.handle_relation_change,
-                    sender=m2m_rel)
 
-            for model, options in ModelIndexable.related.items():
-                if 'save' in options:
-                    logger.debug('Disconnecting save signal handler for %s',
-                                 model)
-                    models.signals.pre_save.disconnect(options['save'],
-                                                       sender=model)
-                if 'delete' in options:
-                    logger.debug('Disconnecting delete signal handler for %s',
-                                 model)
-                    models.signals.pre_delete.disconnect(
-                        options['delete'], sender=model)
-
+if django:
     IndexableSignalHandler.connect()
