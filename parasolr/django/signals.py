@@ -135,16 +135,11 @@ class IndexableSignalHandler:
                 sender=m2m_rel)
 
         for model, options in ModelIndexable.related.items():
-            if 'save' in options:
-                logger.debug('Disconnecting save signal handler for %s',
-                             model)
-                models.signals.pre_save.disconnect(options['save'],
-                                                   sender=model)
-            if 'delete' in options:
-                logger.debug('Disconnecting delete signal handler for %s',
-                             model)
-                models.signals.pre_delete.disconnect(
-                    options['delete'], sender=model)
+            for signal_name, handler in options.items():
+                model_signal = getattr(models.signals, signal_name)
+                logger.debug('Disconnecting %s signal handler for %s',
+                             signal_name, model)
+                model_signal.disconnect(handler, sender=model)
 
 
 if django:
