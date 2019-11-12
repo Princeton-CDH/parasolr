@@ -26,6 +26,7 @@ class SimpleIndexable(Indexable):
     class objects:
         def count():
             return 5
+
         def all():
             return [SimpleIndexable() for i in range(5)]
 
@@ -53,6 +54,16 @@ class AbstractIndexable(Indexable):
         abstract = True
 
 
+class SubIndexable(SimpleIndexable):
+    """indexable sub-subclass that should be included in all_indexables"""
+    pass
+
+
+class SubAbstractIndexable(SimpleIndexable):
+    class Meta:
+        abstract = True
+
+
 @skipif_no_django
 @patch.object(Indexable, 'solr')
 class TestIndexable:
@@ -62,6 +73,8 @@ class TestIndexable:
         assert SimpleIndexable in indexables
         assert MockModelIndexable in indexables
         assert AbstractIndexable not in indexables
+        assert SubIndexable in indexables
+        assert SubAbstractIndexable not in indexables
 
     def test_index_item_type(self, mocksolr):
         # use model verbose name by default

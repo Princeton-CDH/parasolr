@@ -64,6 +64,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         self.init_indexables()
+        print('indexables %s' % self.indexables)
         # indexing choices: all, none, and all indexable model names
         choices = ['all'] + list(self.indexables.keys())
         # allow indexing none so you can clear without indexing

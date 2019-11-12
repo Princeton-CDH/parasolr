@@ -46,5 +46,9 @@ if django:
 
     # item with no index_depends_on declared should not cause an error
     class IndependentItem(models.Model, ModelIndexable):
+
         class Meta:
             abstract = True
+
+# something is overriding this (inheritance?); ensure set as abstract
+IndependentItem.Meta.abstract = True

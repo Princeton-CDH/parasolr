@@ -14,6 +14,9 @@ except ImportError:
     pass
 
 from parasolr.tests.utils import skipif_no_django
+# ensure indexables are imported
+from parasolr.tests.test_indexing import SimpleIndexable
+from parasolr.django.tests import test_models
 
 
 @skipif_no_django
@@ -233,9 +236,7 @@ class TestIndexCommand:
 
     @patch('parasolr.management.commands.index.progressbar')
     @patch('parasolr.management.commands.index.SolrClient')
-    @patch('parasolr.indexing.SolrClient')
-    def test_call_command(self, mocksolr, mocksolr2, mockprogbar):
-        mocksolr = Mock()
+    def test_call_command(self, mocksolr2, mockprogbar):
 
         # patch the method that actually does the indexing (tested elsewhere)
         with patch.object(index.Command, 'index') as mock_index_meth:
@@ -246,6 +247,7 @@ class TestIndexCommand:
             # index all indexable content
             call_command('index', index='all', stdout=stdout)
             # should be called once for each indexable subclass
+            print(mock_index_meth.call_args_list)
             assert mock_index_meth.call_count == 2
             # call order is not guaranteed, not inspecting here
             # commit called after works are indexed
