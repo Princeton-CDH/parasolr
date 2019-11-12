@@ -50,5 +50,5 @@ if django:
         class Meta:
             abstract = True
 
-# something is overriding this (inheritance?); ensure set as abstract
-IndependentItem.Meta.abstract = True
+    # something is overriding this (inheritance?); ensure set as abstract
+    IndependentItem.Meta.abstract = True
