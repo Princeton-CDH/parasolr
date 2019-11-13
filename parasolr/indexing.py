@@ -69,21 +69,6 @@ class Indexable:
         """Find all :class:`Indexable` subclasses for indexing. Ignore abstract
         :class:`Indexable` subclasses such as
         :class:`~parasolr.django.indexing.ModelIndexable`."""
-
-        for subclass in all_subclasses(cls):
-            print(subclass)
-            print(getattr(subclass, 'Meta', '[no meta]'))
-            if hasattr(subclass, "Meta"):
-                print('abstract? %s' % subclass.Meta.abstract)
-
-            print('not abstract ? %s' % bool(not hasattr(subclass, 'Meta') or not subclass.Meta.abstract))
-
-        indexables = [subclass for subclass in all_subclasses(cls)
-                      if not hasattr(subclass, 'Meta') or not subclass.Meta.abstract]
-        print('all indexables')
-        print(indexables)
-
-
         return [subclass for subclass in all_subclasses(cls)
                 if not hasattr(subclass, 'Meta') or not subclass.Meta.abstract]
 
