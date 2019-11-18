@@ -68,22 +68,31 @@ logger = logging.getLogger(__name__)
 
 @requires_django
 class IndexableSignalHandler:
+    '''Signal handler for indexing Django model-based indexables.
+    Automatically identifies and binds handlers based on configured
+    index dependencies on indexable objects..
+    '''
 
     @staticmethod
     def handle_save(sender, instance, **kwargs):
+        '''reindex on save if an instance of
+        :class:`~parasolr.django.indexing.ModelIndexable`'''
         if isinstance(instance, ModelIndexable):
             logger.debug('Indexing %r', instance)
             instance.index()
 
     @staticmethod
     def handle_delete(sender, instance, **kwargs):
+        '''remove from index on delete if an instance of
+        :class:`~parasolr.django.indexing.ModelIndexable`'''
         logger.debug('Deleting %r from index', instance)
         if isinstance(instance, ModelIndexable):
             instance.remove_from_index()
 
     @staticmethod
     def handle_relation_change(sender, instance, action, **kwargs):
-        # handle add, remove, and clear for ModelIndexable instances
+        '''index on add, remove, and clear for
+        :class:`~parasolr.django.indexing.ModelIndexable` instances'''
         if action in ['post_add', 'post_remove', 'post_clear']:
             if isinstance(instance, ModelIndexable):
                 logger.debug('Indexing %r (m2m change)', instance)

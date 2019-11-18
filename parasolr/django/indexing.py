@@ -62,6 +62,10 @@ class ModelIndexable(Indexable):
 
     @staticmethod
     def get_related_model(model, name):
+        '''Find a related model for use in signal-based indexing. Supports
+        app.Model notation or attribute on the current model (supports
+        queryset syntax for attributes on related models.)
+        '''
 
         # support app.Model notation
         if '.' in name:
