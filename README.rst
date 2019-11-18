@@ -130,5 +130,14 @@ requires a minimal settings file for Django-required configurations.
    pytest
 
 
+License
+-------
+
+**parasolr** is distributed under the Apache 2.0 License.
+
+©2010 Trustees of Princeton University.  Permission granted via
+Princeton Docket #20-3619 for distribution online under a standard Open Source
+license.  Ownership rights transferred to Rebecca Koeser provided software
+is distributed online via open source.
 
 
