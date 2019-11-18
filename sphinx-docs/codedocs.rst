@@ -54,13 +54,34 @@ Indexing
 QuerySet
 --------
 
-.. automodule:: parasolr.query
+.. automodule:: parasolr.query.queryset
+   :members:
+
+.. automodule:: parasolr.query.aliased_queryset
    :members:
 
 Django
 ------
 
 .. automodule:: parasolr.django
+    :members:
+
+Indexing
+^^^^^^^^
+
+.. automodule:: parasolr.django.indexing
+    :members:
+
+QuerySet
+^^^^^^^^
+
+.. automodule:: parasolr.django.queryset
+   :members:
+
+Signals
+^^^^^^^
+
+.. automodule:: parasolr.django.signals
     :members:
 
 

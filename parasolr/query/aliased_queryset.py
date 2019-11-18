@@ -66,12 +66,12 @@ class AliasedSolrQuerySet(SolrQuerySet):
         return super().facet(*args, **kwargs)
 
     def stats(self, *args, **kwargs) -> 'AliasedSolrQuerySet':
-        """Extend :methd:`parasolr.query.queryset.SolrQuerySet.stats
+        """Extend :meth:`parasolr.query.queryset.SolrQuerySet.stats`
         to support using aliased field names in args."""
         args = self._unalias_args(*args)
         return super().stats(*args, **kwargs)
 
-    def facet_field(self, field: str, exclude: str='', **kwargs) -> 'AlaisedSolrQuerySet':
+    def facet_field(self, field: str, exclude: str='', **kwargs) -> 'AliasedSolrQuerySet':
         '''Extend :meth:`parasolr.query.queryset.SolrQuerySet.facet_field``
         to support using aliased field names for field parameter.'''
         field = self.field_aliases.get(field, field)

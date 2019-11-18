@@ -14,13 +14,14 @@ from parasolr.solr.update import Update
 # up in conftest.py
 # Otherwise, they will be retained between test iterations and break results.
 
+
 class TestParasolrDict:
 
     def test_as_dict(self):
         para_dict = ParasolrDict({
             'a': 1,
             'b': ParasolrDict({
-                'c': [1, 2 ,3],
+                'c': [1, 2, 3],
                 'd': ParasolrDict({'z': 1})
             })
         })
@@ -38,6 +39,10 @@ class TestParasolrDict:
         # other structures should be untouched
         assert isinstance(as_dict['b']['c'], list)
 
+    def test_repr(self):
+        data = {'a': 1,}
+        para_dict = ParasolrDict(data)
+        assert repr(para_dict) == 'ParasolrDict(%s)' % repr(data)
 
 
 class TestQueryResponse:
@@ -58,14 +63,14 @@ class TestQueryResponse:
                 ],
             },
             'facet_counts': {
-                    'facet_fields': {
-                        'A': ['5', 1, '2', 1, '3', 1]
-                    },
-                    'facet_ranges': {
-                        'A': {
-                            'counts': ['1', 1, '2', 2, '7', 1]
-                        }
+                'facet_fields': {
+                    'A': ['5', 1, '2', 1, '3', 1]
+                },
+                'facet_ranges': {
+                    'A': {
+                        'counts': ['1', 1, '2', 2, '7', 1]
                     }
+                }
             },
             'stats': {
                 'stats_fields': {
@@ -114,7 +119,7 @@ class TestSolrClient:
         # test that session headers include the version name
         assert client.session.headers['User-Agent'] == \
             'parasolr/%s (python-requests/%s)' % (parasolr_ver,
-                                                 requests.__version__)
+                                                  requests.__version__)
 
     def test_query(self, test_client):
         # query of empty core produces the expected results

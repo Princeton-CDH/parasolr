@@ -28,6 +28,14 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+# recursive subclasses
+# via https://stackoverflow.com/questions/3862310/how-to-find-all-the-subclasses-of-a-class-given-its-name
+def all_subclasses(cls):
+    '''recursive method to find all subclasses'''
+    return set(cls.__subclasses__()).union(
+        [s for c in cls.__subclasses__() for s in all_subclasses(c)])
+
+
 class Indexable:
     """Mixin for objects that are indexed in Solr.  Subclasses must implement
     `index_id` and `index` methods.
@@ -58,8 +66,11 @@ class Indexable:
 
     @classmethod
     def all_indexables(cls):
-        """Find all :class:`Indexable` subclasses for indexing."""
-        return cls.__subclasses__()
+        """Find all :class:`Indexable` subclasses for indexing. Ignore abstract
+        :class:`Indexable` subclasses such as
+        :class:`~parasolr.django.indexing.ModelIndexable`."""
+        return [subclass for subclass in all_subclasses(cls)
+                if not hasattr(subclass, 'Meta') or not subclass.Meta.abstract]
 
     @classmethod
     def index_item_type(cls):
