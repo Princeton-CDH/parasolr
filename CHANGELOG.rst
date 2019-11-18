@@ -3,6 +3,17 @@
 CHANGELOG
 =========
 
+0.5
+---
+
+- Support for on-demand indexing for Django models based on signals;
+  see ``parasolr.django.signals``; adds a Django-specific indexable class
+  ``parasolr.django.indexing.ModelIndexable``
+- pytest plugin to disconnect django signal handlers
+- Django pytest fixture for an empty solr
+- Adds an EmptySolrQuerySet class, as a simpler way to check for empty results
+
+
 0.4
 ---
 
