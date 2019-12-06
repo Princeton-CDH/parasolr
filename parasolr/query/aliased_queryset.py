@@ -105,6 +105,9 @@ class AliasedSolrQuerySet(SolrQuerySet):
         '''Extend :meth:`parasolr.query.queryset.SolrQuerySet.get_facets`
         to use aliased field names for facet and range facet keys.'''
         facets = super().get_facets()
+        # bail out if empty dict is returned
+        if not facets:
+            return facets
 
         # replace field names in facet field and facet range
         # with aliased field names

@@ -81,7 +81,10 @@ class SolrQuerySet:
         # NOTE: django templates choke on AttrDict because it is
         # callable; using dictionary response instead
         self._result_cache = self.solr.query(**query_opts)
-        return [doc.as_dict() for doc in self._result_cache.docs]
+        # if there is a query error, result will not be set
+        if self._result_cache:
+            return [doc.as_dict() for doc in self._result_cache.docs]
+        return []
 
     def _set_highlighting_opts(self, query_opts: Dict) -> None:
         """Configure highlighting attributes on query_opts. Modifies
@@ -158,6 +161,9 @@ class SolrQuerySet:
 
         return query_opts
 
+    def __len__(self) -> int:
+        return self.count()
+
     def count(self) -> int:
         """Total number of results for the current query"""
 
@@ -173,7 +179,12 @@ class SolrQuerySet:
         query_opts['rows'] = 0
         query_opts['facet'] = False
         query_opts['hl'] = False
-        return self.solr.query(**query_opts).numFound
+        result = self.solr.query(**query_opts)
+        # if there is a query error, no result is returned
+        if result:
+            return result.numFound
+        # error = no results found
+        return 0
 
     def get_facets(self) -> Dict[str, Dict]:
         """Return a dictionary of facet information included in the
@@ -194,7 +205,10 @@ class SolrQuerySet:
         query_opts['hl'] = False
         # setting these by dictionary assignment, because conflicting
         # kwargs results in a Python exception
-        return self.solr.query(**query_opts).facet_counts
+        result = self.solr.query(**query_opts)
+        if result:
+            return result.facet_counts
+        return {}
 
     def get_stats(self) -> Optional[Dict[str, ParasolrDict]]:
         """Return a dictionary of stats information in Solr format or None

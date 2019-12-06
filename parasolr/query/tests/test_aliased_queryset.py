@@ -167,9 +167,9 @@ class TestAliasedSolrQuerySet(TestCase):
                         "1920", 5939,
                         "1940", 477,
                         "1960", 6],
-                    "gap":20,
-                    "start":1900,
-                    "end":1980}
+                    "gap": 20,
+                    "start": 1900,
+                    "end": 1980}
             }
         }
         mock_get_facets.return_value = sample_facet_result.copy()
@@ -190,6 +190,10 @@ class TestAliasedSolrQuerySet(TestCase):
             sample_facet_result['facet_ranges']['year_i']
         # non-aliased field is ignored
         assert 'birth' in facets['facet_ranges']
+
+        # error on query returns empty facets
+        mock_get_facets.return_value = {}
+        assert self.mysqs.get_facets() == {}
 
     @patch('parasolr.query.queryset.SolrQuerySet.get_stats')
     def test_get_stats(self, mock_get_stats):
