@@ -3,6 +3,11 @@
 CHANGELOG
 =========
 
+0.5.1
+-----
+
+* bugfix: SolrQuerySet improved handling for Solr errors
+
 0.5
 ---
 

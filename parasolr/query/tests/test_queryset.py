@@ -145,6 +145,18 @@ class TestSolrQuerySet:
         # cache should not be populated
         assert not sqs._result_cache
 
+        # error on the query should not raise an exception
+        mocksolr.query.return_value = None
+        assert sqs.count() == 0
+
+    def test_len(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        # simulate result cache already populated
+        sqs._result_cache = Mock()
+        sqs._result_cache.numFound = 5477
+        assert len(sqs) == sqs.count()
+
     @patch('parasolr.query.queryset.QueryResponse')
     def test_get_facets(self, mockQR):
         mocksolr = Mock(spec=SolrClient)
@@ -190,6 +202,10 @@ class TestSolrQuerySet:
         assert isinstance(ret['facet_fields'], OrderedDict)
         # return should be the return value of facet_counts.facet_fields
         assert ret['facet_fields'] == OrderedDict(b=2)
+
+        # error on query returns no result
+        mocksolr.query.return_value = None
+        assert sqs.get_facets() == {}
 
     @patch('parasolr.query.queryset.QueryResponse')
     def test_get_stats(self, mockQR):
