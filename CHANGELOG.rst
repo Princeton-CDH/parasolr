@@ -3,6 +3,12 @@
 CHANGELOG
 =========
 
+0.5.2
+-----
+
+* bugfix: correct queryset highlighting so it actually works
+* Revise pytest plugin code to work on non-django projects
+
 0.5.1
 -----
 
