@@ -1,12 +1,12 @@
-from collections import OrderedDict
 import time
+from collections import OrderedDict
 
 from attrdict import AttrDict
 import requests
 
 from parasolr import __version__ as parasolr_ver
 from parasolr.solr.admin import CoreAdmin
-from parasolr.solr.client import QueryResponse, SolrClient, ParasolrDict
+from parasolr.solr.client import ParasolrDict, QueryResponse, SolrClient
 from parasolr.solr.schema import Schema
 from parasolr.solr.update import Update
 
@@ -93,6 +93,7 @@ class TestQueryResponse:
                           OrderedDict)
         assert qr.facet_counts['facet_fields']['A']['5'] == 1
         assert qr.facet_counts['facet_ranges']['A']['counts']['2'] == 2
+        assert qr.highlighting == {}
 
 
 class TestSolrClient:

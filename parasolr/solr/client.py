@@ -60,6 +60,8 @@ class QueryResponse:
         if 'facet_counts' in response:
             self.facet_counts = \
                 self._process_facet_counts(response.facet_counts)
+        self.highlighting = response.get('highlighting', {})
+
         # NOTE: To access facet_counts.facet_fields or facet_counts.facet_ranges
         # as OrderedDicts, you must use dict notation (or AttrDict *will*
         # convert).

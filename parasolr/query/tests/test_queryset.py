@@ -26,7 +26,7 @@ class TestSolrQuerySet:
         assert query_opts['q'] == '*:*'
         # don't include unset options
         for opt in ['fq', 'rows', 'sort', 'fl', 'hl',
-                    'hl.field', 'facet', 'stats', 'stats.field']:
+                    'hl.fl', 'facet', 'stats', 'stats.field']:
             assert opt not in query_opts
 
         # customized query opts
@@ -53,7 +53,7 @@ class TestSolrQuerySet:
         assert query_opts['fl'] == ','.join(sqs.field_list)
         # highlighting should be turned on
         assert query_opts['hl']
-        assert query_opts['hl.field'] == 'content'
+        assert query_opts['hl.fl'] == 'content'
         # highlighting options added with hl.prefix
         assert query_opts['hl.snippets'] == 3
         assert query_opts['hl.method'] == 'unified'
@@ -496,12 +496,17 @@ class TestSolrQuerySet:
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
         # simulate result cache already populated, no highlighting
-        sqs._result_cache = {'response': {'docs': []}}
+        sqs._result_cache = QueryResponse({
+            'responseHeader': {'params': ''},
+            'response': {
+                'docs': [], 'numFound': 0, 'start': 1,
+            }
+        })
         assert sqs.get_highlighting() == {}
 
         # simulate response with highlighting
         mock_highlights = {'id1': {'text': ['sample match content']}}
-        sqs._result_cache = {'highlighting': mock_highlights}
+        sqs._result_cache = Mock(highlighting=mock_highlights)
         assert sqs.get_highlighting() == mock_highlights
 
         # should populate cache if empty

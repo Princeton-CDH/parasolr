@@ -92,7 +92,7 @@ class SolrQuerySet:
         if self.highlight_field:
             query_opts.update({
                 'hl': True,
-                'hl.field': self.highlight_field
+                'hl.fl': self.highlight_field
             })
             for key, val in self.highlight_opts.items():
                 query_opts['hl.%s' % key] = val
@@ -519,7 +519,7 @@ class SolrQuerySet:
         """Return the highlighting portion of the Solr response."""
         if not self._result_cache:
             self.get_results()
-        return self._result_cache.get('highlighting', {})
+        return self._result_cache.highlighting
 
     def all(self) -> 'SolrQuerySet':
         """Return a new queryset that is a copy of the current one."""
