@@ -16,6 +16,7 @@ def test_solr_fields():
         required_str = schema.SolrStringField(required=True)
         multival_str = schema.SolrStringField(multivalued=True)
         custom_field = schema.SolrField('text_en')
+        last_modified = schema.SolrField('date', default='NOW')
 
     # get on the field returns solr config info
     assert TestySolrFields.mystring ==  \
@@ -26,6 +27,10 @@ def test_solr_fields():
         {'type': 'string', 'required': False, 'multiValued': True}
     assert TestySolrFields.custom_field ==  \
         {'type': 'text_en', 'required': False, 'multiValued': False}
+    # with default specified
+    assert TestySolrFields.last_modified ==  \
+        {'type': 'date', 'required': False, 'multiValued': False,
+         'default': 'NOW'}
 
     # explicitly read-only
     with pytest.raises(AttributeError):

@@ -3,6 +3,11 @@
 CHANGELOG
 =========
 
+0.6
+---
+
+* Support default option adding fields to solr schema
+
 0.5.2
 -----
 
