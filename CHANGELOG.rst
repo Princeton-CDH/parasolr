@@ -3,6 +3,12 @@
 CHANGELOG
 =========
 
+0.5.3
+---
+
+* Support default option adding fields to solr schema
+* Add utility method to convert Solr timestamp to python datetime
+
 0.5.2
 -----
 

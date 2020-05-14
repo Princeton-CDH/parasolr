@@ -100,14 +100,18 @@ class SolrField:
     """
 
     def __init__(self, fieldtype: str, required: bool=False,
-                 multivalued: bool=False):
+                 multivalued: bool=False, default: str=None):
         self.type = fieldtype
         self.required = required
         self.multivalued = multivalued
+        self.default = default
 
     def __get__(self, obj, objtype):
-        return {'type': self.type, 'required': self.required,
+        opts = {'type': self.type, 'required': self.required,
                 'multiValued': self.multivalued}
+        if self.default:
+            opts['default'] = self.default
+        return opts
 
     def __set__(self, obj, val):
         # enforce read-only descriptor
