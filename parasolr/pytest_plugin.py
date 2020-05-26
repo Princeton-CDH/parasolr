@@ -25,7 +25,11 @@ if django:
         options specified are used; if no test collection name
         is specified, generates one based on the configured collection.'''
 
-        # copy default config for basic connection optiosn (e.g. url)
+        # if no solr connection is configured, bail out
+        if not getattr(settings, 'SOLR_CONNECTIONS', None):
+            return
+
+        # copy default config for basic connection options (e.g. url)
         test_config = settings.SOLR_CONNECTIONS['default'].copy()
 
         # use test settings as primary: anything in test settings
@@ -67,6 +71,8 @@ if django:
         """
 
         solr_config_opts = get_test_solr_config()
+        if not solr_config_opts:
+            return
 
         logger.info('Configuring Solr for tests %(URL)s%(COLLECTION)s',
                     solr_config_opts)
