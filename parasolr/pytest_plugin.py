@@ -4,6 +4,7 @@ import pytest
 
 try:
     import django
+    from django.apps import apps
     from django.conf import settings
     from django.test import override_settings
 except ImportError:
@@ -25,8 +26,13 @@ if django:
         options specified are used; if no test collection name
         is specified, generates one based on the configured collection.'''
 
+        # skip if parasolr is not actually in django installed apps
+        if not apps.is_installed("parasolr"):
+            return
+
         # if no solr connection is configured, bail out
         if not getattr(settings, 'SOLR_CONNECTIONS', None):
+            logger.warn('No Solr configuration found')
             return
 
         # copy default config for basic connection options (e.g. url)

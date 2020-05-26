@@ -1,7 +1,7 @@
 """
 Test pytest plugin fixture for django
 """
-import uuid
+from unittest.mock import patch
 
 import pytest
 try:
@@ -114,3 +114,13 @@ def test_not_configured(testdir):
         result = testdir.runpytest_subprocess('--capture', 'no')
         # check that test case passed
         result.assert_outcomes(passed=1)
+
+
+@skipif_no_django
+def test_app_not_installed(testdir):
+    """skip without error if not configured."""
+
+    with patch('parasolr.pytest_plugin.apps') as mockapps:
+        mockapps.is_installed.return_value = False
+        assert not get_test_solr_config()
+        mockapps.is_installed.assert_called_with('parasolr')
