@@ -1,7 +1,7 @@
 """
 Test pytest plugin fixture for django
 """
-import uuid
+from unittest.mock import patch
 
 import pytest
 try:
@@ -93,6 +93,34 @@ def test_configure_django_test_solr(testdir):
 
     # run all tests with pytest with all pytest-django plugins turned off
     # result = testdir.runpytest('-p', 'no:django')
-    result = testdir.runpytest_subprocess('--capture', 'no') #, '-p', 'no:django')
+    result = testdir.runpytest_subprocess('--capture', 'no')
     # check that test case passed
     result.assert_outcomes(passed=1)
+
+
+@skipif_no_django
+def test_not_configured(testdir):
+    """skip without error if not configured."""
+
+    with override_settings(SOLR_CONNECTIONS=None):
+        assert not get_test_solr_config()
+
+        # create a temporary pytest test file with no solr use
+        testdir.makepyfile("""
+        def test_unrelated():
+            assert 1 + 1 == 2
+        """)
+        # run all tests with pytest with all pytest-django plugins turned off
+        result = testdir.runpytest_subprocess('--capture', 'no')
+        # check that test case passed
+        result.assert_outcomes(passed=1)
+
+
+@skipif_no_django
+def test_app_not_installed(testdir):
+    """skip without error if not configured."""
+
+    with patch('parasolr.pytest_plugin.apps') as mockapps:
+        mockapps.is_installed.return_value = False
+        assert not get_test_solr_config()
+        mockapps.is_installed.assert_called_with('parasolr')

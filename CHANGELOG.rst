@@ -3,6 +3,12 @@
 CHANGELOG
 =========
 
+0.5.4
+-----
+
+* Only enable pytest plugin when parasolr is in Django installed apps
+  and a Solr connection is configured
+
 0.5.3
 ---
 
