@@ -100,15 +100,17 @@ class SolrField:
     """
 
     def __init__(self, fieldtype: str, required: bool=False,
-                 multivalued: bool=False, default: str=None):
+                 multivalued: bool=False, default: str=None,
+                 stored: bool=True):
         self.type = fieldtype
         self.required = required
         self.multivalued = multivalued
         self.default = default
+        self.stored = stored
 
     def __get__(self, obj, objtype):
         opts = {'type': self.type, 'required': self.required,
-                'multiValued': self.multivalued}
+                'multiValued': self.multivalued, 'stored': self.stored}
         if self.default:
             opts['default'] = self.default
         return opts
