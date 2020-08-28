@@ -122,8 +122,8 @@ class IndexableSignalHandler:
         for model, options in ModelIndexable.related:
             for signal_name, handler in options.items():
                 model_signal = getattr(models.signals, signal_name)
-                logger.debug('Registering %s signal handler for %s',
-                             signal_name, model)
+                logger.debug('Registering %s signal handler %s for %s',
+                             handler, signal_name, model)
                 model_signal.connect(handler, sender=model)
 
     @staticmethod
