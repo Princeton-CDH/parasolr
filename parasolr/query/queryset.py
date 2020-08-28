@@ -100,7 +100,7 @@ class SolrQuerySet:
     def _set_faceting_opts(self, query_opts: Dict) -> None:
         """Configure faceting attributes directly on query_opts. Modifies
         dictionary directly."""
-        if self.facet_field_list or self.range_facet_fields:
+        if self.facet_field_list or self.range_facet_fields or self.facet_opts:
             query_opts.update({
                 'facet': True,
                 'facet.field': self.facet_field_list,
