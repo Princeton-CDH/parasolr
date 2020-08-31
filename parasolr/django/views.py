@@ -1,10 +1,15 @@
 import calendar
+import logging
 
 from django.utils.cache import get_conditional_response
 from django.views.generic.base import View
 
 from parasolr.django import SolrQuerySet
+from parasolr.solr import SolrClientException
 from parasolr.utils import solr_timestamp_to_datetime
+
+
+logger = logging.getLogger(__name__)
 
 
 class SolrLastModifiedMixin(View):
@@ -35,9 +40,13 @@ class SolrLastModifiedMixin(View):
             return solr_timestamp_to_datetime(sqs[0]['last_modified'])
             # skip extra call to Solr to check count and just grab the first
             # item if it exists
-        except (IndexError, KeyError):
+        except (IndexError, KeyError, SolrClientException) as err:
             # if a syntax or other solr error happens, no date to return
-            pass
+            # report the error, but don't fail since the view may still
+            # be able to render normally
+            logger.error('Failed to retrieve last modified: %s' % err)
+            # TODO: if possible, report view / args / url that triggering
+            # the error
 
     def dispatch(self, request, *args, **kwargs):
         '''Wrap the dispatch method to add a last modified header if
