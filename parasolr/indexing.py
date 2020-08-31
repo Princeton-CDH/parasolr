@@ -39,6 +39,13 @@ def all_subclasses(cls):
 class Indexable:
     """Mixin for objects that are indexed in Solr.  Subclasses must implement
     `index_id` and `index` methods.
+
+    When implementing an Indexable subclass where items_to_index
+    returns something like a generator, whicht does not expose either a
+    `count` method or can be counted with `len`, for use with
+    the Django index manage comment you should
+    implement `total_to_index` and return the number of items
+    to be indexed.
     """
 
     # NOTE: current implementation is Django-specific, intended for
@@ -78,6 +85,8 @@ class Indexable:
         across all Indexable items in an application. By default, uses
         Django model verbose name. Used in default index id and
         in index manage command. """
+        # TODO: move this implementation into django subclass?
+        # default could just return an attribute on the class
         return cls._meta.verbose_name
 
     @classmethod
