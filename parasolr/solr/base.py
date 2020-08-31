@@ -115,6 +115,11 @@ class ClientBase:
         if allowed_responses is None:
             allowed_responses = [requests.codes.ok]
 
+        # 404 error should be escalated, since it likely means a
+        # misconfiguration (wrong core name or core not created)
+        if response.status_code == requests.codes.not_found:
+            raise SolrClientException('404 Not Found: %s' % url)
+
         if response.status_code not in allowed_responses:
             # Add the content of the response on the off chance
             # it's helpful
