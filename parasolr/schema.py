@@ -166,20 +166,24 @@ class SolrFieldType:
     Args:
         field_class: The class of the SolrField
         analyzer: The name of the Solr analyzer to use on the field.
+        Additional field options can be passed as keyword arguments.
 
     Raises:
         AttributeError: If __set__ is called.
     """
-    def __init__(self, field_class: str, analyzer: str):
+    def __init__(self, field_class: str, analyzer: str, **kwargs: Any):
         self.field_class = field_class
         self.analyzer = analyzer
+        self.opts = kwargs
 
     def __get__(self, obj, objtype):
         # return format neded for declaring field type
-        return {
+        opts = self.opts.copy()
+        opts.update({
             'class': self.field_class,
             'analyzer': self.analyzer.as_solr_config()
-        }
+        })
+        return opts
 
     def __set__(self, obj, val):
         # enforce read-only descriptor
