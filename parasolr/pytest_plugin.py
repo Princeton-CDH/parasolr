@@ -126,37 +126,47 @@ def mock_solr_queryset(request):
     '''Fixture to provide a :class:`unitest.mock.Mock` for
     :class:`~parasolr.query.queryset.SolrQuerySet` that simplifies
     testing against a mocked version of the fluent interface. It returns
-    a mock callable for use with patching the class; when the mock is
-    called it will return the mock with the fluent interface.
+    a method to generate a Mock queryset class; the method has an
+    optional parameter for a queryset subclass to use for the `spec`
+    argument to Mock.
 
-    If called  from a class or function where the request provides access
-    to a class, the mock will be set as `mock_solr_queryset` on the class.
+    If called from a class or function where the request provides access
+    to a class, the mock generator method `mock_solr_queryset` will be
+    added to the class as a static method.
 
-    Example use::
+    Example uses:
 
+        @pytest.mark.usefixtures("mock_solr_queryset")
         class MyTestCaseTestCase):
 
-            @pytest.mark.usefixtures("mock_solr_queryset")
             def test_my_solr_method(self):
 
-            with patch('parasolr.queryset.SolrQuerySet',
-                   new=self.mock_solr_queryset) as mock_queryset_cls:
+                with patch('parasolr.queryset.SolrQuerySet',
+                       new=self.mock_solr_queryset()) as mock_queryset_cls:
 
-                mock_qs = mock_queryset_cls.return_value
-                mock_qs.search.assert_any_call(text='my test search')
+                    mock_qs = mock_queryset_cls.return_value
+                    mock_qs.search.assert_any_call(text='my test search')
+
+    To use with a custom queryset subclass::
+
+        mock_qs = self.mock_solr_queryset(MySolrQuerySet)
 
     '''
-    mock_qs = Mock(spec=SolrQuerySet)
-    # simulate fluent interface
-    for meth in ['filter', 'facet', 'stats', 'facet_field', 'facet_range',
-                 'search', 'order_by', 'query', 'only', 'also', 'highlight',
-                 'raw_query_parameters', 'all', 'none']:
-        getattr(mock_qs, meth).return_value = mock_qs
 
-    mock_qs_class = Mock(return_value=mock_qs)
+    @staticmethod
+    def get_mock_solr_queryset(spec=SolrQuerySet):
+        mock_qs = Mock(spec=spec)
+
+        # simulate fluent interface
+        for meth in ['filter', 'facet', 'stats', 'facet_field', 'facet_range',
+                     'search', 'order_by', 'query', 'only', 'also',
+                     'highlight', 'raw_query_parameters', 'all', 'none']:
+            getattr(mock_qs, meth).return_value = mock_qs
+
+        return Mock(return_value=mock_qs)
 
     # if scope is class or function and there is a class available,
-    # set the mock on the class
+    # set the mock generator on the class
     if request.scope in ['class', 'function'] and hasattr(request, 'cls'):
-        request.cls.mock_solr_queryset = mock_qs_class
-    return mock_qs_class
+        request.cls.mock_solr_queryset = get_mock_solr_queryset
+    return get_mock_solr_queryset

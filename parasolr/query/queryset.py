@@ -194,6 +194,7 @@ class SolrQuerySet:
         if self._result_cache is not None:
             # wrap to process facets and return as dictionary
             # for Django template support
+            return self._result_cache.facet_counts
             qr = QueryResponse(self._result_cache)
             # NOTE: using dictionary syntax preserves OrderedDict
             return qr.facet_counts
@@ -223,6 +224,15 @@ class SolrQuerySet:
         response = self.solr.query(**query_opts)
         if response:
             return response.stats
+
+    def get_expanded(self) -> Dict[str, Dict]:
+        """Return a dictionary of expanded records included in the
+        Solr response.
+        """
+        if not self._result_cache:
+            self.get_results()
+
+        return self._result_cache.expanded
 
     @staticmethod
     def _lookup_to_filter(key: str, value: Any, tag: str = '') -> str:
@@ -532,7 +542,8 @@ class SolrQuerySet:
         qs_copy.search_qs = ['NOT *:*']
         return qs_copy
 
-    def _clone(self) -> 'SolrQuerySet':
+    # def _clone(self) -> 'SolrQuerySet':
+    def _clone(self):
         """
         Return a copy of the current QuerySet for modification via
         filters.
