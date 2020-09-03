@@ -36,7 +36,7 @@ if django:
 
         # if no solr connection is configured, bail out
         if not getattr(settings, 'SOLR_CONNECTIONS', None):
-            logger.warn('No Solr configuration found')
+            logger.warning('No Solr configuration found')
             return
 
         # copy default config for basic connection options (e.g. url)
@@ -158,7 +158,6 @@ def mock_solr_queryset(request):
 
     '''
 
-    @staticmethod
     def get_mock_solr_queryset(spec=SolrQuerySet):
         mock_qs = MagicMock(spec=spec)
 
@@ -171,7 +170,8 @@ def mock_solr_queryset(request):
         return Mock(return_value=mock_qs)
 
     # if scope is class or function and there is a class available,
-    # set the mock generator on the class
-    if request.scope in ['class', 'function'] and hasattr(request, 'cls'):
-        request.cls.mock_solr_queryset = get_mock_solr_queryset
+    # convert the mock generator to a static method and set it on the class
+    if request.scope in ['class', 'function'] and \
+       getattr(request, 'cls', None):
+        request.cls.mock_solr_queryset = staticmethod(get_mock_solr_queryset)
     return get_mock_solr_queryset
