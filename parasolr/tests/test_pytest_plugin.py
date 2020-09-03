@@ -8,12 +8,12 @@ try:
     from django.conf import settings
     from django.test import override_settings
 
-    from parasolr.pytest_plugin import get_test_solr_config, \
-        get_mock_solr_queryset
+    from parasolr.pytest_plugin import get_test_solr_config
 
 except ImportError:
     pass
 
+from parasolr.pytest_plugin import get_mock_solr_queryset
 from parasolr.query import SolrQuerySet
 from parasolr.tests.utils import skipif_no_django
 
