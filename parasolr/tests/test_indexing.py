@@ -156,3 +156,19 @@ class TestIndexable:
         # raises not implemented if objects.all fails
         with pytest.raises(NotImplementedError):
             NonModelIndexable.items_to_index()
+
+    def test_total_to_index(self, mocksolr):
+        # assumes django model manager interface by default
+
+        # simple object with objects.all interface
+        assert SimpleIndexable.total_to_index() == 5
+
+        # model-ish object
+        assert MockModelIndexable.total_to_index() == 1
+
+        class NonModelIndexable(Indexable):
+            pass
+
+        # raises not implemented if objects.all fails
+        with pytest.raises(NotImplementedError):
+            NonModelIndexable.total_to_index()
