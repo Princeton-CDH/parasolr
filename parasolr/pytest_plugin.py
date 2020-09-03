@@ -126,6 +126,18 @@ if django:
             sleep(0.1)
 
 
+def get_mock_solr_queryset(spec=SolrQuerySet):
+    mock_qs = MagicMock(spec=spec)
+
+    # simulate fluent interface
+    for meth in ['filter', 'facet', 'stats', 'facet_field', 'facet_range',
+                 'search', 'order_by', 'query', 'only', 'also',
+                 'highlight', 'raw_query_parameters', 'all', 'none']:
+        getattr(mock_qs, meth).return_value = mock_qs
+
+    return Mock(return_value=mock_qs)
+
+
 @pytest.fixture
 def mock_solr_queryset(request):
     '''Fixture to provide a :class:`unitest.mock.Mock` for
@@ -157,17 +169,6 @@ def mock_solr_queryset(request):
         mock_qs = self.mock_solr_queryset(MySolrQuerySet)
 
     '''
-
-    def get_mock_solr_queryset(spec=SolrQuerySet):
-        mock_qs = MagicMock(spec=spec)
-
-        # simulate fluent interface
-        for meth in ['filter', 'facet', 'stats', 'facet_field', 'facet_range',
-                     'search', 'order_by', 'query', 'only', 'also',
-                     'highlight', 'raw_query_parameters', 'all', 'none']:
-            getattr(mock_qs, meth).return_value = mock_qs
-
-        return Mock(return_value=mock_qs)
 
     # if scope is class or function and there is a class available,
     # convert the mock generator to a static method and set it on the class
