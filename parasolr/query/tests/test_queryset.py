@@ -157,23 +157,17 @@ class TestSolrQuerySet:
         sqs._result_cache.numFound = 5477
         assert len(sqs) == sqs.count()
 
-    @patch('parasolr.query.queryset.QueryResponse')
-    def test_get_facets(self, mockQR):
+    def test_get_facets(self):
         mocksolr = Mock(spec=SolrClient)
         # mock cached solr response
-        mock_response = Mock()
         sqs = SolrQuerySet(mocksolr)
         # mock out return of MockQR constructor to ensure it calls
         # facet_counts.facet_fields
-        mockQR.return_value = Mock()
-        mockQR.return_value.facet_counts = {'facet_fields': OrderedDict(a=1)}
-        sqs._result_cache = mock_response
+        sqs._result_cache = Mock()
+        sqs._result_cache.facet_counts = {'facet_fields': OrderedDict(a=1)}
 
         ret = sqs.get_facets()
-        # QueryResponse called to wrap mock_response
-        assert mockQR.called
         # called with the cached response
-        mockQR.assert_called_with(mock_response)
         # facet fields should be an OrderedDict
         assert isinstance(ret['facet_fields'], OrderedDict)
         # return the value of facet_counts.facet_fields
@@ -185,11 +179,8 @@ class TestSolrQuerySet:
             'facet_fields': OrderedDict(b=2)}
         sqs._result_cache = None
         # clear the previous mocks
-        mockQR.reset_mock()
 
         ret = sqs.get_facets()
-        # QueryResponse not called to wrap return of query
-        assert not mockQR.called
         # solr.query called
         assert mocksolr.query.called
         # should be called with rows=0 and hl=False to avoid inefficiencies
@@ -207,29 +198,21 @@ class TestSolrQuerySet:
         mocksolr.query.return_value = None
         assert sqs.get_facets() == {}
 
-    @patch('parasolr.query.queryset.QueryResponse')
-    def test_get_stats(self, mockQR):
+    def test_get_stats(self):
         mocksolr = Mock(spec=SolrClient)
         # mock cached solr response
         mock_response = Mock()
         sqs = SolrQuerySet(mocksolr)
         sqs._result_cache = mock_response
         ret = sqs.get_stats()
-        # QueryResponse called to wrap mock_response
-        assert mockQR.called
-        # called with the cached response
-        mockQR.assert_called_with(mock_response)
-        # return should be stats property of the mockQR
-        assert ret == mockQR.return_value.stats
+        # return should be stats property of the cached result
+        assert ret == mock_response.stats
 
         # Now check that get_stats makes solr query if no cached results
         sqs._result_cache = None
-        mockQR.reset_mock()
         mocksolr.query.return_value = Mock()
 
         ret = sqs.get_stats()
-        # QR not called
-        assert not mockQR.called
         # should be called with rows=0 and hl=False
         name, args, kwargs = mocksolr.query.mock_calls[0]
         assert kwargs['rows'] == 0
