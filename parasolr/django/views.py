@@ -16,7 +16,7 @@ class SolrLastModifiedMixin(View):
     """View mixin to add last modified headers based on Solr.
     By default, searches entire solr collection and returns the most
     recent last modified value (assumes **last_modified** field).
-    To filter for items specific to  your view, either
+    To filter for items specific to your view, either
     set :attr:`solr_lastmodified_filters` or
     implement :meth:`get_solr_lastmodified_filters`.
     """
@@ -35,6 +35,7 @@ class SolrLastModifiedMixin(View):
         filter_qs = self.get_solr_lastmodified_filters()
         sqs = SolrQuerySet().filter(**filter_qs) \
             .order_by('-last_modified').only('last_modified')
+
         try:
             # Solr stores date in isoformat; convert to datetime
             return solr_timestamp_to_datetime(sqs[0]['last_modified'])

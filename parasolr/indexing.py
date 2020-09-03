@@ -117,8 +117,7 @@ class Indexable:
         }
 
     def index(self):
-        """Index the current object in Solr.  Allows passing in
-        parameter, e.g. to set a `commitWithin` value.
+        """Index the current object in Solr.
         """
         self.solr.update.index([self.index_data()])
 
