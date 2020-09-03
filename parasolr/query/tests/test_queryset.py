@@ -161,8 +161,6 @@ class TestSolrQuerySet:
         mocksolr = Mock(spec=SolrClient)
         # mock cached solr response
         sqs = SolrQuerySet(mocksolr)
-        # mock out return of MockQR constructor to ensure it calls
-        # facet_counts.facet_fields
         sqs._result_cache = Mock()
         sqs._result_cache.facet_counts = {'facet_fields': OrderedDict(a=1)}
 
@@ -219,6 +217,20 @@ class TestSolrQuerySet:
         assert kwargs['hl'] is False
         # returns the stats property of query call
         assert ret == mocksolr.query.return_value.stats
+
+    def test_get_expanded(self):
+        mocksolr = Mock(spec=SolrClient)
+        # mock cached solr response
+        with patch.object(SolrQuerySet, 'get_results') as mock_get_results:
+            sqs = SolrQuerySet(mocksolr)
+            sqs._result_cache = Mock()
+            result = sqs.get_expanded()
+            assert result == sqs._result_cache.expanded
+            mock_get_results.assert_not_called()
+
+            # Not sure how to test without cache since
+            # currently using get_results to populate cache
+            # on the instance
 
     def test_filter(self):
         mocksolr = Mock(spec=SolrClient)
