@@ -101,6 +101,17 @@ class Indexable:
         except AttributeError:
             raise NotImplementedError
 
+    @classmethod
+    def total_to_index(cls):
+        """Get the total number of items to be indexed for a single class of
+        Indexable content. Subclasses should override this method
+        if necessary. By default, returns a Django queryset count for a model.
+        Raises NotImplementedError if that fails."""
+        try:
+            return cls.objects.count()
+        except AttributeError:
+            raise NotImplementedError
+
     def index_id(self):
         """Solr identifier. By default, combines :meth:`index item_type`
         and :attr:`id` with :attr:ID_SEPARATOR`."""

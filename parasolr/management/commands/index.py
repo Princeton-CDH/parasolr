@@ -116,23 +116,15 @@ class Command(BaseCommand):
             # calculate total to index across all indexables for current mode
             for name, model in self.indexables.items():
                 if self.options['index'] in [name, 'all']:
-                    # Note this is likely inefficient to generate the list
-                    # for a count; should be ok for django queryset;
-                    # other cases should implement total_to_index
                     items = model.items_to_index()
                     if items:
                         try:
                             # first check for method to provide
                             # counts for non-models
                             total_to_index += model.total_to_index()
-                        except AttributeError:
-                            # if method is not present,
-                            # try count, since it's more efficient for
-                            # django querysets
-                            total_to_index += items.count()
-                        except TypeError:
-                            # if count errors because we have a list,
-                            # use len
+                        except (AttributeError, NotImplementedError):
+                            # if count errors because we have a non-model
+                            # indexable or a  list, fall back to len
                             total_to_index += len(items)
 
         # initialize progressbar if requested and indexing more than 5 items
