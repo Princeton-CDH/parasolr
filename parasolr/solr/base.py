@@ -13,17 +13,19 @@ logger = logging.getLogger(__name__)
 
 class SolrClientException(Exception):
     """Base class for all exceptions in this module"""
-    pass
 
 
 class CoreExists(SolrClientException):
     """Raised when a Solr core exists and it should not."""
-    pass
 
 
 class ImproperConfiguration(SolrClientException):
     """Raised when a required setting is not present or is an invalid value."""
-    pass
+
+
+class SolrConnectionNotFound(SolrClientException):
+    """Raised when a 404 is returned from Solr (e.g., attempting to query
+    a non-existent collection on a valid Solr server)"""
 
 
 class ClientBase:
@@ -38,7 +40,6 @@ class ClientBase:
             self.session = requests.Session()
         else:
             self.session = session
-
 
     def build_url(self, solr_url: str, collection: str, handler: str) -> str:
         """Return a url to a handler based on core and base url.
@@ -118,7 +119,7 @@ class ClientBase:
         # 404 error should be escalated, since it likely means a
         # misconfiguration (wrong core name or core not created)
         if response.status_code == requests.codes.not_found:
-            raise SolrClientException('404 Not Found: %s' % url)
+            raise SolrConnectionNotFound('404 Not Found: %s' % url)
 
         if response.status_code not in allowed_responses:
             # Add the content of the response on the off chance
