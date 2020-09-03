@@ -1,5 +1,6 @@
 import logging
-from unittest.mock import Mock
+from time import sleep
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -119,6 +120,10 @@ if django:
     def empty_solr():
         # pytest solr fixture; updates solr schema
         parasolr_django.SolrClient().update.delete_by_query('*:*')
+        while(parasolr_django.SolrQuerySet().count() != 0):
+            # sleep until we get records back; 0.1 seems to be enough
+            # for local dev with local Solr
+            sleep(0.1)
 
 
 @pytest.fixture
@@ -155,7 +160,7 @@ def mock_solr_queryset(request):
 
     @staticmethod
     def get_mock_solr_queryset(spec=SolrQuerySet):
-        mock_qs = Mock(spec=spec)
+        mock_qs = MagicMock(spec=spec)
 
         # simulate fluent interface
         for meth in ['filter', 'facet', 'stats', 'facet_field', 'facet_range',
