@@ -1,18 +1,20 @@
 """
 Test pytest plugin fixture for django
 """
-from unittest.mock import patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 try:
     from django.conf import settings
     from django.test import override_settings
 
-    from parasolr.pytest_plugin import get_test_solr_config
+    from parasolr.pytest_plugin import get_test_solr_config, \
+        get_mock_solr_queryset
 
 except ImportError:
     pass
 
+from parasolr.query import SolrQuerySet
 from parasolr.tests.utils import skipif_no_django
 
 
@@ -124,3 +126,32 @@ def test_app_not_installed(testdir):
         mockapps.is_installed.return_value = False
         assert not get_test_solr_config()
         mockapps.is_installed.assert_called_with('parasolr')
+
+
+def test_get_mock_solr_queryset():
+    # mock queryset generator
+    mock_qs_cls = get_mock_solr_queryset()
+    assert isinstance(mock_qs_cls, Mock)
+
+    mock_qs = mock_qs_cls()
+    assert isinstance(mock_qs, MagicMock)
+    assert isinstance(mock_qs, SolrQuerySet)
+
+    # test a few of the methods that return the same mock
+    assert mock_qs.filter() == mock_qs
+    assert mock_qs.all() == mock_qs
+
+
+def test_get_mock_solr_queryset_subclass():
+    class MyCustomQuerySet(SolrQuerySet):
+        def custom_method(self):
+            return 3.14
+
+    # call the genreator with the subclass
+    mock_qs_cls = get_mock_solr_queryset(MyCustomQuerySet)
+    # generate a mock instance
+    mock_qs = mock_qs_cls()
+    # should be able to call the custom method (included in spec)
+    mock_qs.custom_method()
+    # should pass isinstance check
+    assert isinstance(mock_qs, MyCustomQuerySet)
