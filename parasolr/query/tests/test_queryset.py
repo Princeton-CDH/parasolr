@@ -222,21 +222,24 @@ class TestSolrQuerySet:
         mocksolr = Mock(spec=SolrClient)
         # mock cached solr response
         with patch.object(SolrQuerySet, 'get_results') as mock_get_results:
+            # simulate cache populating
             sqs = SolrQuerySet(mocksolr)
             sqs._result_cache = Mock()
             result = sqs.get_expanded()
             assert result == sqs._result_cache.expanded
             mock_get_results.assert_not_called()
 
+            # simulate cache not populating
             # Not sure how to mock a class attribute so it is None
-            # and then populated as a side effect...
+            # and then populated as a side effect.
             # This triggers the get results call but causes an exception
             # trying to return an attribute of the result cache, which is
             # still unset because we didn't call the real get_results
             with pytest.raises(AttributeError):
                 sqs._result_cache = None
                 result = sqs.get_expanded()
-                mock_get_results.assert_any_call()
+
+            mock_get_results.assert_any_call()
 
     def test_filter(self):
         mocksolr = Mock(spec=SolrClient)
