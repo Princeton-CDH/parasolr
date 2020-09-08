@@ -118,7 +118,7 @@ if django:
 
     @pytest.fixture
     def empty_solr():
-        # pytest solr fixture; updates solr schema
+        '''pytest fixture to clear out all content from configured Solr'''
         parasolr_django.SolrClient().update.delete_by_query('*:*')
         while(parasolr_django.SolrQuerySet().count() != 0):
             # sleep until we get records back; 0.1 seems to be enough

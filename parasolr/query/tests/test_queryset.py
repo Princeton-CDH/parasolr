@@ -228,9 +228,15 @@ class TestSolrQuerySet:
             assert result == sqs._result_cache.expanded
             mock_get_results.assert_not_called()
 
-            # Not sure how to test without cache since
-            # currently using get_results to populate cache
-            # on the instance
+            # Not sure how to mock a class attribute so it is None
+            # and then populated as a side effect...
+            # This triggers the get results call but causes an exception
+            # trying to return an attribute of the result cache, which is
+            # still unset because we didn't call the real get_results
+            with pytest.raises(AttributeError):
+                sqs._result_cache = None
+                result = sqs.get_expanded()
+                mock_get_results.assert_any_call()
 
     def test_filter(self):
         mocksolr = Mock(spec=SolrClient)
