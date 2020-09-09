@@ -154,7 +154,7 @@ def mock_solr_queryset(request):
     Example uses:
 
         @pytest.mark.usefixtures("mock_solr_queryset")
-        class MyTestCaseTestCase):
+        class MyTestCase(TestCase):
 
             def test_my_solr_method(self):
 

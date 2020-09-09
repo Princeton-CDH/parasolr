@@ -212,11 +212,7 @@ class SolrQuerySet:
         if self._result_cache:
             return self._result_cache.stats
 
-        query_opts = self.query_opts()
-        query_opts['rows'] = 0
-        query_opts['hl'] = False
-
-        response = self.solr.query(rows=0, hl=False)  # **query_opts)
+        response = self.solr.query(rows=0, hl=False)
         if response:
             return response.stats
 
@@ -537,8 +533,7 @@ class SolrQuerySet:
         qs_copy.search_qs = ['NOT *:*']
         return qs_copy
 
-    # def _clone(self) -> 'SolrQuerySet':
-    def _clone(self):
+    def _clone(self) -> 'SolrQuerySet':
         """
         Return a copy of the current QuerySet for modification via
         filters.

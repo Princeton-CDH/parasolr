@@ -41,9 +41,9 @@ class Indexable:
     `index_id` and `index` methods.
 
     When implementing an Indexable subclass where items_to_index
-    returns something like a generator, whicht does not expose either a
+    returns something like a generator, which does not expose either a
     `count` method or can be counted with `len`, for use with
-    the Django index manage comment you should
+    the Django index manage command you should
     implement `total_to_index` and return the number of items
     to be indexed.
     """

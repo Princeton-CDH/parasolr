@@ -10,7 +10,7 @@ CHANGELOG
 * Schema field declarations now support the `stored` option
 * Schema field type declarations now pass through arbitrary options
 * New method `total_to_index` on `parasolr.indexing.Indexable` to better
-  support indexing content that is returneds as a generator
+  support indexing content that is returned as a generator
 * Access to expanded results now available on QueryResponse and SolrQuerySet
 * SolrQuerySet no longer wraps return results from `get_stats` and `get_facets` with QueryResponse
 * New last-modified view mixin for use with Django views `parasolr.django.views.SolrLastModifiedMixin`
