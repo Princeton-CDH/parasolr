@@ -61,6 +61,7 @@ class QueryResponse:
             self.facet_counts = \
                 self._process_facet_counts(response.facet_counts)
         self.highlighting = response.get('highlighting', {})
+        self.expanded = response.get('expanded', {})
 
         # NOTE: To access facet_counts.facet_fields or facet_counts.facet_ranges
         # as OrderedDicts, you must use dict notation (or AttrDict *will*

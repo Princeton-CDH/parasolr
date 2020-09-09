@@ -1,4 +1,6 @@
 import logging
+from time import sleep
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -11,10 +13,12 @@ except ImportError:
     django = None
 
 import parasolr.django as parasolr_django
+from parasolr.query.queryset import SolrQuerySet
 from parasolr.schema import SolrSchema
 
 
 logger = logging.getLogger(__name__)
+
 
 # NOTE: pytest plugins must be conditionally defined to avoid errors
 # (requires_django decorator does not work)
@@ -32,7 +36,7 @@ if django:
 
         # if no solr connection is configured, bail out
         if not getattr(settings, 'SOLR_CONNECTIONS', None):
-            logger.warn('No Solr configuration found')
+            logger.warning('No Solr configuration found')
             return
 
         # copy default config for basic connection options (e.g. url)
@@ -114,5 +118,61 @@ if django:
 
     @pytest.fixture
     def empty_solr():
-        # pytest solr fixture; updates solr schema
+        '''pytest fixture to clear out all content from configured Solr'''
         parasolr_django.SolrClient().update.delete_by_query('*:*')
+        while(parasolr_django.SolrQuerySet().count() != 0):
+            # sleep until we get records back; 0.1 seems to be enough
+            # for local dev with local Solr
+            sleep(0.1)
+
+
+def get_mock_solr_queryset(spec=SolrQuerySet):
+    mock_qs = MagicMock(spec=spec)
+
+    # simulate fluent interface
+    for meth in ['filter', 'facet', 'stats', 'facet_field', 'facet_range',
+                 'search', 'order_by', 'query', 'only', 'also',
+                 'highlight', 'raw_query_parameters', 'all', 'none']:
+        getattr(mock_qs, meth).return_value = mock_qs
+
+    return Mock(return_value=mock_qs)
+
+
+@pytest.fixture
+def mock_solr_queryset(request):
+    '''Fixture to provide a :class:`unitest.mock.Mock` for
+    :class:`~parasolr.query.queryset.SolrQuerySet` that simplifies
+    testing against a mocked version of the fluent interface. It returns
+    a method to generate a Mock queryset class; the method has an
+    optional parameter for a queryset subclass to use for the `spec`
+    argument to Mock.
+
+    If called from a class or function where the request provides access
+    to a class, the mock generator method `mock_solr_queryset` will be
+    added to the class as a static method.
+
+    Example uses:
+
+        @pytest.mark.usefixtures("mock_solr_queryset")
+        class MyTestCase(TestCase):
+
+            def test_my_solr_method(self):
+
+                with patch('parasolr.queryset.SolrQuerySet',
+                       new=self.mock_solr_queryset()) as mock_queryset_cls:
+
+                    mock_qs = mock_queryset_cls.return_value
+                    mock_qs.search.assert_any_call(text='my test search')
+
+    To use with a custom queryset subclass::
+
+        mock_qs = self.mock_solr_queryset(MySolrQuerySet)
+
+    '''
+
+    # if scope is class or function and there is a class available,
+    # convert the mock generator to a static method and set it on the class
+    if request.scope in ['class', 'function'] and \
+       getattr(request, 'cls', None):
+        request.cls.mock_solr_queryset = staticmethod(get_mock_solr_queryset)
+    return get_mock_solr_queryset

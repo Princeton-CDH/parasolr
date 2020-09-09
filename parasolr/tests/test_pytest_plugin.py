@@ -1,7 +1,7 @@
 """
 Test pytest plugin fixture for django
 """
-from unittest.mock import patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 try:
@@ -13,6 +13,8 @@ try:
 except ImportError:
     pass
 
+from parasolr.pytest_plugin import get_mock_solr_queryset
+from parasolr.query import SolrQuerySet
 from parasolr.tests.utils import skipif_no_django
 
 
@@ -59,7 +61,7 @@ class TestGetTestSolrConfig:
 
 @skipif_no_django
 def test_configure_django_test_solr(testdir):
-    """Sanity check pytest solr fixture."""
+    """Basic check of django solr pytest fixture."""
 
     solr_url = settings.SOLR_CONNECTIONS['default']['URL']
     solr_test_collection = settings.SOLR_CONNECTIONS['default']['TEST']['COLLECTION']
@@ -124,3 +126,90 @@ def test_app_not_installed(testdir):
         mockapps.is_installed.return_value = False
         assert not get_test_solr_config()
         mockapps.is_installed.assert_called_with('parasolr')
+
+
+@skipif_no_django
+def test_empty_solr(testdir):
+    """Check empty_solr pytest fixture."""
+
+    # NOTE: can't figure out how to get the plugin test to use
+    # test-local test settings, so testing against project
+    # testsettings for now
+
+    # create a temporary pytest test file
+    testdir.makepyfile(
+        """
+        from parasolr.django import SolrClient
+
+        # causes "Plugin already registered" error on travis...
+        # pytest_plugins = "parasolr.pytest_plugin"
+
+        def test_empty_solr(empty_solr):
+            solr = SolrClient()
+            assert solr.query(q='*:*').numFound == 0
+
+    """
+    )
+
+    # run all tests with pytest with all pytest-django plugins turned off
+    # result = testdir.runpytest('-p', 'no:django')
+    result = testdir.runpytest_subprocess('--capture', 'no')
+    # check that test case passed
+    result.assert_outcomes(passed=1)
+
+
+def test_get_mock_solr_queryset():
+    # mock queryset generator
+    mock_qs_cls = get_mock_solr_queryset()
+    assert isinstance(mock_qs_cls, Mock)
+
+    mock_qs = mock_qs_cls()
+    assert isinstance(mock_qs, MagicMock)
+    assert isinstance(mock_qs, SolrQuerySet)
+
+    # test a few of the methods that return the same mock
+    assert mock_qs.filter() == mock_qs
+    assert mock_qs.all() == mock_qs
+
+
+def test_get_mock_solr_queryset_subclass():
+    class MyCustomQuerySet(SolrQuerySet):
+        def custom_method(self):
+            '''custom method queryset method to keep in mock'''
+
+    # call the genreator with the subclass
+    mock_qs_cls = get_mock_solr_queryset(MyCustomQuerySet)
+    # generate a mock instance
+    mock_qs = mock_qs_cls()
+    # should be able to call the custom method (included in spec)
+    mock_qs.custom_method()
+    # should pass isinstance check
+    assert isinstance(mock_qs, MyCustomQuerySet)
+
+
+def test_get_mock_solr_queryset_class_scope(testdir):
+    # test class scope logic when using mock solr queryset fixture
+
+    # create a temporary pytest test file
+    testdir.makepyfile(
+        """
+        import pytest
+        # causes "Plugin already registered" error on travis...
+        # pytest_plugins = "parasolr.pytest_plugin"
+
+        class TestGetMockSolrQueryset:
+            # test class scope logic when using mock solr queryset fixture
+
+            @pytest.mark.usefixtures("mock_solr_queryset")
+            def test_class_scope(self):
+                # method should be set on the class
+                assert self.mock_solr_queryset
+
+    """
+    )
+
+    # run all tests with pytest with all pytest-django plugins turned off
+    # result = testdir.runpytest('-p', 'no:django')
+    result = testdir.runpytest_subprocess('--capture', 'no')
+    # check that test case passed
+    result.assert_outcomes(passed=1)

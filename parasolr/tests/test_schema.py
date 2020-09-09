@@ -17,20 +17,29 @@ def test_solr_fields():
         multival_str = schema.SolrStringField(multivalued=True)
         custom_field = schema.SolrField('text_en')
         last_modified = schema.SolrField('date', default='NOW')
+        unstored = schema.SolrField('text_en', stored=False)
 
     # get on the field returns solr config info
     assert TestySolrFields.mystring ==  \
-        {'type': 'string', 'required': False, 'multiValued': False}
+        {'type': 'string', 'required': False, 'multiValued': False,
+         'stored': True}
     assert TestySolrFields.required_str ==  \
-        {'type': 'string', 'required': True, 'multiValued': False}
+        {'type': 'string', 'required': True, 'multiValued': False,
+         'stored': True}
     assert TestySolrFields.multival_str ==  \
-        {'type': 'string', 'required': False, 'multiValued': True}
+        {'type': 'string', 'required': False, 'multiValued': True,
+         'stored': True}
     assert TestySolrFields.custom_field ==  \
-        {'type': 'text_en', 'required': False, 'multiValued': False}
+        {'type': 'text_en', 'required': False, 'multiValued': False,
+         'stored': True}
     # with default specified
     assert TestySolrFields.last_modified ==  \
         {'type': 'date', 'required': False, 'multiValued': False,
-         'default': 'NOW'}
+         'default': 'NOW', 'stored': True}
+    # with stored false
+    assert TestySolrFields.unstored ==  \
+        {'type': 'text_en', 'required': False, 'multiValued': False,
+         'stored': False}
 
     # explicitly read-only
     with pytest.raises(AttributeError):
