@@ -117,7 +117,7 @@ requires a minimal settings file for Django-required configurations.
 
 - Copy sample test settings and add a secret key::
 
-   cp ci/testsettings.py.sample testsettings.py
+   cp ci/testsettings.py testsettings.py
    python -c "import uuid; print('\nSECRET_KEY = \'%s\'' % uuid.uuid4())" >> testsettings.py
 
 - To run the test, either use the configured setup.py test command::
