@@ -91,38 +91,39 @@ To use with Django:
 Getting Started
 ---------------
 
-To use `parasolr` you'll need to first create a solr core with the command `solr create_core -c core_name`.
+To use `parasolr` you'll need to first create a solr core with the command
+ `solr create_core -c core_name`.
 
 To interact with solr, you'll need to first create a `SolrClient` instance
-```python
-from parasolr.solr.client import SolrClient
-solr_url = "http://localhost:8983/solr"
-solr_core = "core_name"
-solr = SolrClient(solr_url, solr_core)
-```
+python.
+.. code-block:: python
+  from parasolr.solr.client import SolrClient
+  solr_url = "http://localhost:8983/solr"
+  solr_core = "core_name"
+  solr = SolrClient(solr_url, solr_core)
 
-You can then ingest and index your data from a CSV. Remember, a unique identifier is required.
+You can then ingest and index your data from a CSV. Remember, a unique
+identifier is required.
+.. code-block:: python
+  solr.update.index([{
+      "id": row["id"],
+      # ...
+    } for row in csv])
 
-```python
-solr.update.index([{
-    "id": row["id"],
-    # ...
-} for row in csv])
-```
 
-To reset the solr core, you can delete all indexed items:
-```python
-solr.update.delete_by_query('*:*')
-```
+To reset the solr core, you can delete all indexed items.
+.. code-block:: python
+  solr.update.delete_by_query('*:*')
 
 And then query the data:
+.. code-block:: python
+  queryset = SolrQuerySet(solr)
+  queryset = queryset.search(solr_query).order_by('some_var') \
+                .continue_series_of_filters_and_maps()
+  results = queryset.get_results(rows=20)
 
-```python
-queryset = SolrQuerySet(solr)
-solr_query = '{!qf=$var_qf pf=$var_pf v=$query}'
-queryset = queryset.search(solr_query).order_by('some_var') \
-              .continue_series_of_filters_and_maps()
-```
+`results` now contains a list of dictionaries that you're welcome to query and
+manipulate as needed.
 
 Development instructions
 ------------------------
