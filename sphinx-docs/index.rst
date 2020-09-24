@@ -9,6 +9,7 @@ parasolr documentation
    :caption: Contents:
 
    codedocs
+   Getting Started <gettingstarted>
    Change Log <changelog>
 
 .. include:: ../README.rst
