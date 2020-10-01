@@ -109,23 +109,23 @@ class Command(BaseCommand):
                 # error if split but index type is not found
                 if index_type not in self.indexables:
                     raise CommandError(unrecognized_err)
-                to_index.append(self.indexables[index_type].objects .get(pk=item_id))
+                to_index.append(self.indexables[index_type].objects.get(pk=item_id))
             total_to_index = len(to_index)
 
         else:
             # calculate total to index across all indexables for current mode
             for name, model in self.indexables.items():
                 if self.options['index'] in [name, 'all']:
-                    items = model.items_to_index()
-                    if items:
-                        try:
-                            # first check for method to provide
-                            # counts for non-models
-                            total_to_index += model.total_to_index()
-                        except (AttributeError, NotImplementedError):
-                            # if count errors because we have a non-model
-                            # indexable or a  list, fall back to len
-                            total_to_index += len(items)
+                    try:
+                        # first, check for model method to provide
+                        # efficient count
+                        total_to_index += model.total_to_index()
+                    except (AttributeError, NotImplementedError):
+                        # if count errors because we have a non-model
+                        # indexable or a  list, fall back to len
+                        # NOTE: this means we generate items to index
+                        # unnecessarily without storing the results!
+                        total_to_index += len(model.items_to_index())
 
         # initialize progressbar if requested and indexing more than 5 items
         progbar = None
