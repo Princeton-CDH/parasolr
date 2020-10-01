@@ -83,8 +83,9 @@ To use with Django:
 * Run ``solr_schema`` manage command to configure your schema; it will
   prompt to create the Solr core if it does not exist.
 
-Note: The ``SolrSchema`` must be imported somewhere for it to be found 
-automatically.
+.. Note::
+   The `SolrSchema` must be imported somewhere for it to be
+   found automatically.
 
 
 Development instructions
