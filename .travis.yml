@@ -6,7 +6,7 @@ jdk:
   - openjdk8 # recommended jdk for solr < 7
 env:
   global:
-    - SOLR_VERSION=6.6.5
+    - SOLR_VERSION=8.6.2
     - JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64  # otherwise jdk11 will be used
   jobs:
     - DJANGO=
