@@ -26,19 +26,19 @@ class TestSchema:
     def test_replace_fields(self, test_client):
 
         test_client.schema.add_field(name='A', type='string')
-        test_client.schema.replace_field(name='A', type='int')
+        test_client.schema.replace_field(name='A', type='pint')
         fields = test_client.schema.list_fields()
         names = [f.name for f in fields]
-        assert fields[names.index('A')].type == 'int'
+        assert fields[names.index('A')].type == 'pint'
 
 
     def test_list_fields(self, test_client):
         test_client.schema.add_field(name='A', type='string')
-        test_client.schema.add_field(name='B', type='int')
+        test_client.schema.add_field(name='B', type='pint')
         fields = test_client.schema.list_fields()
         names = [f.name for f in fields]
         assert fields[names.index('A')].type == 'string'
-        assert fields[names.index('B')].type == 'int'
+        assert fields[names.index('B')].type == 'pint'
         # check that we can look for a subset of fields
         fields = test_client.schema.list_fields(fields=['A'])
         names = [f.name for f in fields]
@@ -77,8 +77,8 @@ class TestSchema:
     def test_list_copy_fields(self, test_client):
         test_client.schema.add_field(name='A', type='string')
         test_client.schema.add_field(name='B', type='string')
-        test_client.schema.add_field(name='C', type='int')
-        test_client.schema.add_field(name='D', type='int')
+        test_client.schema.add_field(name='C', type='pint')
+        test_client.schema.add_field(name='D', type='pint')
 
         test_client.schema.add_copy_field(source='A', dest='B')
         test_client.schema.add_copy_field(source='C', dest='D')
