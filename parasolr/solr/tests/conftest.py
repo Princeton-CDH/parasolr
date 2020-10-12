@@ -62,7 +62,7 @@ def test_client(request):
     response = client.core_admin.status(core=collection)
     if response.status.parasolr_test:
         raise CoreExists('Test core "parasolr_test" exists, aborting!')
-    client.core_admin.create(collection, configSet='basic_configs')
+    client.core_admin.create(collection, configSet='_default')
 
     def clean_up():
         for field in TEST_FIELDS:

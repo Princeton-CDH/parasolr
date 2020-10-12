@@ -168,5 +168,5 @@ class TestSchema:
 
     def test_get_schema(self, test_client):
         schema = test_client.schema.get_schema()
-        # check that we have the basic_configs schema
+        # check that we have the _default schema
         assert schema.name == 'example-basic'
