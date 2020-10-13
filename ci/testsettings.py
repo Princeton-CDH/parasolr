@@ -1,7 +1,7 @@
 import os
 
-SOLR_MAJOR_VERSION = int(os.environ.get('SOLR_VERSION', '8').split('.')[0])
-configset = 'basic_configs' if SOLR_MAJOR_VERSION < 7 else '_default'
+MAJOR_SOLR_VERSION = int(os.environ.get('SOLR_VERSION', '8').split('.')[0])
+configset = 'basic_configs' if MAJOR_SOLR_VERSION < 7 else '_default'
 
 # minimal django settings required to run tests
 DATABASES = {
@@ -36,7 +36,7 @@ SOLR_CONNECTIONS = {
             # aggressive commitWithin for test only
             'COMMITWITHIN': 750,
             'CONFIGSET': configset,
-            'SOLR_MAJOR_VERSION': SOLR_MAJOR_VERSION
+            'MAJOR_SOLR_VERSION': MAJOR_SOLR_VERSION
         }
     }
 }
