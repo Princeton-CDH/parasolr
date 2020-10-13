@@ -35,7 +35,8 @@ SOLR_CONNECTIONS = {
             'COLLECTION': 'parasolr_test',
             # aggressive commitWithin for test only
             'COMMITWITHIN': 750,
-            'CONFIGSET': configset
+            'CONFIGSET': configset,
+            'SOLR_MAJOR_VERSION': SOLR_MAJOR_VERSION
         }
     }
 }
