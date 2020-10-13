@@ -1,3 +1,5 @@
+import os
+
 # NOTE: Field and field-type names must be registered and cleaned
 # up in conftest.py
 # Otherwise, they will be retained between test iterations and break results.
@@ -168,5 +170,6 @@ class TestSchema:
 
     def test_get_schema(self, test_client):
         schema = test_client.schema.get_schema()
-        # check that we have the _default schema
-        assert schema.name == 'default-config'
+        # check that we have the default schema
+        major_solr_version = int(os.environ.get('SOLR_VERSION', '8').split('.')[0])
+        assert schema.name == 'default-config' if major_solr_version >= 7 else 'example-basic'
