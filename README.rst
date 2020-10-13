@@ -74,8 +74,10 @@ To use with Django:
         'default': {
         'URL': 'http://localhost:8983/solr/',
         'COLLECTION': 'name',
-        # any configSet in SOLR_ROOT/server/solr/configsets
-        'CONFIGSET': '_default' # optional, _default is default
+        # Any configSet in SOLR_ROOT/server/solr/configsets.
+        #   The default configset name is "_default" as of Solr 7.
+        #   For Solr 6, "basic_configs" is the default.
+        'CONFIGSET': '_default'
         }
     }
 
