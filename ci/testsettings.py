@@ -36,7 +36,6 @@ SOLR_CONNECTIONS = {
             # aggressive commitWithin for test only
             'COMMITWITHIN': 750,
             'CONFIGSET': configset,
-            'MAJOR_SOLR_VERSION': MAJOR_SOLR_VERSION
         }
     }
 }

@@ -1,4 +1,4 @@
-from parasolr.solr.tests.conftest import TEST_SOLR_CONNECTION
+from parasolr.solr.tests.conftest import settings
 
 # NOTE: Field and field-type names must be registered and cleaned
 # up in conftest.py
@@ -173,6 +173,6 @@ class TestSchema:
         schema = test_client.schema.get_schema()
         # check that we have the default schema
         assert schema.name == (
-            'default-config' if TEST_SOLR_CONNECTION['MAJOR_SOLR_VERSION'] >= 7
+            'default-config' if settings.MAJOR_SOLR_VERSION >= 7
             else 'example-basic'
         )
