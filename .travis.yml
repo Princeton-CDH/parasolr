@@ -10,15 +10,9 @@ env:
   jobs:
     # solr 8
     - SOLR_VERSION=8.6.2 DJANGO=
-    - SOLR_VERSION=8.6.2 DJANGO=1.11
-    - SOLR_VERSION=8.6.2 DJANGO=2.0
-    - SOLR_VERSION=8.6.2 DJANGO=2.1
     - SOLR_VERSION=8.6.2 DJANGO=2.2
     # solr 6
     - SOLR_VERSION=6.6.5 DJANGO=
-    - SOLR_VERSION=6.6.5 DJANGO=1.11
-    - SOLR_VERSION=6.6.5 DJANGO=2.0
-    - SOLR_VERSION=6.6.5 DJANGO=2.1
     - SOLR_VERSION=6.6.5 DJANGO=2.2
 before_install:
 - pip install --upgrade pip
