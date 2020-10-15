@@ -93,7 +93,7 @@ if django:
             response = solr.core_admin.status(core=solr_config_opts['COLLECTION'])
             if not response.status.get(solr_config_opts['COLLECTION'], None):
                 solr.core_admin.create(solr_config_opts['COLLECTION'],
-                                       configSet=solr_config_opts.get('CONFIGSET', 'basic_configs'))
+                                       configSet=solr_config_opts['CONFIGSET'])
 
             try:
                 # if a schema is configured, update the test core
