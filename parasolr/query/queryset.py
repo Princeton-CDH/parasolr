@@ -100,7 +100,7 @@ class SolrQuerySet:
     def _set_faceting_opts(self, query_opts: Dict) -> None:
         """Configure faceting attributes directly on query_opts. Modifies
         dictionary directly."""
-        if self.facet_field_list or self.range_facet_fields:
+        if self.facet_field_list or self.range_facet_fields or self.facet_opts:
             query_opts.update({
                 'facet': True,
                 'facet.field': self.facet_field_list,
@@ -168,7 +168,7 @@ class SolrQuerySet:
         """Total number of results for the current query"""
 
         # if result cache is already populated, use it
-        if self._result_cache is not None:
+        if self._result_cache:
             return self._result_cache.numFound
 
         # otherwise, query with current options but request zero rows
@@ -191,15 +191,11 @@ class SolrQuerySet:
         Solr response. Includes facet fields, facet ranges, etc. Facet
         field results are returned as an ordered dict of value and count.
         """
-        if self._result_cache is not None:
-            # wrap to process facets and return as dictionary
-            # for Django template support
-            qr = QueryResponse(self._result_cache)
-            # NOTE: using dictionary syntax preserves OrderedDict
-            return qr.facet_counts
+        if self._result_cache:
+            return self._result_cache.facet_counts
+
         # since we just want a dictionary of facet fields, don't populate
         # the result cache, no rows needed
-
         query_opts = self.query_opts()
         query_opts['rows'] = 0
         query_opts['hl'] = False
@@ -213,16 +209,21 @@ class SolrQuerySet:
     def get_stats(self) -> Optional[Dict[str, ParasolrDict]]:
         """Return a dictionary of stats information in Solr format or None
         on error."""
-        if self._result_cache is not None:
-            qr = QueryResponse(self._result_cache)
-            return qr.stats
-        query_opts = self.query_opts()
-        query_opts['rows'] = 0
-        query_opts['hl'] = False
+        if self._result_cache:
+            return self._result_cache.stats
 
-        response = self.solr.query(**query_opts)
+        response = self.solr.query(rows=0, hl=False)
         if response:
             return response.stats
+
+    def get_expanded(self) -> Dict[str, Dict]:
+        """Return a dictionary of expanded records included in the
+        Solr response.
+        """
+        if not self._result_cache:
+            self.get_results()
+
+        return self._result_cache.expanded
 
     @staticmethod
     def _lookup_to_filter(key: str, value: Any, tag: str = '') -> str:
@@ -590,7 +591,7 @@ class SolrQuerySet:
 
         # if the result cache is already populated,
         # return the requested index or slice
-        if self._result_cache is not None:
+        if self._result_cache:
             return self._result_cache.docs[k]
 
         qs_copy = self._clone()

@@ -39,6 +39,13 @@ def all_subclasses(cls):
 class Indexable:
     """Mixin for objects that are indexed in Solr.  Subclasses must implement
     `index_id` and `index` methods.
+
+    When implementing an Indexable subclass where items_to_index
+    returns something like a generator, which does not expose either a
+    `count` method or can be counted with `len`, for use with
+    the Django index manage command you should
+    implement `total_to_index` and return the number of items
+    to be indexed.
     """
 
     # NOTE: current implementation is Django-specific, intended for
@@ -78,6 +85,8 @@ class Indexable:
         across all Indexable items in an application. By default, uses
         Django model verbose name. Used in default index id and
         in index manage command. """
+        # TODO: move this implementation into django subclass?
+        # default could just return an attribute on the class
         return cls._meta.verbose_name
 
     @classmethod
@@ -89,6 +98,17 @@ class Indexable:
         Raises NotImplementedError if that fails."""
         try:
             return cls.objects.all()
+        except AttributeError:
+            raise NotImplementedError
+
+    @classmethod
+    def total_to_index(cls):
+        """Get the total number of items to be indexed for a single class of
+        Indexable content. Subclasses should override this method
+        if necessary. By default, returns a Django queryset count for a model.
+        Raises NotImplementedError if that fails."""
+        try:
+            return cls.objects.count()
         except AttributeError:
             raise NotImplementedError
 
@@ -108,8 +128,7 @@ class Indexable:
         }
 
     def index(self):
-        """Index the current object in Solr.  Allows passing in
-        parameter, e.g. to set a `commitWithin` value.
+        """Index the current object in Solr.
         """
         self.solr.update.index([self.index_data()])
 

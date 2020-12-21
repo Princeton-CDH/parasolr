@@ -1,3 +1,7 @@
+import os
+
+MAJOR_SOLR_VERSION = int(os.environ.get('SOLR_VERSION', '8').split('.')[0])
+configset = 'basic_configs' if MAJOR_SOLR_VERSION < 7 else '_default'
 
 # minimal django settings required to run tests
 DATABASES = {
@@ -25,12 +29,13 @@ SOLR_CONNECTIONS = {
         # default config for testing pytest plugin
         'URL': 'http://localhost:8983/solr/',
         'COLLECTION': 'myplugin',
+        'CONFIGSET': configset,
         'TEST': {
             'URL': 'http://localhost:8983/solr/',
             'COLLECTION': 'parasolr_test',
             # aggressive commitWithin for test only
             'COMMITWITHIN': 750,
-            'CONFIGSET': 'basic_configs'
+            'CONFIGSET': configset,
         }
     }
 }

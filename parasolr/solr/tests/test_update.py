@@ -1,5 +1,5 @@
 import time
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from parasolr.solr.update import Update
 
@@ -53,6 +53,26 @@ class TestUpdate:
         time.sleep(0.8)
         resp = test_client.query(q='*:*')
         assert resp.numFound == 3
+
+    def test_index_override(self, test_client):
+        with patch.object(test_client.update, 'make_request') as mock_make_request:
+            # ensure default is properly configured
+            test_client.update.index([])
+            args, kwargs = mock_make_request.call_args
+            assert kwargs['params']['commitWithin'] == test_client.commitWithin
+
+            # ensure commitWithin updates with index
+            test_client.update.index([], commitWithin=1234)
+            args, kwargs = mock_make_request.call_args
+            assert kwargs['params']['commitWithin'] == 1234
+
+            # ensure a hard commit removes the commitWithin default param and
+            #  configures the new commit param
+            test_client.update.index([], commit=True)
+            args, kwargs = mock_make_request.call_args
+            assert 'commitWithin' not in kwargs['params']
+            assert kwargs['params']['commit']
+
 
     def test_delete_by_id(self, test_client):
         # add a field and index some documents

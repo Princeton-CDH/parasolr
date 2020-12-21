@@ -47,7 +47,7 @@ class Update(ClientBase):
             'post',
             url,
             data=docs,
-            params=self.params,
+            params=params,
             headers=self.headers
         )
 

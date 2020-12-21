@@ -50,8 +50,7 @@ configuration and indexing content.
     :target: https://requires.io/github/Princeton-CDH/parasolr/requirements/?branch=master
     :alt: Requirements Status
 
-Currently tested against Python 3.5 and 3.6, Solr 6.6.5, and Django 1.11,
-2.0, and 2.1, and without Django.
+Currently tested against Python 3.5 and 3.6, Solr 6.6.5 and 8.6.2, and Django 2.2 and without Django.
 
 
 Installation
@@ -74,8 +73,10 @@ To use with Django:
         'default': {
         'URL': 'http://localhost:8983/solr/',
         'COLLECTION': 'name',
-        # any configSet in SOLR_ROOT/server/solr/configsets
-        'CONFIGSET': 'basic_configs' # optional, basic_configs is default
+        # Any configSet in SOLR_ROOT/server/solr/configsets.
+        #   The default configset name is "_default" as of Solr 7.
+        #   For Solr 6, "basic_configs" is the default.
+        'CONFIGSET': '_default'
         }
     }
 
@@ -119,6 +120,12 @@ requires a minimal settings file for Django-required configurations.
 
    cp ci/testsettings.py testsettings.py
    python -c "import uuid; print('\nSECRET_KEY = \'%s\'' % uuid.uuid4())" >> testsettings.py
+
+- By default, parasolr expects Solr 8. If running tests with an earlier 
+  version of Solr, either explicitly change **MAJOR_SOLR_VERSION** in your
+  local **testsettings.py** or set the environment variable::
+
+   export SOLR_VERSION=x.x.x
 
 - To run the test, either use the configured setup.py test command::
 

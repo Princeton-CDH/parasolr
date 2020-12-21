@@ -116,18 +116,15 @@ class Command(BaseCommand):
             # calculate total to index across all indexables for current mode
             for name, model in self.indexables.items():
                 if self.options['index'] in [name, 'all']:
-                    # possibly inefficient to generate the list just
-                    # for a count; should be ok for django queryset implementation,
-                    # hopefully not too bad for other cases
                     items = model.items_to_index()
                     if items:
                         try:
-                            # try count, since it's more effecient for
-                            # django querysets
-                            total_to_index += items.count()
-                        except TypeError:
-                            # if count errors because we have a list,
-                            # use len
+                            # first check for method to provide
+                            # counts for non-models
+                            total_to_index += model.total_to_index()
+                        except (AttributeError, NotImplementedError):
+                            # if count errors because we have a non-model
+                            # indexable or a  list, fall back to len
                             total_to_index += len(items)
 
         # initialize progressbar if requested and indexing more than 5 items
@@ -147,7 +144,8 @@ class Command(BaseCommand):
             for name, model in self.indexables.items():
                 if self.options['index'] in [name, 'all']:
                     # index in chunks and update progress bar
-                    count += self.index(model.items_to_index(), progbar=progbar)
+                    count += self.index(model.items_to_index(),
+                                        progbar=progbar)
 
         if progbar:
             progbar.finish()
