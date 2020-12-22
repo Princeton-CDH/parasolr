@@ -56,7 +56,7 @@ class Command(BaseCommand):
                 # The error handling for ensuring there's a configuration
                 # has already happened, so just get default
                 default_solr = settings.SOLR_CONNECTIONS['default']
-                config_set = default_solr.get('CONFIGSET', 'basic_configs')
+                config_set = default_solr.get('CONFIGSET', '_default')
                 solr.core_admin.create(solr.collection, configSet=config_set)
             else:
                 # if core was not created, bail out

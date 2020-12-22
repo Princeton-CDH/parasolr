@@ -109,26 +109,23 @@ class Command(BaseCommand):
                 # error if split but index type is not found
                 if index_type not in self.indexables:
                     raise CommandError(unrecognized_err)
-                to_index.append(self.indexables[index_type].objects .get(pk=item_id))
+                to_index.append(self.indexables[index_type].objects.get(pk=item_id))
             total_to_index = len(to_index)
 
         else:
             # calculate total to index across all indexables for current mode
             for name, model in self.indexables.items():
                 if self.options['index'] in [name, 'all']:
-                    # possibly inefficient to generate the list just
-                    # for a count; should be ok for django queryset implementation,
-                    # hopefully not too bad for other cases
-                    items = model.items_to_index()
-                    if items:
-                        try:
-                            # try count, since it's more effecient for
-                            # django querysets
-                            total_to_index += items.count()
-                        except TypeError:
-                            # if count errors because we have a list,
-                            # use len
-                            total_to_index += len(items)
+                    try:
+                        # first, check for model method to provide
+                        # efficient count
+                        total_to_index += model.total_to_index()
+                    except (AttributeError, NotImplementedError):
+                        # if count errors because we have a non-model
+                        # indexable or a  list, fall back to len
+                        # NOTE: this means we generate items to index
+                        # unnecessarily without storing the results!
+                        total_to_index += len(model.items_to_index())
 
         # initialize progressbar if requested and indexing more than 5 items
         progbar = None
@@ -147,7 +144,8 @@ class Command(BaseCommand):
             for name, model in self.indexables.items():
                 if self.options['index'] in [name, 'all']:
                     # index in chunks and update progress bar
-                    count += self.index(model.items_to_index(), progbar=progbar)
+                    count += self.index(model.items_to_index(),
+                                        progbar=progbar)
 
         if progbar:
             progbar.finish()

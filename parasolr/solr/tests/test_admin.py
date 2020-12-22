@@ -16,7 +16,7 @@ class TestCoreAdmin:
 
     def test_create_unload(self, core_test_client):
         test_client, core = core_test_client
-        test_client.core_admin.create(core, configSet='basic_configs')
+        test_client.core_admin.create(core, configSet=TEST_SOLR_CONNECTION['CONFIGSET'])
         resp = test_client.core_admin.status(core=core)
         assert not resp.initFailures
         # core has a start time
@@ -31,14 +31,14 @@ class TestCoreAdmin:
         # check that additional params (for the rest of the API)
         # can be used
         with patch('parasolr.solr.admin.ClientBase.make_request') as mockrequest:
-            test_client.core_admin.create(core, configSet='basic_configs',
+            test_client.core_admin.create(core, configSet=TEST_SOLR_CONNECTION['CONFIGSET'],
                                           dataDir='foo')
             assert mockrequest.called
             params = mockrequest.call_args[1]['params']
             assert params['name'] == core
             assert params['action'] == 'CREATE'
             assert params['dataDir'] == 'foo'
-            assert params['configSet'] == 'basic_configs'
+            assert params['configSet'] == TEST_SOLR_CONNECTION['CONFIGSET']
 
     def test_reload(self, test_client):
         assert test_client.core_admin.reload(test_client.collection)
@@ -51,7 +51,7 @@ class TestCoreAdmin:
         # should not log the error since 404 is an allowed response for ping
         assert not caplog.records
         # create the core and then check it
-        solrclient.core_admin.create(core, configSet='basic_configs',
+        solrclient.core_admin.create(core, configSet=TEST_SOLR_CONNECTION['CONFIGSET'],
                                       dataDir='foo')
         assert solrclient.core_admin.ping(core)
 

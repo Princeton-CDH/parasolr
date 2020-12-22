@@ -13,6 +13,7 @@ try:
 except ImportError:
     pass
 
+from parasolr.indexing import Indexable
 from parasolr.tests.utils import skipif_no_django
 # ensure indexables are imported
 from parasolr.tests.test_indexing import SimpleIndexable
@@ -71,8 +72,8 @@ class TestSolrSchemaCommand:
         # simulate user says yes when asked to create core
         mockinput.reset_mock()
         mockinput.return_value = 'Y'
-        with override_settings(SOLR_CONNECTIONS=\
-            {'default': {'CONFIGSET': 'test_config'}}):
+        with override_settings(SOLR_CONNECTIONS={
+                               'default': {'CONFIGSET': 'test_config'}}):
 
             cmd.handle()
             # called once
@@ -145,6 +146,19 @@ class TestSolrSchemaCommand:
             mocksolr.core_admin.reload.assert_called_with(mocksolr.collection)
 
 
+class ListIndexable(Indexable):
+    # define a test indexable that returns a list of items
+    # and does not implement total_to_index
+
+    @classmethod
+    def index_item_type(cls):
+        return 'list'
+
+    @classmethod
+    def items_to_index(cls):
+        return ['a', 'b', 'c']
+
+
 @skipif_no_django
 class TestIndexCommand:
 
@@ -156,11 +170,13 @@ class TestIndexCommand:
 
         test_index_data = range(5)
         cmd.index(test_index_data)
-        mockindexable.index_items.assert_called_with(test_index_data, progbar=None)
+        mockindexable.index_items.assert_called_with(
+            test_index_data, progbar=None)
 
         # solr connection exception should raise a command error
         with pytest.raises(CommandError):
-            mockindexable.index_items.side_effect = requests.exceptions.ConnectionError
+            mockindexable.index_items.side_effect = \
+                requests.exceptions.ConnectionError
             cmd.index(test_index_data)
 
     def test_clear(self):
@@ -247,17 +263,15 @@ class TestIndexCommand:
             # index all indexable content
             call_command('index', index='all', stdout=stdout)
             # should be called once for each indexable subclass
-            print(mock_index_meth.call_args_list)
-            assert mock_index_meth.call_count == 2
+            assert mock_index_meth.call_count == 3
             # call order is not guaranteed, not inspecting here
             # commit called after works are indexed
-            mocksolr2.return_value.update.index.assert_called_with([], commit=True)
-        # self.solr.update.index([], commit=True)
-            # mocksolr.commit.assert_called_with(test_coll, openSearcher=True)
+            mocksolr2.return_value.update.index \
+                .assert_called_with([], commit=True)
 
             # progressbar should be initialized and finished
             mockprogbar.ProgressBar.assert_called_with(
-                redirect_stdout=True, max_value=6)
+                redirect_stdout=True, max_value=9)
             mockprogbar.ProgressBar.return_value.finish.assert_called_with()
 
             # request no progress bar

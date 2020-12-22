@@ -6,14 +6,14 @@ jdk:
   - openjdk8 # recommended jdk for solr < 7
 env:
   global:
-    - SOLR_VERSION=6.6.5
     - JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64  # otherwise jdk11 will be used
   jobs:
-    - DJANGO=
-    - DJANGO=1.11
-    - DJANGO=2.0
-    - DJANGO=2.1
-    - DJANGO=2.2
+    # solr 8
+    - SOLR_VERSION=8.6.2 DJANGO=
+    - SOLR_VERSION=8.6.2 DJANGO=2.2
+    # solr 6
+    - SOLR_VERSION=6.6.5 DJANGO=
+    - SOLR_VERSION=6.6.5 DJANGO=2.2
 before_install:
 - pip install --upgrade pip
 - pip install --upgrade pytest
@@ -37,8 +37,6 @@ script:
 after_success:
 - codecov
 - if [[ "$TRAVIS_PULL_REQUEST" == "false" && "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi
-before_cache:
-  - rm -rf downloads/solr-${SOLR_VERSION}
 notifications:
   slack:
     secure: VQzciC3upnIlJPtdEo+z3LletLLsYtM2Ci76aK/ADH1wjEakiU3qNrUgqm7Cp06Hrngx4aBep7nvaRCk4nIAdE7ljGrI1HuoWqig85McIn2dEq1jM+p4rJAQNvqF949GVaJMjJUZi0pGNplDORPSh8c9NI0vzENnnM1yBqsdeA5NOV3HqLiPp49QQ8tUrt4Xy1YfmirnQOHJmwHu/vYlZpDggAaV3+MYVbhaMfHGgvC57QwyvxJjwqYYuCEZy6GDXBl/jayO0kvb0u1ZjeQ31u+JMKeg+kdzcfny8lnnJ4KcMJOAsZ/snwc+AkM6foj6oqC+I8hsVd8Dl5ebPjKU7Kmc8zjH+vBFXF3dtZ0QrtWWahe/p4mtNGDsOEGYQqhnG/ozWAgq14FQwhiJyq411gUbYSrjaeFgbevKzmGC40Diyt0h/BKRI5oeRqcSiqm+yspT8qMyH+3bt/mLpivfn2Enhj2mBSql2HYk9MZv245dUbpEKDsPFNsV2zLl8tnhUzICUPPxCBDzyebg/N3R8Zhz6YQzknDywp9gDWdPlUvzA/ZpnemSiwaedfcfFbvVY276aJO9vo57W+iHJ27OuPLCj5YJqBmQfIIa1LdgADIsGGOeuVEq+drzgoiLalR+0A4xUGw4pPM6gwAcj4/wUm2+kKeMT0QNXgG6J8HL7Ok=
