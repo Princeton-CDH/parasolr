@@ -31,7 +31,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python }
+          python-version: ${{ matrix.python }}
 
       # We base the python cache on the hash of all requirements files, so that
       # if any change, the cache is invalidated.
