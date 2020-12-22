@@ -27,11 +27,11 @@ INSTALLED_APPS = (
 SOLR_CONNECTIONS = {
     'default': {
         # default config for testing pytest plugin
-        'URL': 'http://localhost:8983/solr/',
+        'URL': 'http://solr:8983/solr/',
         'COLLECTION': 'myplugin',
         'CONFIGSET': configset,
         'TEST': {
-            'URL': 'http://localhost:8983/solr/',
+            'URL': 'http://solr:8983/solr/',
             'COLLECTION': 'parasolr_test',
             # aggressive commitWithin for test only
             'COMMITWITHIN': 750,
