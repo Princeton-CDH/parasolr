@@ -27,7 +27,8 @@ jobs:
         ports:
           - 8983:8983
         # workaround permission error in docker image
-        volumes: /tmp/:/opt/solr/server/solr/parasolr_test/
+        volumes:
+          - /tmp:/opt/solr/server/solr/parasolr_test/
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
