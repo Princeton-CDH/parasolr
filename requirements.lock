@@ -16,7 +16,7 @@ Jinja2==2.10.1
 MarkupSafe==1.1.1
 more-itertools==7.0.0
 packaging==19.0
--e git+git@github.com:Princeton-CDH/parasolr.git@29eab586fc73f01cb2e1c63846f16bf09253a693#egg=parasolr
+-e git+git@github.com:Princeton-CDH/parasolr.git@8e9cfff9aef6652b6c50d0c20a317f609f6b8b6a#egg=parasolr
 pkginfo==1.5.0.1
 pluggy==0.12.0
 pockets==0.7.2
