@@ -26,6 +26,9 @@ jobs:
         image: solr:${{ matrix.solr }}
         ports:
           - 8983:8983
+        command:
+          - solr-precreate
+          - parasolr_test
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
