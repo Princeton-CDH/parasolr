@@ -21,6 +21,8 @@ jobs:
     # https://docs.github.com/en/free-pro-team@latest/actions/guides/about-service-containers
     services:
       solr:
+        env:
+          SOLR_HOME: "/opt/solr/server/solr"
         image: solr:${{ matrix.solr }}
         ports:
           - 8983:8983
