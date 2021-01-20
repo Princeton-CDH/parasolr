@@ -200,7 +200,7 @@ class TestSolrQuerySet:
         mocksolr = Mock(spec=SolrClient)
         # mock cached solr response
         mock_response = Mock()
-        sqs = SolrQuerySet(mocksolr)
+        sqs = SolrQuerySet(mocksolr).stats('years')
         sqs._result_cache = mock_response
         ret = sqs.get_stats()
         # return should be stats property of the cached result
@@ -215,6 +215,8 @@ class TestSolrQuerySet:
         name, args, kwargs = mocksolr.query.mock_calls[0]
         assert kwargs['rows'] == 0
         assert kwargs['hl'] is False
+        assert kwargs['stats'] is True
+        assert kwargs['stats.field'] == ['years']
         # returns the stats property of query call
         assert ret == mocksolr.query.return_value.stats
 
