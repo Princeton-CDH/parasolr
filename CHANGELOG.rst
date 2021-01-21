@@ -3,6 +3,11 @@
 CHANGELOG
 =========
 
+0.6.1
+-----
+
+* bugfix: fix regression in SolrQuerySet `get_stats` in 0.6
+
 0.6
 ---
 
