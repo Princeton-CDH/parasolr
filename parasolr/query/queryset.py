@@ -212,9 +212,17 @@ class SolrQuerySet:
         if self._result_cache:
             return self._result_cache.stats
 
-        response = self.solr.query(rows=0, hl=False)
-        if response:
-            return response.stats
+        # since we just want a dictionary of stats fields, don't populate
+        # the result cache, no rows needed
+        query_opts = self.query_opts()
+        query_opts['rows'] = 0
+        query_opts['hl'] = False
+        # setting these by dictionary assignment, because conflicting
+        # kwargs results in a Python exception
+        result = self.solr.query(**query_opts)
+        if result:
+            return result.stats
+        return {}
 
     def get_expanded(self) -> Dict[str, Dict]:
         """Return a dictionary of expanded records included in the
