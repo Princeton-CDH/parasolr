@@ -9,6 +9,10 @@ CHANGELOG
 * Dropped support for Python 3.5
 * Now tested against Python 3.6, 3.8, Django 2.2—3.1, Solr 6 and Solr 8
 * Continuous integration migrated from Travis-CI to GitHub Actions
+* bugfix: in some cases, index script was wrongly detecting ModelIndexable
+  subclasses as abstract and excluding them; this has been corrected
+* ModelIndexable now extends `django.db.models.Model`; existing code 
+  should be updated to avoid double-extending Model
 
 0.6.1
 -----
