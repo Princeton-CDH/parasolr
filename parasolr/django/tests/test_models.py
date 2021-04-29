@@ -21,8 +21,19 @@ if django:
         class Meta:
             app_label = 'parasolr'
 
+    class NothingToIndex:
+        # mixin with class methods required to avoid test on
+        # index command trying to query django db and index
+        @classmethod
+        def items_to_index(cls):
+            return []
+
+        @classmethod
+        def total_to_index(cls):
+            return 0
+
     # an indexable django model that has dependencies
-    class IndexItem(models.Model, ModelIndexable):
+    class IndexItem(NothingToIndex, ModelIndexable):
         collections = models.ManyToManyField(Collection)
         primary = models.ForeignKey(Collection, on_delete=models.SET_NULL)
 
@@ -45,7 +56,7 @@ if django:
             app_label = 'parasolr'
 
     # item with no index_depends_on declared should not cause an error
-    class IndependentItem(models.Model, ModelIndexable):
+    class IndependentItem(ModelIndexable):
 
         class Meta:
             abstract = True

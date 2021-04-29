@@ -37,6 +37,7 @@ from parasolr.indexing import Indexable
 
 try:
     import django
+    from django.db import models
     from django.apps import apps
     from django.db.models.fields import related_descriptors
 except ImportError:
@@ -47,8 +48,7 @@ logger = logging.getLogger(__name__)
 
 
 @requires_django
-class ModelIndexable(Indexable):
-
+class ModelIndexable(models.Model, Indexable):
     # Prevent ModelIndexable from itself being indexed - only subclasses
     # should be included in  `Indexable.all_indexables`
     class Meta:

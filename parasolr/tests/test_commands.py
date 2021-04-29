@@ -250,6 +250,7 @@ class TestIndexCommand:
             assert not mock_index_meth.call_count
             assert "Unrecognized index id 'foo:1'" in str(excinfo.value)
 
+    @pytest.mark.django_db
     @patch('parasolr.management.commands.index.progressbar')
     @patch('parasolr.management.commands.index.SolrClient')
     def test_call_command(self, mocksolr2, mockprogbar):
@@ -263,7 +264,7 @@ class TestIndexCommand:
             # index all indexable content
             call_command('index', index='all', stdout=stdout)
             # should be called once for each indexable subclass
-            assert mock_index_meth.call_count == 3
+            assert mock_index_meth.call_count == 6
             # call order is not guaranteed, not inspecting here
             # commit called after works are indexed
             mocksolr2.return_value.update.index \

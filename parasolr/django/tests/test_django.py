@@ -5,14 +5,16 @@ import pytest
 
 try:
     from django.core.exceptions import ImproperlyConfigured
+    from django.db import models
     from django.test import override_settings
 
     from parasolr.django import SolrClient, SolrQuerySet, \
         AliasedSolrQuerySet
 
+    from parasolr.indexing import Indexable
     from parasolr.django.indexing import ModelIndexable
     from parasolr.django.tests.test_models import Collection, \
-        IndexItem, Owner
+        IndexItem, Owner, NothingToIndex
 
 except ImportError:
     pass
@@ -184,3 +186,30 @@ def test_get_related_model(caplog):
     with caplog.at_level(logging.WARNING):
         assert not ModelIndexable.get_related_model(IndexItem, 'primary')
         assert 'Unhandled related model' in caplog.text
+
+
+@skipif_no_django
+class TestModelIndexable:
+
+    class NoMetaModelIndexable(NothingToIndex, ModelIndexable):
+        """indexable subclass that should be indexed"""
+
+    class AbstractModelIndexable(ModelIndexable):
+        """abstract indexable subclass that should NOT be indexed"""
+
+        class Meta:
+            abstract = True
+
+    class NonAbstractModelIndexable(NothingToIndex, ModelIndexable):
+        """indexable subclass that should be indexed"""
+
+        class Meta:
+            abstract = False
+
+    def test_all_indexables(self):
+        indexables = Indexable.all_indexables()
+
+        assert ModelIndexable not in indexables
+        assert self.NoMetaModelIndexable in indexables
+        assert self.AbstractModelIndexable not in indexables
+        assert self.NonAbstractModelIndexable in indexables
