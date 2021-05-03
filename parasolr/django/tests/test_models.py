@@ -11,6 +11,18 @@ try:
 except ImportError:
     django = None
 
+
+class NothingToIndex:
+    # mixin with class methods required to avoid test on
+    # index command trying to query django db and index
+    @classmethod
+    def items_to_index(cls):
+        return []
+
+    @classmethod
+    def total_to_index(cls):
+        return 0
+
 if django:
 
     def signal_method(*args, **kwargs):
@@ -20,17 +32,6 @@ if django:
     class Collection(models.Model):
         class Meta:
             app_label = 'parasolr'
-
-    class NothingToIndex:
-        # mixin with class methods required to avoid test on
-        # index command trying to query django db and index
-        @classmethod
-        def items_to_index(cls):
-            return []
-
-        @classmethod
-        def total_to_index(cls):
-            return 0
 
     # an indexable django model that has dependencies
     class IndexItem(NothingToIndex, ModelIndexable):
