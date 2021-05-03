@@ -24,9 +24,6 @@ jobs:
         image: solr:${{ matrix.solr }}
         ports:
           - 8983:8983
-        # workaround permission error in docker image
-        volumes:
-          - /tmp:/opt/solr/server/solr/parasolr_test/
     steps:
       - name: Copy solr configsets to solr home directory (Solr 8 only)
         run: "docker exec -d ${{ job.services.solr.id }} cp -r /opt/solr/server/solr/configsets /var/solr/data"
@@ -70,25 +67,3 @@ jobs:
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1
-
-      # Set the color of the slack message used in the next step based on the
-      # status of the build: "warning" for failure and "good" for success
-      # - name: Set Slack message color based on build status
-      #   if: ${{ always() }}
-      #   env:
-      #     JOB_STATUS: ${{ job.status }}
-      #   run: echo "SLACK_COLOR=$(if [ "$JOB_STATUS" == "success" ]; then echo "good"; else echo "warning"; fi)" >> $GITHUB_ENV
-
-      # Send a message to slack to report the build status. The webhook is stored
-      # at the organization level and available to all repositories. Only run on
-      # scheduled builds & pushes, since PRs automatically report to Slack.
-      # - name: Report status to Slack
-      #   uses: rtCamp/action-slack-notify@master
-      #   if: ${{ always() && (github.event_name == 'schedule' || github.event_name == 'push') }}
-      #   env:
-      #     SLACK_COLOR: ${{ env.SLACK_COLOR }}
-      #     SLACK_WEBHOOK: ${{ secrets.ACTIONS_SLACK_WEBHOOK }}
-      #     SLACK_TITLE: "Run #${{ github.run_number }} for workflow `${{ github.workflow }}`: ${{ job.status }}"
-      #     SLACK_MESSAGE: "<https://github.com/${{ github.repository }}/|${{ github.repository }}@${{ github.ref }}>"
-      #     SLACK_FOOTER: "<https://github.com/${{ github.repository }}/commit/${{ github.sha }}|View commit>"
-      #     MSG_MINIMAL: true # use compact slack message format
