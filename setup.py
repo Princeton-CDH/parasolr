@@ -15,7 +15,7 @@ TEST_REQUIREMENTS = ['pytest>5.2', 'pytest-cov']
 DEV_REQUIREMENTS = ['sphinx', 'sphinxcontrib-napoleon',
                     'sphinx-autodoc-typehints']
 # django integration is optional
-DJANGO_REQUIREMENTS = ['django>=1.11', 'pytest-django>=3.6']
+DJANGO_REQUIREMENTS = ['django>=2.2', 'pytest-django>=3.6']
 
 setup(
     name='parasolr',
@@ -41,17 +41,17 @@ setup(
         'Environment :: Web Environment',
         'Development Status :: 2 - Pre-Alpha',
         'Framework :: Django',
-        'Framework :: Django :: 1.11',
-        'Framework :: Django :: 2.0',
-        'Framework :: Django :: 2.1',
+        'Framework :: Django :: 2.2',
+        'Framework :: Django :: 3.0',
+        'Framework :: Django :: 3.1',
         'Framework :: Pytest',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.8',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Database',
     ],
