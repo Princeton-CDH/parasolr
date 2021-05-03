@@ -1,4 +1,4 @@
-name: unit tests
+olecuname: unit tests
 
 on:
   push: # run on every push or PR to any branch
@@ -21,8 +21,6 @@ jobs:
     # https://docs.github.com/en/free-pro-team@latest/actions/guides/about-service-containers
     services:
       solr:
-        env:
-          SOLR_HOME: "/opt/solr/server/solr"
         image: solr:${{ matrix.solr }}
         ports:
           - 8983:8983
@@ -30,6 +28,10 @@ jobs:
         volumes:
           - /tmp:/opt/solr/server/solr/parasolr_test/
     steps:
+      - name: Copy solr configsets to solr home directory (Solr 8 only)
+        run: docker exec -d solr cp -r /opt/solr/server/solr/configsets /var/solr/data
+        if: ${{ matrix.solr == 8.6 }}
+
       - name: Checkout repository
         uses: actions/checkout@v2
 
@@ -38,8 +40,8 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      # We base the python cache on the hash of all requirements files, so that
-      # if any change, the cache is invalidated.
+      We base the python cache on the hash of all requirements files, so that
+      if any change, the cache is invalidated.
       - name: Cache pip
         uses: actions/cache@v2
         with:
