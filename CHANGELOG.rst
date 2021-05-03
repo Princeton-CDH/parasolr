@@ -3,6 +3,13 @@
 CHANGELOG
 =========
 
+0.7
+---
+
+* Dropped support for Python 3.5
+* Now tested against Python 3.6, 3.8, Django 2.2—3.1, Solr 6 and Solr 8
+* Continuous integration migrated from Travis-CI to GitHub Actions
+
 0.6.1
 -----
 
