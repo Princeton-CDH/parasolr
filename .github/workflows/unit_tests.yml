@@ -29,7 +29,7 @@ jobs:
           - /tmp:/opt/solr/server/solr/parasolr_test/
     steps:
       - name: Copy solr configsets to solr home directory (Solr 8 only)
-        run: docker exec -d solr cp -r /opt/solr/server/solr/configsets /var/solr/data
+        run: "docker exec -d ${{ job.services.solr.id }} cp -r /opt/solr/server/solr/configsets /var/solr/data"
         if: ${{ matrix.solr == 8.6 }}
 
       - name: Checkout repository
