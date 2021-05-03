@@ -50,7 +50,7 @@ configuration and indexing content.
     :target: https://requires.io/github/Princeton-CDH/parasolr/requirements/?branch=main
     :alt: Requirements Status
 
-Currently tested against Python 3.5 and 3.6, Solr 6.6.5 and 8.6.2, and Django 2.2 and without Django.
+Currently tested against Python 3.6 and 3.8, Solr 6.6.5 and 8.6.2, and Django 2.2-3.1 and without Django.
 
 
 Installation
