@@ -50,7 +50,7 @@ class MockModelIndexable(Indexable):
 class AbstractIndexable(Indexable):
     """indexable subclass that should not (itself) be indexed"""
 
-    class Meta:
+    class _meta:
         abstract = True
 
 
@@ -60,7 +60,7 @@ class SubIndexable(SimpleIndexable):
 
 
 class SubAbstractIndexable(SimpleIndexable):
-    class Meta:
+    class _meta:
         abstract = True
 
 
