@@ -36,19 +36,19 @@ from parasolr.django.util import requires_django
 from parasolr.indexing import Indexable
 
 try:
-    import django
-    from django.db import models
+    from django.db.models import Model
     from django.apps import apps
     from django.db.models.fields import related_descriptors
 except ImportError:
-    pass
-
+    # define placeholder model class so ModelIndexable can be defined
+    class Model:
+        pass
 
 logger = logging.getLogger(__name__)
 
 
 @requires_django
-class ModelIndexable(models.Model, Indexable):
+class ModelIndexable(Model, Indexable):
     # Prevent ModelIndexable from itself being indexed - only subclasses
     # should be included in  `Indexable.all_indexables`
     class Meta:

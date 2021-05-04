@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 try:
+    import django
     from django.core.exceptions import ImproperlyConfigured
     from django.db import models
     from django.test import override_settings
@@ -17,7 +18,7 @@ try:
         IndexItem, Owner, NothingToIndex
 
 except ImportError:
-    pass
+    django = None
 
 from parasolr.tests.utils import skipif_django, skipif_no_django
 
@@ -188,28 +189,31 @@ def test_get_related_model(caplog):
         assert 'Unhandled related model' in caplog.text
 
 
-@skipif_no_django
-class TestModelIndexable:
+# these classes cannot be defined without django dependencies
+if django:
 
-    class NoMetaModelIndexable(NothingToIndex, ModelIndexable):
-        """indexable subclass that should be indexed"""
+    @skipif_no_django
+    class TestModelIndexable:
 
-    class AbstractModelIndexable(ModelIndexable):
-        """abstract indexable subclass that should NOT be indexed"""
+        class NoMetaModelIndexable(NothingToIndex, ModelIndexable):
+            """indexable subclass that should be indexed"""
 
-        class Meta:
-            abstract = True
+        class AbstractModelIndexable(ModelIndexable):
+            """abstract indexable subclass that should NOT be indexed"""
 
-    class NonAbstractModelIndexable(NothingToIndex, ModelIndexable):
-        """indexable subclass that should be indexed"""
+            class Meta:
+                abstract = True
 
-        class Meta:
-            abstract = False
+        class NonAbstractModelIndexable(NothingToIndex, ModelIndexable):
+            """indexable subclass that should be indexed"""
 
-    def test_all_indexables(self):
-        indexables = Indexable.all_indexables()
+            class Meta:
+                abstract = False
 
-        assert ModelIndexable not in indexables
-        assert self.NoMetaModelIndexable in indexables
-        assert self.AbstractModelIndexable not in indexables
-        assert self.NonAbstractModelIndexable in indexables
+        def test_all_indexables(self):
+            indexables = Indexable.all_indexables()
+
+            assert ModelIndexable not in indexables
+            assert self.NoMetaModelIndexable in indexables
+            assert self.AbstractModelIndexable not in indexables
+            assert self.NonAbstractModelIndexable in indexables
