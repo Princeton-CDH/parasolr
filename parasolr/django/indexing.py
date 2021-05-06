@@ -138,9 +138,9 @@ class ModelIndexable(Model, Indexable):
                 # check for through model
                 if hasattr(model, dep):
                     attr = getattr(model, dep)
-                    if isinstance(attr,
-                                  related_descriptors.ManyToManyDescriptor) \
-                       or isinstance(attr, Manager):
+                    if isinstance(
+                        attr, (Manager,
+                               related_descriptors.ManyToManyDescriptor)):
                         # add through model to many to many list
                         m2m.append(attr.through)
 
