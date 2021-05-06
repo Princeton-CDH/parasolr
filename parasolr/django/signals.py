@@ -18,7 +18,7 @@ To configure index dependencies, add a property on any
 :class:`~parasolr.django.indexing.ModelIndexable` subclass with the
 dependencies and signals that should trigger reindexing.  Example::
 
-    class MyModel(Model, ModelIndexable):
+    class MyModel(ModelIndexable):
 
         index_depends_on = {
             'collections': {
