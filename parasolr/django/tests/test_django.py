@@ -5,8 +5,8 @@ import pytest
 
 try:
     import django
+    from django.db.models import Manager
     from django.core.exceptions import ImproperlyConfigured
-    from django.db import models
     from django.test import override_settings
 
     from parasolr.django import SolrClient, SolrQuerySet, \
@@ -183,11 +183,22 @@ def test_get_related_model(caplog):
     assert ModelIndexable.get_related_model(
         IndexItem, 'owner_set__collections') == Collection
 
+    # foreign key is now supported!
+    assert ModelIndexable.get_related_model(
+        IndexItem, 'primary') == Collection
+
+    # use mock to test taggable manager behavior
+    mockitem = Mock()
+    mockitem.tags = Mock(spec=Manager, through=Mock())
+    mockitem.tags.through.tag_model.return_value = 'TagBase'
+    assert ModelIndexable.get_related_model(mockitem, 'tags') == \
+        'TagBase'
+
+    # of relation cannot be determined, should warn
     # foreign key is not currently supported; should warn
     with caplog.at_level(logging.WARNING):
-        assert not ModelIndexable.get_related_model(IndexItem, 'primary')
+        assert not ModelIndexable.get_related_model(mockitem, 'foo')
         assert 'Unhandled related model' in caplog.text
-
 
 # these classes cannot be defined without django dependencies
 if django:
