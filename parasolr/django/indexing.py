@@ -36,7 +36,7 @@ from parasolr.django.util import requires_django
 from parasolr.indexing import Indexable
 
 try:
-    from django.db.models import Model
+    from django.db.models import Model, Manager
     from django.apps import apps
     from django.db.models.fields import related_descriptors
 except ImportError:
@@ -96,6 +96,16 @@ class ModelIndexable(Model, Indexable):
                         related_descriptors.ReverseManyToOneDescriptor):
             related_model = attr.rel.related_model
 
+        elif isinstance(attr,
+                        related_descriptors.ForwardManyToOneDescriptor):
+            # many to one, i.e. foreign key
+            related_model = attr.field.related_model
+
+        elif isinstance(attr, Manager):
+            # specific to django-taggit TaggableManager
+            if hasattr(attr.through, 'tag_model'):
+                related_model = attr.through.tag_model()
+
         if related_model:
             return related_model
 
@@ -129,7 +139,8 @@ class ModelIndexable(Model, Indexable):
                 if hasattr(model, dep):
                     attr = getattr(model, dep)
                     if isinstance(
-                       attr, related_descriptors.ManyToManyDescriptor):
+                        attr, (Manager,
+                               related_descriptors.ManyToManyDescriptor)):
                         # add through model to many to many list
                         m2m.append(attr.through)
 
