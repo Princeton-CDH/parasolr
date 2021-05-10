@@ -194,8 +194,7 @@ def test_get_related_model(caplog):
     assert ModelIndexable.get_related_model(mockitem, 'tags') == \
         'TagBase'
 
-    # of relation cannot be determined, should warn
-    # foreign key is not currently supported; should warn
+    # if relation cannot be determined, should warn
     with caplog.at_level(logging.WARNING):
         assert not ModelIndexable.get_related_model(mockitem, 'foo')
         assert 'Unhandled related model' in caplog.text
