@@ -189,7 +189,7 @@ class TestIndexCommand:
 
         cmd.solr.reset_mock()
         cmd.clear('work')
-        cmd.solr.update.delete_by_query.assert_called_with('item_type:work')
+        cmd.solr.update.delete_by_query.assert_called_with('item_type_s:work')
 
         cmd.solr.reset_mock()
         cmd.clear('foo')

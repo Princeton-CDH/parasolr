@@ -125,7 +125,7 @@ class Indexable:
         :meth:`index_item_type` """
         return {
             'id': self.index_id(),
-            'item_type': self.index_item_type()
+            'item_type_s': self.index_item_type()
         }
 
     def index(self):

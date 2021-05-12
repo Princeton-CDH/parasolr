@@ -88,7 +88,7 @@ class TestIndexable:
         model = MockModelIndexable()
         data = model.index_data()
         assert data['id'] == model.index_id()
-        assert data['item_type'] == model.index_item_type()
+        assert data['item_type_s'] == model.index_item_type()
         assert len(data) == 2
 
     def test_index(self, mocksolr):
