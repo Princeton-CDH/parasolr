@@ -12,7 +12,8 @@ CHANGELOG
 * bugfix: in some cases, index script was wrongly detecting ModelIndexable
   subclasses as abstract and excluding them; this has been corrected
 * ModelIndexable now extends `django.db.models.Model`; existing code 
-  should be updated to avoid double-extending Model
+  MUST be updated to avoid double-extending Model
+* Default index data has been updated to use a dynamic field `item_type_s` instead of `item_type` so that basic setup does not require customizing the solr schema.
 
 0.6.1
 -----
