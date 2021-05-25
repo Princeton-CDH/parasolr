@@ -14,6 +14,7 @@ CHANGELOG
 * ModelIndexable now extends `django.db.models.Model`; existing code 
   MUST be updated to avoid double-extending Model
 * Default index data has been updated to use a dynamic field `item_type_s` instead of `item_type` so that basic setup does not require customizing the solr schema.
+* `ModleIndexable.get_related_model` now supports ForeignKey relationships and django-taggit `TaggableManager` when identifying depencies for binding signal handlers
 
 0.6.1
 -----
