@@ -6,7 +6,7 @@ slicing, counting, and boolean check to see if a search has results.
 Filter, search and sort methods return a new queryset, and can be
 chained. For example::
 
-    SolrQuerySet(solrclient).filter(item_type='person') \
+    SolrQuerySet(solrclient).filter(item_type_s='person') \
                             .search(name='hem*') \
                             .order_by('sort_name') \
 
@@ -277,7 +277,7 @@ class SolrQuerySet:
                         # for any value and double-negates a lookup
                         # for the requested values
                         # The final output is something like:
-                        # -(item_type:[* TO *] OR item_type:(book OR periodical))
+                        # -(item_type_s:[* TO *] OR item_type_s:(book OR periodical))
                         solr_query = '-(%s:%s OR -%s)' % \
                             (key, SolrQuerySet.ANY_VALUE, solr_query)
 
@@ -304,13 +304,13 @@ class SolrQuerySet:
         method call, or they can be chained for the same effect.
         For example::
 
-            queryset.filter(item_type='person').filter(birth_year=1900)
-            queryset.filter(item_type='person', birth_year=1900)
+            queryset.filter(item_type_s='person').filter(birth_year=1900)
+            queryset.filter(item_type_s='person', birth_year=1900)
 
         A tag may be specified for the filter to be used with facet.field
         exclusions::
 
-            queryset.filter(item_type='person', tag='person')
+            queryset.filter(item_type_s='person', tag='person')
 
         To provide a filter that should be used unmodified, provide
         the exact string of your filter query::
@@ -320,8 +320,8 @@ class SolrQuerySet:
         You can also search for pre-defined using lookups on a field,
         for example::
 
-            queryset.filter(item_type__in=['person', 'book'])
-            queryset.filter(item_type__exists=False)
+            queryset.filter(item_type_s__in=['person', 'book'])
+            queryset.filter(item_type_s__exists=False)
 
         Currently supported field lookups:
 
@@ -354,9 +354,9 @@ class SolrQuerySet:
         For example::
 
             qs = queryset.facet('person_type', 'age')
-            qs = qs.facet('item_type')
+            qs = qs.facet('item_type_s')
 
-        would result in ``item_type`` being the only facet field.
+        would result in ``item_type_s`` being the only facet field.
         """
         qs_copy = self._clone()
 

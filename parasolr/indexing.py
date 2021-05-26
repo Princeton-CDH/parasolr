@@ -77,7 +77,8 @@ class Indexable:
         :class:`Indexable` subclasses such as
         :class:`~parasolr.django.indexing.ModelIndexable`."""
         return [subclass for subclass in all_subclasses(cls)
-                if not hasattr(subclass, 'Meta') or not subclass.Meta.abstract]
+                if not hasattr(subclass, '_meta') or
+                not getattr(subclass._meta, 'abstract', False)]
 
     @classmethod
     def index_item_type(cls):
@@ -124,7 +125,7 @@ class Indexable:
         :meth:`index_item_type` """
         return {
             'id': self.index_id(),
-            'item_type': self.index_item_type()
+            'item_type_s': self.index_item_type()
         }
 
     def index(self):

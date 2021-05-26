@@ -4,18 +4,21 @@ from unittest.mock import Mock, patch
 import pytest
 
 try:
+    import django
+    from django.db.models import Manager
     from django.core.exceptions import ImproperlyConfigured
     from django.test import override_settings
 
     from parasolr.django import SolrClient, SolrQuerySet, \
         AliasedSolrQuerySet
 
+    from parasolr.indexing import Indexable
     from parasolr.django.indexing import ModelIndexable
     from parasolr.django.tests.test_models import Collection, \
-        IndexItem, Owner
+        IndexItem, Owner, NothingToIndex
 
 except ImportError:
-    pass
+    django = None
 
 from parasolr.tests.utils import skipif_django, skipif_no_django
 
@@ -180,7 +183,47 @@ def test_get_related_model(caplog):
     assert ModelIndexable.get_related_model(
         IndexItem, 'owner_set__collections') == Collection
 
-    # foreign key is not currently supported; should warn
+    # foreign key is now supported!
+    assert ModelIndexable.get_related_model(
+        IndexItem, 'primary') == Collection
+
+    # use mock to test taggable manager behavior
+    mockitem = Mock()
+    mockitem.tags = Mock(spec=Manager, through=Mock())
+    mockitem.tags.through.tag_model.return_value = 'TagBase'
+    assert ModelIndexable.get_related_model(mockitem, 'tags') == \
+        'TagBase'
+
+    # if relation cannot be determined, should warn
     with caplog.at_level(logging.WARNING):
-        assert not ModelIndexable.get_related_model(IndexItem, 'primary')
+        assert not ModelIndexable.get_related_model(mockitem, 'foo')
         assert 'Unhandled related model' in caplog.text
+
+# these classes cannot be defined without django dependencies
+if django:
+
+    @skipif_no_django
+    class TestModelIndexable:
+
+        class NoMetaModelIndexable(NothingToIndex, ModelIndexable):
+            """indexable subclass that should be indexed"""
+
+        class AbstractModelIndexable(ModelIndexable):
+            """abstract indexable subclass that should NOT be indexed"""
+
+            class Meta:
+                abstract = True
+
+        class NonAbstractModelIndexable(NothingToIndex, ModelIndexable):
+            """indexable subclass that should be indexed"""
+
+            class Meta:
+                abstract = False
+
+        def test_all_indexables(self):
+            indexables = Indexable.all_indexables()
+
+            assert ModelIndexable not in indexables
+            assert self.NoMetaModelIndexable in indexables
+            assert self.AbstractModelIndexable not in indexables
+            assert self.NonAbstractModelIndexable in indexables

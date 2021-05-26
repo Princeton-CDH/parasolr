@@ -33,14 +33,14 @@ class TestSolrQuerySet:
         sqs.start = 10
         sqs.stop = 20
         sqs.sort_options = ['title asc', 'date desc']
-        sqs.filter_qs = ['item_type:work']
+        sqs.filter_qs = ['item_type_s:work']
         sqs.search_qs = ['title:reading', 'author:johnson']
         sqs.field_list = ['title', 'author', 'date:pubyear_i']
         sqs.highlight_field = 'content'
         sqs.highlight_opts = {'snippets': 3, 'method': 'unified'}
-        sqs.facet_field_list = ['item_type', 'member_type']
+        sqs.facet_field_list = ['item_type_s', 'member_type']
         sqs.facet_opts = {'sort': 'count'}
-        sqs.stats_field_list = ['item_type', 'account_start_i']
+        sqs.stats_field_list = ['item_type_s', 'account_start_i']
         # check that both prepended and not get stats. prefix appropriately
         sqs.stats_opts = {'calcdistinct': True, 'stats.facet': 'mean'}
         query_opts = sqs.query_opts()
@@ -248,7 +248,7 @@ class TestSolrQuerySet:
         sqs = SolrQuerySet(mocksolr)
 
         # arg options added to filter list as is
-        new_filters = ['item_type:work', 'date:[1550 TO 1900]']
+        new_filters = ['item_type_s:work', 'date:[1550 TO 1900]']
         filtered_qs = sqs.filter(*new_filters)
         # returned queryset has the filters
         assert filtered_qs.filter_qs == new_filters
@@ -257,18 +257,18 @@ class TestSolrQuerySet:
 
         # keyword arg options converted into filters, except tag, which
         # is prepended as a special case.
-        filtered_qs = sqs.filter(item_type='work', date=1500, tag='workDate')
+        filtered_qs = sqs.filter(item_type_s='work', date=1500, tag='workDate')
         # returned queryset has the filters
-        assert '{!tag=workDate}item_type:work' in filtered_qs.filter_qs
+        assert '{!tag=workDate}item_type_s:work' in filtered_qs.filter_qs
         assert '{!tag=workDate}date:1500' in filtered_qs.filter_qs
         # original queryset is unchanged
         assert not sqs.filter_qs
 
         # chaining adds to the filters, tag is optional and not appended
         # if not supplied
-        filtered_qs = sqs.filter(item_type='work').filter(date=1500) \
+        filtered_qs = sqs.filter(item_type_s='work').filter(date=1500) \
                          .filter('name:he*')
-        assert 'item_type:work' in filtered_qs.filter_qs
+        assert 'item_type_s:work' in filtered_qs.filter_qs
         assert 'date:1500' in filtered_qs.filter_qs
         assert 'name:he*' in filtered_qs.filter_qs
 
@@ -276,7 +276,7 @@ class TestSolrQuerySet:
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
         # facet a search
-        facet_list = ['person_type', 'item_type']
+        facet_list = ['person_type', 'item_type_s']
         faceted_qs = sqs.facet(*facet_list)
         # faceting should be set
         assert faceted_qs.facet_field_list == facet_list
@@ -368,7 +368,7 @@ class TestSolrQuerySet:
         sqs = SolrQuerySet(mocksolr)
 
         # arg options added to filter list as is
-        queries = ['item_type:work', 'date:[1550 TO *]']
+        queries = ['item_type_s:work', 'date:[1550 TO *]']
         search_sqs = sqs.search(*queries)
         # returned queryset has the filters
         assert search_sqs.search_qs == queries
@@ -376,15 +376,15 @@ class TestSolrQuerySet:
         assert not sqs.search_qs
 
         # keyword arg options are converted
-        search_sqs = sqs.search(item_type='work', date=1550)
-        assert 'item_type:work' in search_sqs.search_qs
+        search_sqs = sqs.search(item_type_s='work', date=1550)
+        assert 'item_type_s:work' in search_sqs.search_qs
         assert 'date:1550' in search_sqs.search_qs
         # original queryset is unchanged
         assert not sqs.search_qs
 
         # chaining is additive
-        search_sqs = sqs.search(item_type='work').search(date=1550)
-        assert 'item_type:work' in search_sqs.search_qs
+        search_sqs = sqs.search(item_type_s='work').search(date=1550)
+        assert 'item_type_s:work' in search_sqs.search_qs
         assert 'date:1550' in search_sqs.search_qs
         # original queryset is unchanged
         assert not sqs.search_qs
@@ -544,9 +544,9 @@ class TestSolrQuerySet:
         assert sqs.search_qs == []
 
         # none after search terms replaces the search
-        search_sqs = SolrQuerySet(mocksolr).search('item_type:work')
+        search_sqs = SolrQuerySet(mocksolr).search('item_type_s:work')
         none_sqs = search_sqs.none()
-        assert search_sqs.search_qs == ['item_type:work']
+        assert search_sqs.search_qs == ['item_type_s:work']
         assert none_sqs.search_qs == ['NOT *:*']
 
     def test__clone(self):
@@ -565,9 +565,9 @@ class TestSolrQuerySet:
         assert cloned_sqs.stats_opts == {}
 
         # set everything
-        custom_sqs = sqs.filter(item_type='person').search(name='he*') \
-                        .order_by('birth_year').facet('item_type')\
-                        .stats('item_type')
+        custom_sqs = sqs.filter(item_type_s='person').search(name='he*') \
+                        .order_by('birth_year').facet('item_type_s')\
+                        .stats('item_type_s')
         custom_sqs.set_limits(10, 100)
         custom_clone = custom_sqs._clone()
         assert custom_clone.start == 10
@@ -599,61 +599,61 @@ class TestSolrQuerySet:
 
         # sanity-check chaining
         sqs = SolrQuerySet(mocksolr)
-        filtered_sqs = sqs.filter(item_type='person')
+        filtered_sqs = sqs.filter(item_type_s='person')
         # filter should be set
-        assert 'item_type:person' in filtered_sqs.filter_qs
+        assert 'item_type_s:person' in filtered_sqs.filter_qs
         sorted_sqs = filtered_sqs.order_by('birth_year')
         # sort and filter should be set
-        assert 'item_type:person' in sorted_sqs.filter_qs
+        assert 'item_type_s:person' in sorted_sqs.filter_qs
         assert 'birth_year asc' in sorted_sqs.sort_options
         search_sqs = sorted_sqs.search(name='hem*')
         # search , sort, and filter should be set
-        assert 'item_type:person' in search_sqs.filter_qs
+        assert 'item_type_s:person' in search_sqs.filter_qs
         assert 'birth_year asc' in search_sqs.sort_options
         assert 'name:hem*' in search_sqs.search_qs
 
     def test__lookup_to_filter(self):
         # simple key-value
-        assert SolrQuerySet._lookup_to_filter('item_type', 'work') == \
-            'item_type:work'
+        assert SolrQuerySet._lookup_to_filter('item_type_s', 'work') == \
+            'item_type_s:work'
         # exists
-        assert SolrQuerySet._lookup_to_filter('item_type__exists', True) == \
-            'item_type:[* TO *]'
+        assert SolrQuerySet._lookup_to_filter('item_type_s__exists', True) == \
+            'item_type_s:[* TO *]'
         # does not exist
-        assert SolrQuerySet._lookup_to_filter('item_type__exists', False) == \
-            '-item_type:[* TO *]'
+        assert SolrQuerySet._lookup_to_filter('item_type_s__exists', False) == \
+            '-item_type_s:[* TO *]'
         # simple __in query
-        assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b']) == \
-            'item_type:(a OR b)'
+        assert SolrQuerySet._lookup_to_filter('item_type_s__in', ['a', 'b']) == \
+            'item_type_s:(a OR b)'
         # complex __in query with a negation
-        assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b', '']) == \
-            '-(item_type:[* TO *] OR -item_type:(a OR b))'
+        assert SolrQuerySet._lookup_to_filter('item_type_s__in', ['a', 'b', '']) == \
+            '-(item_type_s:[* TO *] OR -item_type_s:(a OR b))'
         # __in query with just a negation
-        assert SolrQuerySet._lookup_to_filter('item_type__in', ['']) == \
-            '-item_type:[* TO *]'
+        assert SolrQuerySet._lookup_to_filter('item_type_s__in', ['']) == \
+            '-item_type_s:[* TO *]'
 
         # test cases with tag
         # simple key-value
-        assert SolrQuerySet._lookup_to_filter('item_type', 'work', tag='type') == \
-            '{!tag=type}item_type:work'
+        assert SolrQuerySet._lookup_to_filter('item_type_s', 'work', tag='type') == \
+            '{!tag=type}item_type_s:work'
         # exists
-        assert SolrQuerySet._lookup_to_filter('item_type__exists', True, tag='type') == \
-            '{!tag=type}item_type:[* TO *]'
+        assert SolrQuerySet._lookup_to_filter('item_type_s__exists', True, tag='type') == \
+            '{!tag=type}item_type_s:[* TO *]'
         # does not exist
-        assert SolrQuerySet._lookup_to_filter('item_type__exists', False, tag='type') == \
-            '{!tag=type}-item_type:[* TO *]'
+        assert SolrQuerySet._lookup_to_filter('item_type_s__exists', False, tag='type') == \
+            '{!tag=type}-item_type_s:[* TO *]'
         # in list query with tag
-        assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b'], tag='type') == \
-            '{!tag=type}item_type:(a OR b)'
+        assert SolrQuerySet._lookup_to_filter('item_type_s__in', ['a', 'b'], tag='type') == \
+            '{!tag=type}item_type_s:(a OR b)'
         # in list query with a None value
-        assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b', None]) == \
-            '-(item_type:[* TO *] OR -item_type:(a OR b))'
+        assert SolrQuerySet._lookup_to_filter('item_type_s__in', ['a', 'b', None]) == \
+            '-(item_type_s:[* TO *] OR -item_type_s:(a OR b))'
         # in list query with a negation
-        assert SolrQuerySet._lookup_to_filter('item_type__in', ['a', 'b', ''], tag='type') == \
-            '{!tag=type}-(item_type:[* TO *] OR -item_type:(a OR b))'
+        assert SolrQuerySet._lookup_to_filter('item_type_s__in', ['a', 'b', ''], tag='type') == \
+            '{!tag=type}-(item_type_s:[* TO *] OR -item_type_s:(a OR b))'
         # in list query with only a negation
-        assert SolrQuerySet._lookup_to_filter('item_type__in', [''], tag='type') == \
-            '{!tag=type}-item_type:[* TO *]'
+        assert SolrQuerySet._lookup_to_filter('item_type_s__in', [''], tag='type') == \
+            '{!tag=type}-item_type_s:[* TO *]'
         # range query - start and end
         assert SolrQuerySet._lookup_to_filter('year__range', (1900, 2000)) == \
             'year:[1900 TO 2000]'

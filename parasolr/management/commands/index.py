@@ -175,7 +175,7 @@ class Command(BaseCommand):
             del_query = '*:*'
         else:
             # construct query based on item type
-            del_query = 'item_type:%s' % mode
+            del_query = 'item_type_s:%s' % mode
 
         if self.verbosity >= self.v_normal:
             # pluralize indexable names but not all

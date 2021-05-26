@@ -1,0 +1,69 @@
+name: unit tests
+
+on:
+  push: # run on every push or PR to any branch
+  pull_request:
+  schedule: # run automatically on main branch each Tuesday at 11am
+    - cron: "0 16 * * 2"
+
+jobs:
+  python-unit:
+    name: Python unit tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: [3.6, 3.8]
+        solr: [8.6, 6.6]
+        django: [0, 2.2, 3.0, 3.1]
+    # We use service containers to avoid needing to set up a local copy of
+    # mysql or postgres on the test runner instance. This syntax is similar to
+    # the spec of a docker-compose file. For more, see:
+    # https://docs.github.com/en/free-pro-team@latest/actions/guides/about-service-containers
+    services:
+      solr:
+        image: solr:${{ matrix.solr }}
+        ports:
+          - 8983:8983
+    steps:
+      - name: Copy solr configsets to solr home directory (Solr 8 only)
+        run: "docker exec -d ${{ job.services.solr.id }} cp -r /opt/solr/server/solr/configsets /var/solr/data"
+        if: ${{ matrix.solr == 8.6 }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+
+      # We base the python cache on the hash of all requirements files, so that
+      # if any change, the cache is invalidated.
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('setup.py') }}
+          restore-keys: |
+            pip-${{ hashFiles('setup.py') }}
+            pip-
+
+      - name: Install package with dependencies
+        run: |
+          if [ "${{ matrix.django }}" -gt "0"]; then pip install -q Django==${{ matrix.django }} pytest-django; fi
+          pip install -e .
+          pip install -e '.[test]'
+          pip install codecov
+
+      - name: Setup test settings
+        run: |
+          cp ci/testsettings.py testsettings.py
+          python -c "import uuid; print('SECRET_KEY = \'%s\'' % uuid.uuid4())" >> testsettings.py
+
+      - name: Run pytest
+        env:
+          SOLR_VERSION: "${{ matrix.solr }}"
+        run: py.test --cov=parasolr --cov-report=xml
+
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1

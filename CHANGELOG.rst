@@ -3,6 +3,19 @@
 CHANGELOG
 =========
 
+0.7
+---
+
+* Dropped support for Python 3.5
+* Now tested against Python 3.6, 3.8, Django 2.2—3.1, Solr 6 and Solr 8
+* Continuous integration migrated from Travis-CI to GitHub Actions
+* bugfix: in some cases, index script was wrongly detecting ModelIndexable
+  subclasses as abstract and excluding them; this has been corrected
+* ModelIndexable now extends `django.db.models.Model`; existing code 
+  MUST be updated to avoid double-extending Model
+* Default index data has been updated to use a dynamic field `item_type_s` instead of `item_type` so that basic setup does not require customizing the solr schema.
+* `ModleIndexable.get_related_model` now supports ForeignKey relationships and django-taggit `TaggableManager` when identifying depencies for binding signal handlers
+
 0.6.1
 -----
 
