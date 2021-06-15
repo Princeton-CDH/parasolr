@@ -95,7 +95,7 @@ class IndexableSignalHandler:
         :class:`~parasolr.django.indexing.ModelIndexable` instances'''
         if action in ['post_add', 'post_remove', 'post_clear']:
             if isinstance(instance, ModelIndexable):
-                logger.debug('Indexing %r (m2m change)', instance)
+                logger.debug('Indexing %r (m2m change: %s)', instance, action)
                 instance.index()
 
     @staticmethod
