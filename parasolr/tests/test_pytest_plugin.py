@@ -13,7 +13,7 @@ try:
 except ImportError:
     pass
 
-from parasolr.pytest_plugin import get_mock_solr_queryset
+from parasolr.pytest_plugin import get_mock_solr_queryset, mock_solr_queryset
 from parasolr.query import SolrQuerySet
 from parasolr.tests.utils import skipif_no_django
 
@@ -185,6 +185,11 @@ def test_get_mock_solr_queryset_subclass():
     mock_qs.custom_method()
     # should pass isinstance check
     assert isinstance(mock_qs, MyCustomQuerySet)
+
+    # specify extra methods to include in fluent interface
+    mock_qs_cls = get_mock_solr_queryset(MyCustomQuerySet, extra_methods=["custom_method"])
+    mock_qs = mock_qs_cls()
+    assert mock_qs.custom_method.return_value == mock_qs
 
 
 def test_get_mock_solr_queryset_class_scope(testdir):

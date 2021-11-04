@@ -126,13 +126,13 @@ if django:
             sleep(0.1)
 
 
-def get_mock_solr_queryset(spec=SolrQuerySet):
+def get_mock_solr_queryset(spec=SolrQuerySet, extra_methods=[]):
     mock_qs = MagicMock(spec=spec)
 
     # simulate fluent interface
     for meth in ['filter', 'facet', 'stats', 'facet_field', 'facet_range',
                  'search', 'order_by', 'query', 'only', 'also',
-                 'highlight', 'raw_query_parameters', 'all', 'none']:
+                 'highlight', 'raw_query_parameters', 'all', 'none'] + extra_methods:
         getattr(mock_qs, meth).return_value = mock_qs
 
     return Mock(return_value=mock_qs)
