@@ -231,6 +231,32 @@ class TestAliasedSolrQuerySet(TestCase):
         mock_get_stats.return_value = None
         assert self.mysqs.get_stats() is None
 
+    @patch('parasolr.query.queryset.SolrQuerySet.get_highlighting')
+    def test_get_highlighting(self, mock_get_highlighting):
+        sample_highlights = {
+            # In setup for tests, name_t is aliased to name
+            "item.1": {
+                "name_t": ["snippet 1", "snippet 2"],
+                "description_t": ["another snippet"]
+            }
+        }
+        # Deepcopy to avoid the dictionaries being passed by reference
+        # so we can check against the original object later
+        mock_get_highlighting.return_value = copy.deepcopy(sample_highlights)
+        highlights = self.mysqs.get_highlighting()
+        # aliased field is changed to unaliased form
+        assert "name_t" not in highlights["item.1"]
+        assert "name" in highlights["item.1"]
+        # value of field is preserved without change
+        assert highlights["item.1"]["name"] \
+            == sample_highlights["item.1"]["name_t"]
+        # unaliased field is left alone
+        assert 'description_t' in highlights["item.1"]
+
+        # ensure that if get_stats returns None on error,
+        # we don't have a key error when try to realias fields
+        mock_get_highlighting.return_value = None
+        assert self.mysqs.get_highlighting() is None
 
 
 
