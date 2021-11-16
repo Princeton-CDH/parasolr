@@ -8,6 +8,7 @@ CHANGELOG
 * Pytest fixture ``mock_solr_queryset`` now takes optional argument for extra methods to include in fluent interface
 * ``SolrQuerySet`` now supports highlighting on multiple fields via ``highlight`` method, with per-field highlighting options.
 * ``AliasedSolrQuerySet`` now correctly aliases fieldnames in highlighting results.
+* Adopted black & isort python style and configured pre-commit hook
 
 0.7
 ---

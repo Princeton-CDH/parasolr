@@ -1,0 +1,12 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 21.9b0 # Replace by any tag/version: https://github.com/psf/black/tags
+    hooks:
+      - id: black
+        # Assumes that your shell's `python` command is linked to python3.6+
+        language_version: python
+  - repo: https://github.com/pycqa/isort
+    rev: 5.9.3
+    hooks:
+      - id: isort
+        args: ["--profile", "black", "--filter-files"]

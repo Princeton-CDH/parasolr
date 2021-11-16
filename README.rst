@@ -50,6 +50,13 @@ configuration and indexing content.
     :target: https://requires.io/github/Princeton-CDH/parasolr/requirements/?branch=main
     :alt: Requirements Status
 
+  .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/psf/black
+    :alt: code style: Black
+
+  .. image:: https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336
+    :target: https://pycqa.github.io/isort/
+
 Currently tested against Python 3.6 and 3.8, Solr 6.6.5 and 8.6.2, and Django 2.2-3.1 and without Django.
 
 
@@ -106,6 +113,22 @@ Initial setup and installation:
 
    pip install -e .
    pip install -e '.[dev]'
+
+Install pre-commit hooks
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Install configured pre-commit hooks (currently `black <https://github.com/psf/black>`_ and `isort <https://pycqa.github.io/isort/>`_):
+
+    pre-commit install
+
+Styling was instituted in version 0.8; as a result, ``git blame`` may not reflect the true author of a given line. In order to see a more accurate ``git blame`` execute the following command:
+
+    git blame <FILE> --ignore-revs-file .git-blame-ignore-revs
+
+Or configure your git to always ignore the black revision commit:
+
+    git config blame.ignoreRevsFile .git-blame-ignore-revs
+
 
 Unit testing
 ------------
