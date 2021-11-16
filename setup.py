@@ -13,7 +13,7 @@ REQUIREMENTS = ['requests', 'attrdict', 'progressbar2']
 # NOTE: progressbar only needed for django index script; make optional?
 TEST_REQUIREMENTS = ['pytest>5.2', 'pytest-cov']
 DEV_REQUIREMENTS = ['sphinx', 'sphinxcontrib-napoleon',
-                    'sphinx-autodoc-typehints']
+                    'sphinx-autodoc-typehints', 'pre-commit']
 # django integration is optional
 DJANGO_REQUIREMENTS = ['django>=2.2', 'pytest-django>=3.6']
 
