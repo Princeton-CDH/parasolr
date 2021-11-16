@@ -36,8 +36,8 @@ class TestSolrQuerySet:
         sqs.filter_qs = ['item_type_s:work']
         sqs.search_qs = ['title:reading', 'author:johnson']
         sqs.field_list = ['title', 'author', 'date:pubyear_i']
-        sqs.highlight_field = 'content'
-        sqs.highlight_opts = {'snippets': 3, 'method': 'unified'}
+        sqs.highlight_fields = ['content']
+        sqs.highlight_opts = {'f.content.hl.snippets': 3, 'f.content.hl.method': 'unified'}
         sqs.facet_field_list = ['item_type_s', 'member_type']
         sqs.facet_opts = {'sort': 'count'}
         sqs.stats_field_list = ['item_type_s', 'account_start_i']
@@ -54,9 +54,9 @@ class TestSolrQuerySet:
         # highlighting should be turned on
         assert query_opts['hl']
         assert query_opts['hl.fl'] == 'content'
-        # highlighting options added with hl.prefix
-        assert query_opts['hl.snippets'] == 3
-        assert query_opts['hl.method'] == 'unified'
+        # highlighting options added as-is
+        assert query_opts['f.content.hl.snippets'] == 3
+        assert query_opts['f.content.hl.method'] == 'unified'
         # make sure faceting opts are preserved
         assert query_opts['facet'] is True
         assert query_opts['facet.field'] == sqs.facet_field_list
@@ -468,18 +468,19 @@ class TestSolrQuerySet:
         sqs = SolrQuerySet(mocksolr)
         # field only, defaults
         highlight_qs = sqs.highlight('content')
-        assert highlight_qs.highlight_field == 'content'
+        assert highlight_qs.highlight_fields == ['content']
         assert highlight_qs.highlight_opts == {}
         # original unchanged
-        assert sqs.highlight_field is None
+        assert sqs.highlight_fields == []
 
         # field and opts
         highlight_qs = sqs.highlight('text', snippets=3, method='unified')
-        assert highlight_qs.highlight_field == 'text'
+        assert highlight_qs.highlight_fields == ['text']
+        print(highlight_qs.highlight_opts)
         assert highlight_qs.highlight_opts == \
-            {'snippets': 3, 'method': 'unified'}
+            {'f.text.hl.snippets': 3, 'f.text.hl.method': 'unified'}
         # original unchanged
-        assert sqs.highlight_field is None
+        assert sqs.highlight_fields == []
         assert sqs.highlight_opts == {}
 
     def test_raw_query_parameters(self):
