@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 from parasolr.query.queryset import SolrQuerySet
 
@@ -130,6 +130,15 @@ class AliasedSolrQuerySet(SolrQuerySet):
             }
         return stats
 
-    # NOTE: may want to do the same for highlighting also eventually,
-    # but no immediate need and it's structured differently so
-    # not as obvious how to handle
+    def get_highlighting(self) -> Dict[str, Dict[str, List]]:
+        highlighting = super().get_highlighting()
+        # highlighting results are keyed on document id
+        # for each document, there is a dictionary of highlights;
+        # key is field name, value is the list of snippets
+        if highlighting:
+            for doc_id, highlights in highlighting.items():
+                highlighting[doc_id] = {
+                    self.reverse_aliases.get(field, field): snippets
+                    for field, snippets in highlights.items()
+                }
+        return highlighting

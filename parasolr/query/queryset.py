@@ -36,7 +36,7 @@ class SolrQuerySet:
     search_qs = []
     filter_qs = []
     field_list = []
-    highlight_field = None
+    highlight_fields = []
     facet_field_list = []
     stats_field_list = []
     range_facet_fields = []
@@ -89,13 +89,14 @@ class SolrQuerySet:
     def _set_highlighting_opts(self, query_opts: Dict) -> None:
         """Configure highlighting attributes on query_opts. Modifies
         dictionary directly."""
-        if self.highlight_field:
+        if self.highlight_fields:
             query_opts.update({
                 'hl': True,
-                'hl.fl': self.highlight_field
+                'hl.fl': ','.join(self.highlight_fields)
             })
-            for key, val in self.highlight_opts.items():
-                query_opts['hl.%s' % key] = val
+            # highlighting options should be added as-is
+            # (prefixes added in highlight methods)
+            query_opts.update(self.highlight_opts)
 
     def _set_faceting_opts(self, query_opts: Dict) -> None:
         """Configure faceting attributes directly on query_opts. Modifies
@@ -512,8 +513,12 @@ class SolrQuerySet:
             queryset.highlight('content', snippets=3, method='unified')
         """
         qs_copy = self._clone()
-        qs_copy.highlight_field = field
-        qs_copy.highlight_opts = kwargs
+        qs_copy.highlight_fields.append(field)
+        # make highlight options field-specific to allow for multiple
+        qs_copy.highlight_opts.update({
+            'f.%s.hl.%s' % (field, opt): value
+            for opt, value in kwargs.items()})
+
         return qs_copy
 
     def raw_query_parameters(self, **kwargs) -> 'SolrQuerySet':
@@ -524,7 +529,7 @@ class SolrQuerySet:
         qs_copy.raw_params.update(kwargs)
         return qs_copy
 
-    def get_highlighting(self):
+    def get_highlighting(self) -> Dict[str, Dict[str, List]]:
         """Return the highlighting portion of the Solr response."""
         if not self._result_cache:
             self.get_results()
@@ -552,7 +557,7 @@ class SolrQuerySet:
         # set attributes that can be copied directly
         qs_copy.start = self.start
         qs_copy.stop = self.stop
-        qs_copy.highlight_field = self.highlight_field
+        qs_copy.highlight_fields = list(self.highlight_fields)
 
         # set copies of list and dict attributes
         qs_copy.search_qs = list(self.search_qs)
