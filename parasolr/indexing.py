@@ -31,9 +31,10 @@ logger = logging.getLogger(__name__)
 # recursive subclasses
 # via https://stackoverflow.com/questions/3862310/how-to-find-all-the-subclasses-of-a-class-given-its-name
 def all_subclasses(cls):
-    '''recursive method to find all subclasses'''
+    """recursive method to find all subclasses"""
     return set(cls.__subclasses__()).union(
-        [s for c in cls.__subclasses__() for s in all_subclasses(c)])
+        [s for c in cls.__subclasses__() for s in all_subclasses(c)]
+    )
 
 
 class Indexable:
@@ -59,7 +60,7 @@ class Indexable:
     solr = None
 
     #: id separator for auto-generated index ids
-    ID_SEPARATOR = '.'
+    ID_SEPARATOR = "."
 
     def __init__(self):
         # initialize connection to solr on first instance initialization
@@ -76,16 +77,19 @@ class Indexable:
         """Find all :class:`Indexable` subclasses for indexing. Ignore abstract
         :class:`Indexable` subclasses such as
         :class:`~parasolr.django.indexing.ModelIndexable`."""
-        return [subclass for subclass in all_subclasses(cls)
-                if not hasattr(subclass, '_meta') or
-                not getattr(subclass._meta, 'abstract', False)]
+        return [
+            subclass
+            for subclass in all_subclasses(cls)
+            if not hasattr(subclass, "_meta")
+            or not getattr(subclass._meta, "abstract", False)
+        ]
 
     @classmethod
     def index_item_type(cls):
         """Label for this kind of indexable item. Must be unique
         across all Indexable items in an application. By default, uses
         Django model verbose name. Used in default index id and
-        in index manage command. """
+        in index manage command."""
         # TODO: move this implementation into django subclass?
         # default could just return an attribute on the class
         return cls._meta.verbose_name
@@ -116,21 +120,16 @@ class Indexable:
     def index_id(self):
         """Solr identifier. By default, combines :meth:`index item_type`
         and :attr:`id` with :attr:ID_SEPARATOR`."""
-        return '%s%s%s' % (self.index_item_type(), self.ID_SEPARATOR,
-                           self.id)
+        return "%s%s%s" % (self.index_item_type(), self.ID_SEPARATOR, self.id)
 
     def index_data(self):
         """Dictionary of data to index in Solr for this item.
         Default implementation adds  :meth:`index_id` and
-        :meth:`index_item_type` """
-        return {
-            'id': self.index_id(),
-            'item_type_s': self.index_item_type()
-        }
+        :meth:`index_item_type`"""
+        return {"id": self.index_id(), "item_type_s": self.index_item_type()}
 
     def index(self):
-        """Index the current object in Solr.
-        """
+        """Index the current object in Solr."""
         self.solr.update.index([self.index_data()])
 
     @classmethod
@@ -167,8 +166,8 @@ class Indexable:
         while chunk:
             # call index data method if present; otherwise assume item is dict
             cls.solr.update.index(
-                [i.index_data() if hasattr(i, 'index_data') else i
-                 for i in chunk])
+                [i.index_data() if hasattr(i, "index_data") else i for i in chunk]
+            )
             count += len(chunk)
             # update progress bar if one was passed in
             if progbar:
@@ -184,5 +183,5 @@ class Indexable:
         :meth:`index_id`"""
         # NOTE: using quotes on id to handle ids that include colons or other
         # characters that have meaning in Solr/lucene queries
-        logger.debug('Deleting document from index with id %s', self.index_id())
+        logger.debug("Deleting document from index with id %s", self.index_id())
         self.solr.update.delete_by_id([self.index_id()])

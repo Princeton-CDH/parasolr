@@ -16,7 +16,6 @@ import parasolr.django as parasolr_django
 from parasolr.query.queryset import SolrQuerySet
 from parasolr.schema import SolrSchema
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -25,37 +24,39 @@ logger = logging.getLogger(__name__)
 if django:
 
     def get_test_solr_config():
-        '''Get configuration for test Solr connection based on
+        """Get configuration for test Solr connection based on
         default and test options in django settings. Any test configuration
         options specified are used; if no test collection name
-        is specified, generates one based on the configured collection.'''
+        is specified, generates one based on the configured collection."""
 
         # skip if parasolr is not actually in django installed apps
         if not apps.is_installed("parasolr"):
             return
 
         # if no solr connection is configured, bail out
-        if not getattr(settings, 'SOLR_CONNECTIONS', None):
-            logger.warning('No Solr configuration found')
+        if not getattr(settings, "SOLR_CONNECTIONS", None):
+            logger.warning("No Solr configuration found")
             return
 
         # copy default config for basic connection options (e.g. url)
-        test_config = settings.SOLR_CONNECTIONS['default'].copy()
+        test_config = settings.SOLR_CONNECTIONS["default"].copy()
 
         # use test settings as primary: anything in test settings
         # should override default settings
-        if 'TEST' in settings.SOLR_CONNECTIONS['default']:
-            test_config.update(settings.SOLR_CONNECTIONS['default']['TEST'])
+        if "TEST" in settings.SOLR_CONNECTIONS["default"]:
+            test_config.update(settings.SOLR_CONNECTIONS["default"]["TEST"])
 
         # if test collection is not explicitly configured,
         # set it based on default collection
-        if 'TEST' not in test_config or \
-           'COLLECTION' not in settings.SOLR_CONNECTIONS['default']['TEST']:
-            test_config['COLLECTION'] = 'test_%s' % \
-                settings.SOLR_CONNECTIONS['default']['COLLECTION']
+        if (
+            "TEST" not in test_config
+            or "COLLECTION" not in settings.SOLR_CONNECTIONS["default"]["TEST"]
+        ):
+            test_config["COLLECTION"] = (
+                "test_%s" % settings.SOLR_CONNECTIONS["default"]["COLLECTION"]
+            )
 
-        logger.info('Configuring Solr for tests %(URL)s%(COLLECTION)s',
-                    test_config)
+        logger.info("Configuring Solr for tests %(URL)s%(COLLECTION)s", test_config)
         return test_config
 
     @pytest.fixture(autouse=True, scope="session")
@@ -84,16 +85,19 @@ if django:
         if not solr_config_opts:
             return
 
-        logger.info('Configuring Solr for tests %(URL)s%(COLLECTION)s',
-                    solr_config_opts)
+        logger.info(
+            "Configuring Solr for tests %(URL)s%(COLLECTION)s", solr_config_opts
+        )
 
-        with override_settings(SOLR_CONNECTIONS={'default': solr_config_opts}):
+        with override_settings(SOLR_CONNECTIONS={"default": solr_config_opts}):
             # reload core before and after to ensure field list is accurate
             solr = parasolr_django.SolrClient(commitWithin=10)
-            response = solr.core_admin.status(core=solr_config_opts['COLLECTION'])
-            if not response.status.get(solr_config_opts['COLLECTION'], None):
-                solr.core_admin.create(solr_config_opts['COLLECTION'],
-                                       configSet=solr_config_opts['CONFIGSET'])
+            response = solr.core_admin.status(core=solr_config_opts["COLLECTION"])
+            if not response.status.get(solr_config_opts["COLLECTION"], None):
+                solr.core_admin.create(
+                    solr_config_opts["COLLECTION"],
+                    configSet=solr_config_opts["CONFIGSET"],
+                )
 
             try:
                 # if a schema is configured, update the test core
@@ -107,20 +111,20 @@ if django:
             yield settings
 
             # clear out any data indexed in test collection
-            solr.update.delete_by_query('*:*')
+            solr.update.delete_by_query("*:*")
             # and unload
             solr.core_admin.unload(
-                solr_config_opts['COLLECTION'],
+                solr_config_opts["COLLECTION"],
                 deleteInstanceDir=True,
                 deleteIndex=True,
-                deleteDataDir=True
+                deleteDataDir=True,
             )
 
     @pytest.fixture
     def empty_solr():
-        '''pytest fixture to clear out all content from configured Solr'''
-        parasolr_django.SolrClient().update.delete_by_query('*:*')
-        while(parasolr_django.SolrQuerySet().count() != 0):
+        """pytest fixture to clear out all content from configured Solr"""
+        parasolr_django.SolrClient().update.delete_by_query("*:*")
+        while parasolr_django.SolrQuerySet().count() != 0:
             # sleep until we get records back; 0.1 seems to be enough
             # for local dev with local Solr
             sleep(0.1)
@@ -130,9 +134,22 @@ def get_mock_solr_queryset(spec=SolrQuerySet, extra_methods=[]):
     mock_qs = MagicMock(spec=spec)
 
     # simulate fluent interface
-    for meth in ['filter', 'facet', 'stats', 'facet_field', 'facet_range',
-                 'search', 'order_by', 'query', 'only', 'also',
-                 'highlight', 'raw_query_parameters', 'all', 'none'] + extra_methods:
+    for meth in [
+        "filter",
+        "facet",
+        "stats",
+        "facet_field",
+        "facet_range",
+        "search",
+        "order_by",
+        "query",
+        "only",
+        "also",
+        "highlight",
+        "raw_query_parameters",
+        "all",
+        "none",
+    ] + extra_methods:
         getattr(mock_qs, meth).return_value = mock_qs
 
     return Mock(return_value=mock_qs)
@@ -140,7 +157,7 @@ def get_mock_solr_queryset(spec=SolrQuerySet, extra_methods=[]):
 
 @pytest.fixture
 def mock_solr_queryset(request):
-    '''Fixture to provide a :class:`unitest.mock.Mock` for
+    """Fixture to provide a :class:`unitest.mock.Mock` for
     :class:`~parasolr.query.queryset.SolrQuerySet` that simplifies
     testing against a mocked version of the fluent interface. It returns
     a method to generate a Mock queryset class; the method has an
@@ -168,11 +185,10 @@ def mock_solr_queryset(request):
 
         mock_qs = self.mock_solr_queryset(MySolrQuerySet)
 
-    '''
+    """
 
     # if scope is class or function and there is a class available,
     # convert the mock generator to a static method and set it on the class
-    if request.scope in ['class', 'function'] and \
-       getattr(request, 'cls', None):
+    if request.scope in ["class", "function"] and getattr(request, "cls", None):
         request.cls.mock_solr_queryset = staticmethod(get_mock_solr_queryset)
     return get_mock_solr_queryset

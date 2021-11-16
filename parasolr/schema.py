@@ -82,7 +82,6 @@ from attrdict import AttrDefault
 
 from parasolr.solr.client import SolrClient
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -99,9 +98,14 @@ class SolrField:
         AttributeError: If ``__set__`` is called.
     """
 
-    def __init__(self, fieldtype: str, required: bool=False,
-                 multivalued: bool=False, default: str=None,
-                 stored: bool=True):
+    def __init__(
+        self,
+        fieldtype: str,
+        required: bool = False,
+        multivalued: bool = False,
+        default: str = None,
+        stored: bool = True,
+    ):
         self.type = fieldtype
         self.required = required
         self.multivalued = multivalued
@@ -109,10 +113,14 @@ class SolrField:
         self.stored = stored
 
     def __get__(self, obj, objtype):
-        opts = {'type': self.type, 'required': self.required,
-                'multiValued': self.multivalued, 'stored': self.stored}
+        opts = {
+            "type": self.type,
+            "required": self.required,
+            "multiValued": self.multivalued,
+            "stored": self.stored,
+        }
         if self.default:
-            opts['default'] = self.default
+            opts["default"] = self.default
         return opts
 
     def __set__(self, obj, val):
@@ -128,6 +136,7 @@ class SolrTypedField(SolrField):
         *args: Arguments as passsed to :class:`SolrField`.
         **kwargs: Keyword arguments as passed to :class:`SolrField`.
     """
+
     field_type = None
 
     def __init__(self, *args: Any, **kwargs: Any):
@@ -136,7 +145,8 @@ class SolrTypedField(SolrField):
 
 class SolrStringField(SolrTypedField):
     """Solr string field."""
-    field_type = 'string'
+
+    field_type = "string"
 
 
 class SolrAnalyzer:
@@ -152,12 +162,7 @@ class SolrAnalyzer:
     @classmethod
     def as_solr_config(cls):
         """ """
-        return {
-            'tokenizer': {
-                'class': cls.tokenizer
-            },
-            'filters': cls.filters
-        }
+        return {"tokenizer": {"class": cls.tokenizer}, "filters": cls.filters}
 
 
 class SolrFieldType:
@@ -171,6 +176,7 @@ class SolrFieldType:
     Raises:
         AttributeError: If __set__ is called.
     """
+
     def __init__(self, field_class: str, analyzer: str, **kwargs: Any):
         self.field_class = field_class
         self.analyzer = analyzer
@@ -179,10 +185,9 @@ class SolrFieldType:
     def __get__(self, obj, objtype):
         # return format neded for declaring field type
         opts = self.opts.copy()
-        opts.update({
-            'class': self.field_class,
-            'analyzer': self.analyzer.as_solr_config()
-        })
+        opts.update(
+            {"class": self.field_class, "analyzer": self.analyzer.as_solr_config()}
+        )
         return opts
 
     def __set__(self, obj, val):
@@ -204,10 +209,12 @@ class SolrSchema:
         """
         subclasses = cls.__subclasses__()
         if not subclasses:
-            raise Exception('No Solr schema configuration found')
+            raise Exception("No Solr schema configuration found")
         elif len(subclasses) > 1:
-            raise Exception('Currently only one Solr schema configuration is supported (found %d)' \
-                             % len(subclasses))
+            raise Exception(
+                "Currently only one Solr schema configuration is supported (found %d)"
+                % len(subclasses)
+            )
 
         return subclasses[0]
 
@@ -219,8 +226,11 @@ class SolrSchema:
         Returns:
             List of attributes that are :class:`SolrField`.
         """
-        return [attr_name for attr_name, attr_type in cls.__dict__.items()
-                if isinstance(attr_type, SolrField)]
+        return [
+            attr_name
+            for attr_name, attr_type in cls.__dict__.items()
+            if isinstance(attr_type, SolrField)
+        ]
 
     @classmethod
     def get_field_types(cls) -> list:
@@ -230,8 +240,11 @@ class SolrSchema:
         Returns:
             List of attriubtes that are :class:`SolrFieldType`.
         """
-        return [attr_name for attr_name, attr_type in cls.__dict__.items()
-                if isinstance(attr_type, SolrFieldType)]
+        return [
+            attr_name
+            for attr_name, attr_type in cls.__dict__.items()
+            if isinstance(attr_type, SolrFieldType)
+        ]
 
     @classmethod
     def configure_fields(cls, solr: SolrClient) -> AttrDefault:
@@ -259,12 +272,12 @@ class SolrSchema:
         for field_name in configured_field_names:
             field_opts = getattr(cls, field_name)
             if field_name not in current_fields:
-                logger.debug('Adding schema field %s %s', field_name, field_opts)
+                logger.debug("Adding schema field %s %s", field_name, field_opts)
                 solr.schema.add_field(name=field_name, **field_opts)
                 stats.added += 1
             else:
                 # NOTE: currently no check if field configuration has changed
-                logger.debug('Replace schema field %s %s', field_name, field_opts)
+                logger.debug("Replace schema field %s %s", field_name, field_opts)
                 solr.schema.replace_field(name=field_name, **field_opts)
                 stats.replaced += 1
 
@@ -276,11 +289,11 @@ class SolrSchema:
         # remove previously defined fields that are no longer current
         for field_name in current_fields:
             # don't remove special fields!
-            if field_name == 'id' or field_name.startswith('_'):
+            if field_name == "id" or field_name.startswith("_"):
                 continue
             if field_name not in configured_field_names:
                 stats.deleted += 1
-                logger.debug('Delete schema field %s', field_name)
+                logger.debug("Delete schema field %s", field_name)
                 solr.schema.delete_field(field_name)
 
         return stats
@@ -304,7 +317,7 @@ class SolrSchema:
         # add copy fields that are not already defined
         for source, dest in cls.copy_fields.items():
             if source not in cp_fields or dest not in cp_fields[source]:
-                logger.debug('Adding copy field %s %s', source, dest)
+                logger.debug("Adding copy field %s %s", source, dest)
                 solr.schema.add_copy_field(source, dest)
 
         # delete previous copy fields that are no longer wanted
@@ -324,7 +337,7 @@ class SolrSchema:
                 delete = True
 
             if delete:
-                logger.debug('Deleting copy field %(source)s %(dest)s', cp_field)
+                logger.debug("Deleting copy field %(source)s %(dest)s", cp_field)
                 solr.schema.delete_copy_field(cp_field.source, cp_field.dest)
 
     @classmethod
@@ -349,13 +362,14 @@ class SolrSchema:
             return stats
 
         # convert list return into dictionary keyed on field type name
-        current_field_types = {ftype['name']: ftype
-                               for ftype in solr.schema.list_field_types()}
+        current_field_types = {
+            ftype["name"]: ftype for ftype in solr.schema.list_field_types()
+        }
 
         for field_type in configured_field_types:
             field_type_opts = getattr(cls, field_type)
             # add name for comparison with current config
-            field_type_opts['name'] = field_type
+            field_type_opts["name"] = field_type
             if field_type in current_field_types:
                 # if field exists [but definition has changed, ] replace it
                 # NOTE: could add logic to only update when the field type
@@ -363,13 +377,19 @@ class SolrSchema:
                 # does not recognize as equal even when the config has
                 # not changed
                 stats.updated += 1
-                logger.debug('Updating field type %s with options %s', field_type, field_type_opts)
+                logger.debug(
+                    "Updating field type %s with options %s",
+                    field_type,
+                    field_type_opts,
+                )
                 solr.schema.replace_field_type(**field_type_opts)
 
             # otherwise, create as a new field type
             else:
                 stats.added += 1
-                logger.debug('Adding field type %s with options %s', field_type, field_type_opts)
+                logger.debug(
+                    "Adding field type %s with options %s", field_type, field_type_opts
+                )
                 solr.schema.add_field_type(**field_type_opts)
 
             # NOTE: currently no deletion support; would need to keep

@@ -1,4 +1,4 @@
-from unittest.mock import patch, Mock, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -10,17 +10,18 @@ except ImportError:
 from parasolr.indexing import Indexable
 from parasolr.tests.utils import skipif_no_django
 
-
 # Define Indexable subclasses for testing
 # Used for both Indexable and index manage command
 
+
 class SimpleIndexable(Indexable):
     """simple indexable subclass"""
-    id = 'a'
+
+    id = "a"
 
     @classmethod
     def index_item_type(cls):
-        return 'simple'
+        return "simple"
 
     # nededed for index manage command (assumes django model)
     class objects:
@@ -33,10 +34,11 @@ class SimpleIndexable(Indexable):
 
 class MockModelIndexable(Indexable):
     """mock-model indexable subclass"""
+
     id = 1
 
     class _meta:
-        verbose_name = 'model'
+        verbose_name = "model"
 
     # nededed for index manage command
     class objects:
@@ -56,6 +58,7 @@ class AbstractIndexable(Indexable):
 
 class SubIndexable(SimpleIndexable):
     """indexable sub-subclass that should be included in all_indexables"""
+
     pass
 
 
@@ -65,9 +68,8 @@ class SubAbstractIndexable(SimpleIndexable):
 
 
 @skipif_no_django
-@patch.object(Indexable, 'solr')
+@patch.object(Indexable, "solr")
 class TestIndexable:
-
     def test_all_indexables(self, mocksolr):
         indexables = Indexable.all_indexables()
         assert SimpleIndexable in indexables
@@ -78,17 +80,17 @@ class TestIndexable:
 
     def test_index_item_type(self, mocksolr):
         # use model verbose name by default
-        assert MockModelIndexable().index_item_type() == 'model'
+        assert MockModelIndexable().index_item_type() == "model"
 
     def test_index_id(self, mocksolr):
-        assert SimpleIndexable().index_id() == 'simple.a'
-        assert MockModelIndexable().index_id() == 'model.1'
+        assert SimpleIndexable().index_id() == "simple.a"
+        assert MockModelIndexable().index_id() == "model.1"
 
     def test_index_data(self, mocksolr):
         model = MockModelIndexable()
         data = model.index_data()
-        assert data['id'] == model.index_id()
-        assert data['item_type_s'] == model.index_item_type()
+        assert data["id"] == model.index_id()
+        assert data["item_type_s"] == model.index_item_type()
         assert len(data) == 2
 
     def test_index(self, mocksolr):
@@ -110,8 +112,7 @@ class TestIndexable:
 
         indexed = Indexable.index_items(items)
         assert indexed == len(items)
-        Indexable.solr.update.index \
-            .assert_called_with([i.index_data() for i in items])
+        Indexable.solr.update.index.assert_called_with([i.index_data() for i in items])
 
         # index in chunks
         Indexable.index_chunk_size = 6
@@ -119,11 +120,9 @@ class TestIndexable:
         indexed = Indexable.index_items(items)
         assert indexed == len(items)
         # first chunk
-        Indexable.solr.update.index \
-            .assert_any_call([i.index_data() for i in items[:6]])
+        Indexable.solr.update.index.assert_any_call([i.index_data() for i in items[:6]])
         # second chunk
-        Indexable.solr.update.index \
-            .assert_any_call([i.index_data() for i in items[6:]])
+        Indexable.solr.update.index.assert_any_call([i.index_data() for i in items[6:]])
 
         # pass in a progressbar object
         mock_progbar = Mock()

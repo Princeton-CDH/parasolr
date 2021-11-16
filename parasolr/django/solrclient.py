@@ -19,8 +19,8 @@ instance.
 import logging
 from typing import Any, Optional
 
-from parasolr.solr import client
 from parasolr.django.util import requires_django
+from parasolr.solr import client
 
 try:
     from django.conf import settings
@@ -43,28 +43,34 @@ class SolrClient(client.SolrClient):
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        solr_opts = getattr(settings, 'SOLR_CONNECTIONS', None)
+        solr_opts = getattr(settings, "SOLR_CONNECTIONS", None)
         # no solr connection section at all
         if not solr_opts:
-            raise ImproperlyConfigured('SolrClient requires SOLR_CONNECTIONS in settings')
+            raise ImproperlyConfigured(
+                "SolrClient requires SOLR_CONNECTIONS in settings"
+            )
 
-        default_solr = solr_opts.get('default', None)
+        default_solr = solr_opts.get("default", None)
         # no default config
         if not default_solr:
-            raise ImproperlyConfigured('No "default" section in SOLR_CONNECTIONS configuration')
+            raise ImproperlyConfigured(
+                'No "default" section in SOLR_CONNECTIONS configuration'
+            )
 
-        url = default_solr.get('URL', None)
+        url = default_solr.get("URL", None)
         # URL is required
         if not url:
-            raise ImproperlyConfigured('No URL in default SOLR_CONNECTIONS configuration')
+            raise ImproperlyConfigured(
+                "No URL in default SOLR_CONNECTIONS configuration"
+            )
 
-        collection = default_solr.get('COLLECTION', '')
+        collection = default_solr.get("COLLECTION", "")
 
         # use commit within if configured
-        commit_within = default_solr.get('COMMITWITHIN', None)
+        commit_within = default_solr.get("COMMITWITHIN", None)
         # passed-in value takes precedence
-        if 'commitWithin' not in kwargs and commit_within:
-            kwargs['commitWithin'] = commit_within
+        if "commitWithin" not in kwargs and commit_within:
+            kwargs["commitWithin"] = commit_within
 
-        logger.info('Connecting to default Solr %s%s', url, collection)
+        logger.info("Connecting to default Solr %s%s", url, collection)
         super().__init__(url, collection, *args, **kwargs)
