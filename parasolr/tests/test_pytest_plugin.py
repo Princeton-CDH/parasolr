@@ -4,6 +4,7 @@ Test pytest plugin fixture for django
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+
 try:
     from django.conf import settings
     from django.test import override_settings
@@ -13,59 +14,59 @@ try:
 except ImportError:
     pass
 
-from parasolr.pytest_plugin import get_mock_solr_queryset
+from parasolr.pytest_plugin import get_mock_solr_queryset, mock_solr_queryset
 from parasolr.query import SolrQuerySet
 from parasolr.tests.utils import skipif_no_django
-
 
 pytest_plugins = "pytester"
 
 
 @skipif_no_django
 class TestGetTestSolrConfig:
-
     def test_no_testconfig(self):
         no_test_cfg = {
-            'default': {
-                'URL': 'http://example.com:8984/solr',
-                'COLLECTION': 'mycoll'
-            }
+            "default": {"URL": "http://example.com:8984/solr", "COLLECTION": "mycoll"}
         }
         with override_settings(SOLR_CONNECTIONS=no_test_cfg):
             test_cfg = get_test_solr_config()
-            assert test_cfg['URL'] == no_test_cfg['default']['URL']
-            assert test_cfg['COLLECTION'] == \
-                'test_%s' % no_test_cfg['default']['COLLECTION']
+            assert test_cfg["URL"] == no_test_cfg["default"]["URL"]
+            assert (
+                test_cfg["COLLECTION"]
+                == "test_%s" % no_test_cfg["default"]["COLLECTION"]
+            )
 
     def test_has_testconfig(self):
         cfg_with_test_cfg = {
-            'default': {
-                'URL': 'http://example.com:8984/solr',
-                'COLLECTION': 'mycoll',
-                'TEST': {
-                    'URL': 'http://testing.example.com:8985/solr',
-                    'COLLECTION': 'testing',
-                    'COMMITWITHIN': 350
-                }
+            "default": {
+                "URL": "http://example.com:8984/solr",
+                "COLLECTION": "mycoll",
+                "TEST": {
+                    "URL": "http://testing.example.com:8985/solr",
+                    "COLLECTION": "testing",
+                    "COMMITWITHIN": 350,
+                },
             }
         }
         with override_settings(SOLR_CONNECTIONS=cfg_with_test_cfg):
             test_cfg = get_test_solr_config()
-            assert test_cfg['URL'] == \
-                cfg_with_test_cfg['default']['TEST']['URL']
-            assert test_cfg['COLLECTION'] == \
-                cfg_with_test_cfg['default']['TEST']['COLLECTION']
-            assert test_cfg['COMMITWITHIN'] == \
-                cfg_with_test_cfg['default']['TEST']['COMMITWITHIN']
+            assert test_cfg["URL"] == cfg_with_test_cfg["default"]["TEST"]["URL"]
+            assert (
+                test_cfg["COLLECTION"]
+                == cfg_with_test_cfg["default"]["TEST"]["COLLECTION"]
+            )
+            assert (
+                test_cfg["COMMITWITHIN"]
+                == cfg_with_test_cfg["default"]["TEST"]["COMMITWITHIN"]
+            )
 
 
 @skipif_no_django
 def test_configure_django_test_solr(testdir):
     """Basic check of django solr pytest fixture."""
 
-    solr_url = settings.SOLR_CONNECTIONS['default']['URL']
-    solr_test_collection = settings.SOLR_CONNECTIONS['default']['TEST']['COLLECTION']
-    solr_commit_within = settings.SOLR_CONNECTIONS['default']['TEST']['COMMITWITHIN']
+    solr_url = settings.SOLR_CONNECTIONS["default"]["URL"]
+    solr_test_collection = settings.SOLR_CONNECTIONS["default"]["TEST"]["COLLECTION"]
+    solr_commit_within = settings.SOLR_CONNECTIONS["default"]["TEST"]["COMMITWITHIN"]
 
     # NOTE: can't figure out how to get the plugin test to use
     # test-local test settings, so testing against project
@@ -90,12 +91,13 @@ def test_configure_django_test_solr(testdir):
             # core should exist
             assert solr.core_admin.status(core=test_collection)
 
-    """ % (solr_url, solr_test_collection, solr_commit_within)
+    """
+        % (solr_url, solr_test_collection, solr_commit_within)
     )
 
     # run all tests with pytest with all pytest-django plugins turned off
     # result = testdir.runpytest('-p', 'no:django')
-    result = testdir.runpytest_subprocess('--capture', 'no')
+    result = testdir.runpytest_subprocess("--capture", "no")
     # check that test case passed
     result.assert_outcomes(passed=1)
 
@@ -108,12 +110,14 @@ def test_not_configured(testdir):
         assert not get_test_solr_config()
 
         # create a temporary pytest test file with no solr use
-        testdir.makepyfile("""
+        testdir.makepyfile(
+            """
         def test_unrelated():
             assert 1 + 1 == 2
-        """)
+        """
+        )
         # run all tests with pytest with all pytest-django plugins turned off
-        result = testdir.runpytest_subprocess('--capture', 'no')
+        result = testdir.runpytest_subprocess("--capture", "no")
         # check that test case passed
         result.assert_outcomes(passed=1)
 
@@ -122,10 +126,10 @@ def test_not_configured(testdir):
 def test_app_not_installed(testdir):
     """skip without error if not configured."""
 
-    with patch('parasolr.pytest_plugin.apps') as mockapps:
+    with patch("parasolr.pytest_plugin.apps") as mockapps:
         mockapps.is_installed.return_value = False
         assert not get_test_solr_config()
-        mockapps.is_installed.assert_called_with('parasolr')
+        mockapps.is_installed.assert_called_with("parasolr")
 
 
 @skipif_no_django
@@ -153,7 +157,7 @@ def test_empty_solr(testdir):
 
     # run all tests with pytest with all pytest-django plugins turned off
     # result = testdir.runpytest('-p', 'no:django')
-    result = testdir.runpytest_subprocess('--capture', 'no')
+    result = testdir.runpytest_subprocess("--capture", "no")
     # check that test case passed
     result.assert_outcomes(passed=1)
 
@@ -175,7 +179,7 @@ def test_get_mock_solr_queryset():
 def test_get_mock_solr_queryset_subclass():
     class MyCustomQuerySet(SolrQuerySet):
         def custom_method(self):
-            '''custom method queryset method to keep in mock'''
+            """custom method queryset method to keep in mock"""
 
     # call the genreator with the subclass
     mock_qs_cls = get_mock_solr_queryset(MyCustomQuerySet)
@@ -185,6 +189,13 @@ def test_get_mock_solr_queryset_subclass():
     mock_qs.custom_method()
     # should pass isinstance check
     assert isinstance(mock_qs, MyCustomQuerySet)
+
+    # specify extra methods to include in fluent interface
+    mock_qs_cls = get_mock_solr_queryset(
+        MyCustomQuerySet, extra_methods=["custom_method"]
+    )
+    mock_qs = mock_qs_cls()
+    assert mock_qs.custom_method.return_value == mock_qs
 
 
 def test_get_mock_solr_queryset_class_scope(testdir):
@@ -210,6 +221,6 @@ def test_get_mock_solr_queryset_class_scope(testdir):
 
     # run all tests with pytest with all pytest-django plugins turned off
     # result = testdir.runpytest('-p', 'no:django')
-    result = testdir.runpytest_subprocess('--capture', 'no')
+    result = testdir.runpytest_subprocess("--capture", "no")
     # check that test case passed
     result.assert_outcomes(passed=1)

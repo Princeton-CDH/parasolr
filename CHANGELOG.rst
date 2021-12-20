@@ -3,6 +3,13 @@
 CHANGELOG
 =========
 
+0.8
+---
+* Pytest fixture ``mock_solr_queryset`` now takes optional argument for extra methods to include in fluent interface
+* ``SolrQuerySet`` now supports highlighting on multiple fields via ``highlight`` method, with per-field highlighting options.
+* ``AliasedSolrQuerySet`` now correctly aliases fieldnames in highlighting results.
+* Adopted black & isort python style and configured pre-commit hook
+
 0.7
 ---
 
@@ -11,10 +18,10 @@ CHANGELOG
 * Continuous integration migrated from Travis-CI to GitHub Actions
 * bugfix: in some cases, index script was wrongly detecting ModelIndexable
   subclasses as abstract and excluding them; this has been corrected
-* ModelIndexable now extends `django.db.models.Model`; existing code 
+* ModelIndexable now extends ``django.db.models.Model``; existing code
   MUST be updated to avoid double-extending Model
-* Default index data has been updated to use a dynamic field `item_type_s` instead of `item_type` so that basic setup does not require customizing the solr schema.
-* `ModelIndexable.get_related_model` now supports ForeignKey relationships and django-taggit `TaggableManager` when identifying depencies for binding signal handlers
+* Default index data has been updated to use a dynamic field ``item_type_s`` instead of ``item_type`` so that basic setup does not require customizing the solr schema.
+* ``ModelIndexable.get_related_model`` now supports ForeignKey relationships and django-taggit ``TaggableManager`` when identifying depencies for binding signal handlers
 
 0.6.1
 -----
@@ -25,14 +32,14 @@ CHANGELOG
 ---
 
 * Solr client now escalates 404 errors instead of logging with no exception
-* Schema field declarations now support the `stored` option
+* Schema field declarations now support the ``stored`` option
 * Schema field type declarations now pass through arbitrary options
-* New method `total_to_index` on `parasolr.indexing.Indexable` to better
+* New method ``total_to_index`` on ``parasolr.indexing.Indexable`` to better
   support indexing content that is returned as a generator
 * Access to expanded results now available on QueryResponse and SolrQuerySet
-* SolrQuerySet no longer wraps return results from `get_stats` and `get_facets` with QueryResponse
-* New last-modified view mixin for use with Django views `parasolr.django.views.SolrLastModifiedMixin`
-* New pytest fixture `mock_solr_queryset` to generate a Mock SolrQuerySet that simulates the SolrQuerySet fluent interface
+* SolrQuerySet no longer wraps return results from ``get_stats`` and ``get_facets`` with QueryResponse
+* New last-modified view mixin for use with Django views ``parasolr.django.views.SolrLastModifiedMixin``
+* New pytest fixture ``mock_solr_queryset`` to generate a Mock SolrQuerySet that simulates the SolrQuerySet fluent interface
 
 
 0.5.4

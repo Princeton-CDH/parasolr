@@ -9,11 +9,13 @@ from typing import Optional
 
 from parasolr import query
 from parasolr.django.util import requires_django
+
 # SolrClient needed for type annotation when testing without django
 from parasolr.solr.client import SolrClient
 
 try:
     from parasolr.django.solrclient import SolrClient
+
     django = True
 except ImportError:
     django = None

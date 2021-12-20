@@ -23,6 +23,7 @@ class NothingToIndex:
     def total_to_index(cls):
         return 0
 
+
 if django:
 
     def signal_method(*args, **kwargs):
@@ -31,7 +32,7 @@ if django:
     # an empty model that can have many TestItem as members
     class Collection(models.Model):
         class Meta:
-            app_label = 'parasolr'
+            app_label = "parasolr"
 
     # an indexable django model that has dependencies
     class IndexItem(NothingToIndex, ModelIndexable):
@@ -39,14 +40,11 @@ if django:
         primary = models.ForeignKey(Collection, on_delete=models.SET_NULL)
 
         index_depends_on = {
-            'collections': {
-                'post_save': signal_method,
-                'pre_delete': signal_method
-            }
+            "collections": {"post_save": signal_method, "pre_delete": signal_method}
         }
 
         class Meta:
-            app_label = 'parasolr'
+            app_label = "parasolr"
 
     # model with a reverse many to many to the indexable item
     class Owner(models.Model):
@@ -54,11 +52,10 @@ if django:
         collections = models.ManyToManyField(Collection)
 
         class Meta:
-            app_label = 'parasolr'
+            app_label = "parasolr"
 
     # item with no index_depends_on declared should not cause an error
     class IndependentItem(ModelIndexable):
-
         class Meta:
             abstract = True
 
