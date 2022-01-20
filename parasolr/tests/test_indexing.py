@@ -67,6 +67,11 @@ class SubAbstractIndexable(SimpleIndexable):
         abstract = True
 
 
+class ProxyIndexable(SimpleIndexable):
+    class _meta:
+        proxy = True
+
+
 @skipif_no_django
 @patch.object(Indexable, "solr")
 class TestIndexable:
@@ -77,6 +82,7 @@ class TestIndexable:
         assert AbstractIndexable not in indexables
         assert SubIndexable in indexables
         assert SubAbstractIndexable not in indexables
+        assert ProxyIndexable not in indexables
 
     def test_index_item_type(self, mocksolr):
         # use model verbose name by default
