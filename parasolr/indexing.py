@@ -74,14 +74,17 @@ class Indexable:
 
     @classmethod
     def all_indexables(cls):
-        """Find all :class:`Indexable` subclasses for indexing. Ignore abstract
-        :class:`Indexable` subclasses such as
+        """Find all :class:`Indexable` subclasses for indexing. Ignore abstract and
+        proxy :class:`Indexable` subclasses such as
         :class:`~parasolr.django.indexing.ModelIndexable`."""
         return [
             subclass
             for subclass in all_subclasses(cls)
             if not hasattr(subclass, "_meta")
-            or not getattr(subclass._meta, "abstract", False)
+            or (
+                not getattr(subclass._meta, "abstract", False)
+                and not getattr(subclass._meta, "proxy", False)
+            )
         ]
 
     @classmethod

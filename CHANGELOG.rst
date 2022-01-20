@@ -3,6 +3,10 @@
 CHANGELOG
 =========
 
+0.8.1
+-----
+* Exclude proxy models when collecting indexable subclasses
+
 0.8
 ---
 * Pytest fixture ``mock_solr_queryset`` now takes optional argument for extra methods to include in fluent interface
