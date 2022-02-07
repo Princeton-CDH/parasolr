@@ -3,8 +3,8 @@
 CHANGELOG
 =========
 
-0.9
----
+0.8.2
+-----
 
 * When subclassing ``SolrQuerySet``, result documents can now be customized by extending ``get_result_document``
 
