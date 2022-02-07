@@ -68,7 +68,6 @@ class SolrQuerySet:
         Returns:
             Solr response documents as a list of dictionaries.
         """
-
         # TODO: can we store the result cache and only retrieve
         # if query options have changed?
         # For now, always query.
@@ -83,8 +82,13 @@ class SolrQuerySet:
         self._result_cache = self.solr.query(**query_opts)
         # if there is a query error, result will not be set
         if self._result_cache:
-            return [doc.as_dict() for doc in self._result_cache.docs]
+            return [self.get_result_document(doc) for doc in self._result_cache.docs]
         return []
+
+    def get_result_document(self, doc):
+        """Method to transform document results. Default behavior is to
+        convert from attrdict to dict."""
+        return doc.as_dict()
 
     def _set_highlighting_opts(self, query_opts: Dict) -> None:
         """Configure highlighting attributes on query_opts. Modifies
