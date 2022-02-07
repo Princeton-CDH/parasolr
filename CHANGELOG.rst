@@ -3,6 +3,11 @@
 CHANGELOG
 =========
 
+0.9
+---
+
+* When subclassing ``SolrQuerySet``, result documents can now be customized by extending ``get_result_document``
+
 0.8.1
 -----
 * Exclude proxy models when collecting indexable subclasses
