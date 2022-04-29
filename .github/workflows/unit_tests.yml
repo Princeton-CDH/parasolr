@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: [3.6, 3.8]
+        python: [3.8]
         solr: [8.6, 6.6]
         django: [0, 2.2, 3.0, 3.1]
     # We use service containers to avoid needing to set up a local copy of
@@ -53,7 +53,7 @@ jobs:
           if [ "${{ matrix.django }}" -gt "0"]; then pip install -q Django==${{ matrix.django }} pytest-django; fi
           pip install -e .
           pip install -e '.[test]'
-          pip install codecov
+          pip install slipcover
 
       - name: Setup test settings
         run: |
@@ -63,7 +63,7 @@ jobs:
       - name: Run pytest
         env:
           SOLR_VERSION: "${{ matrix.solr }}"
-        run: py.test --cov=parasolr --cov-report=xml
+        run: python -m slipcover -m pytest
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1
