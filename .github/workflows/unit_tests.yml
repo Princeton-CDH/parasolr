@@ -53,7 +53,7 @@ jobs:
           if [ "${{ matrix.django }}" -gt "0"]; then pip install -q Django==${{ matrix.django }} pytest-django; fi
           pip install -e .
           pip install -e '.[test]'
-          pip install codecov
+          pip install slipcover
 
       - name: Setup test settings
         run: |
@@ -63,7 +63,7 @@ jobs:
       - name: Run pytest
         env:
           SOLR_VERSION: "${{ matrix.solr }}"
-        run: py.test --cov=parasolr --cov-report=xml
+        run: python -m slipcover -m pytest
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1
