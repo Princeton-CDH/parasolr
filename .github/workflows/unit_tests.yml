@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: [3.6, 3.8]
+        python: [3.8]
         solr: [8.6, 6.6]
         django: [0, 2.2, 3.0, 3.1]
     # We use service containers to avoid needing to set up a local copy of
