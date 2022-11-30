@@ -3,6 +3,7 @@ import logging
 import time
 from typing import Any, Optional
 from urllib.parse import urljoin
+from pprint import pformat
 
 import requests
 from attrdict import AttrDict
@@ -112,7 +113,7 @@ class ClientBase:
             url,
             response.status_code,
             time.time() - start,
-            "\n%s" % user_params if user_params else "",
+            "\n%s" % pformat(user_params,indent=4) if user_params else "",
         )
 
         if allowed_responses is None:
