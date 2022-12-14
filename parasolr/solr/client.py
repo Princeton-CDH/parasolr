@@ -1,3 +1,4 @@
+from pprint import pprint
 import logging
 from collections import OrderedDict
 from typing import Any, Dict, Optional
@@ -49,14 +50,27 @@ class QueryResponse:
     def __init__(self, response: Dict) -> None:
         # cast to ParasolrDict for any dict-like object
         response = ParasolrDict(response)
-        self.numFound = int(response.response.numFound)
-        self.start = int(response.response.start)
-        self.docs = response.response.docs
+
+        self.is_grouped = 'grouped' in response and len(response.grouped)
+        if self.is_grouped:
+            grouped_d = response.grouped
+            group_name = list(grouped_d.keys())[0]  # @NOTE: This best way to get the one(?) group we've grouped by?
+            group_data = grouped_d[group_name]
+            self.numFound = group_data['matches']
+            self.start = 0 # @NOTE: ?
+            self.docs = [
+                doc
+                for group in group_data.get('groups',[])
+                for doc in group.get('doclist',{}).get('docs',[])
+            ]
+        else:
+            self.numFound = int(response.response.numFound)
+            self.start = int(response.response.start)
+            self.docs = response.response.docs
+        
         self.params = response.responseHeader.params
         self.stats = response.stats if "stats" in response else {}
         self.facet_counts = {}
-        if "docs" in response.response:
-            self.docs = response.response.docs
         if "facet_counts" in response:
             self.facet_counts = self._process_facet_counts(response.facet_counts)
         self.highlighting = response.get("highlighting", {})

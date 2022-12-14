@@ -88,7 +88,7 @@ class SolrQuerySet:
     def get_result_document(self, doc):
         """Method to transform document results. Default behavior is to
         convert from attrdict to dict."""
-        return doc.as_dict()
+        return doc.as_dict() if type(doc) is not dict else doc
 
     def _set_highlighting_opts(self, query_opts: Dict) -> None:
         """Configure highlighting attributes on query_opts. Modifies
