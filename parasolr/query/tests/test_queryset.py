@@ -34,6 +34,8 @@ class TestSolrQuerySet:
             "facet",
             "stats",
             "stats.field",
+            "group",
+            "group.field",
         ]:
             assert opt not in query_opts
 
@@ -96,6 +98,16 @@ class TestSolrQuerySet:
         assert query_opts["facet"] is True
         assert query_opts["facet.range"] == sqs.range_facet_fields
         assert range_facet_opt in query_opts
+
+    def test_query_opts_group(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        sqs.group_field = "group_id"
+        sqs.group_opts = {"group.limit": 3}
+        query_opts = sqs.query_opts()
+        assert query_opts["group"] == True
+        assert query_opts["group.field"] == "group_id"
+        assert query_opts["group.limit"] == 3
 
     def test_query(self):
         mocksolr = Mock(spec=SolrClient)
@@ -530,18 +542,6 @@ class TestSolrQuerySet:
         mock_highlights = {"id1": {"text": ["sample match content"]}}
         sqs._result_cache = Mock(highlighting=mock_highlights)
         assert sqs.get_highlighting() == mock_highlights
-
-        # should populate cache if empty
-        sqs._result_cache = None
-        with patch.object(sqs, "get_results") as mock_get_results:
-
-            def set_result_cache():
-                sqs._result_cache = Mock()
-
-            mock_get_results.side_effect = set_result_cache
-
-            sqs.get_highlighting()
-            mock_get_results.assert_called_with()
 
     def test_all(self):
         mocksolr = Mock(spec=SolrClient)

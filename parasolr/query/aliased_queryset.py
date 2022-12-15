@@ -102,6 +102,13 @@ class AliasedSolrQuerySet(SolrQuerySet):
         field = self.field_aliases.get(field, field)
         return super().highlight(field, **kwargs)
 
+    def group(self, field: str, **kwargs) -> "AliasedSolrQuerySet":
+        """Extend :meth:`parasolr.query.queryset.SolrQuerySet.group`
+        to support using aliased field names in kwargs."""
+        field = self.field_aliases.get(field, field)
+        # TODO: should we also reverse alias for sort option if specified?
+        return super().group(field, **kwargs)
+
     def get_facets(self) -> Dict[str, int]:
         """Extend :meth:`parasolr.query.queryset.SolrQuerySet.get_facets`
         to use aliased field names for facet and range facet keys."""
