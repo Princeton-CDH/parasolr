@@ -30,6 +30,7 @@ class SolrQuerySet:
     """
 
     _result_cache = None
+    _result_cache_d = {}
     start = 0
     stop = None
     sort_options = []
@@ -59,7 +60,10 @@ class SolrQuerySet:
         # convert search operator into form needed for combining queries
         self._search_op = " %s " % self.default_search_operator
 
-    def get_results(self, **kwargs) -> List[dict]:
+
+    
+
+    def get_response(self, **kwargs) -> List[dict]:
         """
         Query Solr and get the results for the current query and filter
         options. Populates result cache and returns the documents portion
@@ -72,17 +76,39 @@ class SolrQuerySet:
         # if query options have changed?
         # For now, always query.
 
-        query_opts = self.query_opts()
-        query_opts.update(**kwargs)
-        # TODO: what do we do about the fact that Solr defaults
-        # to 10 rows?
+        if not self._result_cache:
+        
+            query_opts = self.query_opts()
+            query_opts.update(**kwargs)
 
-        # NOTE: django templates choke on AttrDict because it is
-        # callable; using dictionary response instead
-        self._result_cache = self.solr.query(**query_opts)
+            # TODO: what do we do about the fact that Solr defaults
+            # to 10 rows?
+
+            # NOTE: django templates choke on AttrDict because it is
+            # callable; using dictionary response instead
+        
+            self._result_cache = self.solr.query(**query_opts)
+
+        return self._result_cache
+
+
+    def get_results(self, **kwargs) -> List[dict]:
+        """
+        Query Solr and get the results for the current query and filter
+        options. Populates result cache and returns the documents portion
+        of the reponse.
+
+        Returns:
+            Solr response documents as a list of dictionaries.
+        """
+        # get query response
+        response = self.get_response(**kwargs)
         # if there is a query error, result will not be set
-        if self._result_cache:
-            return [self.get_result_document(doc) for doc in self._result_cache.docs]
+        if response:
+            return [
+                self.get_result_document(doc)
+                for doc in self._result_cache.docs
+            ]
         return []
 
     def get_result_document(self, doc):
@@ -538,9 +564,7 @@ class SolrQuerySet:
 
     def get_highlighting(self) -> Dict[str, Dict[str, List]]:
         """Return the highlighting portion of the Solr response."""
-        if not self._result_cache:
-            self.get_results()
-        return self._result_cache.highlighting
+        return self.get_response().highlighting
 
     def all(self) -> "SolrQuerySet":
         """Return a new queryset that is a copy of the current one."""
