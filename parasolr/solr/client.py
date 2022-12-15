@@ -1,6 +1,6 @@
 import logging
 from collections import OrderedDict
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from attrdict import AttrDict
@@ -39,32 +39,42 @@ class ParasolrDict(AttrDict):
         return "ParasolrDict(%s)" % super(AttrDict, self).__repr__()
 
 
-class QueryResponse:
-    """Thin wrapper to give access to Solr select responses.
-
-    Args:
-        response: A Solr query response
-    """
+class BaseResponse:
+    """Base Solr response class with fields common to standard and
+    grouped results."""
 
     def __init__(self, response: Dict) -> None:
-        # cast to ParasolrDict for any dict-like object
-        response = ParasolrDict(response)
-        self.numFound = int(response.response.numFound)
-        self.start = int(response.response.start)
-        self.docs = response.response.docs
-        self.params = response.responseHeader.params
-        self.stats = response.stats if "stats" in response else {}
+        # cast to ParasolrDict for any dict-like object and store
+        self.response = ParasolrDict(response)
+        # facet counts need to be processed to convert into
+        # ordered dict, so process and store
         self.facet_counts = {}
-        if "docs" in response.response:
-            self.docs = response.response.docs
-        if "facet_counts" in response:
+        if "facet_counts" in self.response:
             self.facet_counts = self._process_facet_counts(response.facet_counts)
-        self.highlighting = response.get("highlighting", {})
-        self.expanded = response.get("expanded", {})
 
         # NOTE: To access facet_counts.facet_fields or facet_counts.facet_ranges
         # as OrderedDicts, you must use dict notation (or AttrDict *will*
         # convert).
+
+    @property
+    def params(self):
+        "parameters sent to solr in the request, as returned in response header"
+        return self.response.responseHeader.params
+
+    @property
+    def stats(self):
+        "stats portion of the response, if statics were requested"
+        return self.response.get("stats", {})
+
+    @property
+    def highlighting(self):
+        "highlighting portion of the response, if highlighting was requested"
+        return self.response.get("highlighting", {})
+
+    @property
+    def expanded(self):
+        "expanded portion of the response, if collapse/expanded results enabled"
+        return self.response.get("expanded", {})
 
     def _process_facet_counts(self, facet_counts: AttrDict) -> OrderedDict:
         """Convert facet_fields and facet_ranges to OrderedDict.
@@ -84,6 +94,58 @@ class QueryResponse:
                     zip(v["counts"][::2], v["counts"][1::2])
                 )
         return facet_counts
+
+
+class QueryResponse(BaseResponse):
+    """Thin wrapper to give access to Solr select responses.
+
+    Args:
+        response: A Solr query response
+    """
+
+    def __init__(self, response: Dict) -> None:
+        super().__init__(response)
+        # document list is contained with the "response" element
+        # in the json returned by solr
+        self.document_list = self.response.response
+
+    @property
+    def numFound(self) -> int:
+        return self.document_list.numFound
+
+    @property
+    def start(self) -> int:
+        return self.document_list.start
+
+    @property
+    def docs(self) -> List:
+        return self.document_list.docs
+
+
+class GroupedResponse(BaseResponse):
+    """Query response variant for grouped results.
+
+    Args:
+        response: A Solr query response
+    """
+
+    def __init__(self, response: Dict) -> None:
+        super().__init__(response)
+        # grouped response structure is structured as a dict
+        # first keyed on fieldname with number of matches, then a dict
+        # of group values and corresponding document list
+        self.grouped = self.response.grouped
+
+        # access grouped results at:
+        # self.grouped.fieldname.groups
+        # groups has
+        # will be a dict of field value, doclist
+
+    @property
+    def numFound(self) -> int:
+        # each field used for grouping has a total
+        # for the number of matches in that grouping
+        return sum(group["matches"] for group in self.grouped.values())
 
 
 class SolrClient(ClientBase):
@@ -155,4 +217,13 @@ class SolrClient(ClientBase):
         response = self.make_request("post", url, headers=headers, params=kwargs)
         if response:
             # queries return the search response for now
-            return QueryResponse(response) if wrap else response
+
+            # unnless a raw/unwrapped result is requested,
+            # determine result type to use and initialize
+            if wrap:
+                result_class = QueryResponse
+                if "grouped" in response:
+                    result_class = GroupedResponse
+                response = result_class(response)
+
+            return response
