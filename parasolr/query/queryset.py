@@ -576,7 +576,7 @@ class SolrQuerySet:
         # for now, assuming single group field
         qs_copy.group_field = field
         qs_copy.group_opts.update(
-            {"group.%s" % (field, opt): value for opt, value in kwargs.items()}
+            {"group.%s" % opt: value for opt, value in kwargs.items()}
         )
 
         return qs_copy

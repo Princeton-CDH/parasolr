@@ -506,6 +506,14 @@ class TestSolrQuerySet:
         assert sqs.highlight_fields == []
         assert sqs.highlight_opts == {}
 
+    def test_group(self):
+        mocksolr = Mock(spec=SolrClient)
+        sqs = SolrQuerySet(mocksolr)
+        # field only, defaults
+        group_qs = sqs.group("content", limit=3)
+        assert group_qs.group_field == "content"
+        assert group_qs.group_opts == {"group.limit": 3}
+
     def test_raw_query_parameters(self):
         mocksolr = Mock(spec=SolrClient)
         sqs = SolrQuerySet(mocksolr)
