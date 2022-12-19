@@ -121,6 +121,10 @@ class QueryResponse(BaseResponse):
     def docs(self) -> List:
         return self.document_list.docs
 
+    @property
+    def items(self) -> List:
+        return self.docs
+
 
 class GroupedResponse(BaseResponse):
     """Query response variant for grouped results.
@@ -144,25 +148,27 @@ class GroupedResponse(BaseResponse):
     @property
     def group_field(self) -> str:
         "group.field as stored in the params. Not yet supporting grouping by query."
-        return self.params.get('group.field','')
+        return self.params.get("group.field", "")
 
     @property
     def numFound(self) -> int:
         # each field used for grouping has a total
         # for the number of matches in that grouping
-        #return sum(group["matches"] for group in self.grouped.values())
-        return self.grouped.get(self.group_field,{}).get('matches',0)
+        # return sum(group["matches"] for group in self.grouped.values())
+        return self.grouped.get(self.group_field, {}).get("matches", 0)
 
     @property
-    def docs(self) -> List:
+    def groups(self) -> List:
         """Unlike `QueryResponse.docs`, this returns a list of groups with nested documents.
 
         :return: _description_
         :rtype: List
         """
-        return self.grouped.get(self.group_field,{}).get('groups',[])
+        return self.grouped.get(self.group_field, {}).get("groups", [])
 
-
+    @property
+    def items(self) -> List:
+        return self.groups
 
 
 class SolrClient(ClientBase):

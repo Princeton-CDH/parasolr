@@ -30,7 +30,6 @@ class SolrQuerySet:
     """
 
     _result_cache = None
-    _result_cache_d = {}
     start = 0
     stop = None
     sort_options = []
@@ -108,6 +107,9 @@ class SolrQuerySet:
         response = self.get_response(**kwargs)
         # if there is a query error, result will not be set
         if response:
+            # TODO: need to handle result doc tranformatiion on grouped response.
+            # intentionally applying to .docs instead of .items to trigger
+            # an error if we try to use on grouped response
             return [self.get_result_document(doc) for doc in self._result_cache.docs]
         return []
 
@@ -567,7 +569,9 @@ class SolrQuerySet:
 
     def group(self, field: str, **kwargs) -> "SolrQuerySet":
         """ "Configure grouping. Takes arbitrary Solr group
-        parameters and adds the `group.` prefix to them.  Example use::
+        parameters and adds the `group.` prefix to them.  Example use,
+        grouping on a `group_id` field, limiting to three results per group,
+        and sorting group members by an `order` field::
 
             queryset.group('group_id', limit=3, sort='order asc')
         """
@@ -666,7 +670,7 @@ class SolrQuerySet:
         # if the result cache is already populated,
         # return the requested index or slice
         if self._result_cache:
-            return self._result_cache.docs[k]
+            return self._result_cache.items[k]
 
         qs_copy = self._clone()
 
