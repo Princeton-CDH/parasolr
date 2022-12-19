@@ -145,6 +145,7 @@ def get_mock_solr_queryset(spec=SolrQuerySet, extra_methods=[]):
         "query",
         "only",
         "also",
+        "group",
         "highlight",
         "raw_query_parameters",
         "all",
