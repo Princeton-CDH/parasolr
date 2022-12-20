@@ -6,7 +6,12 @@ from attrdict import AttrDict
 
 from parasolr import __version__ as parasolr_ver
 from parasolr.solr.admin import CoreAdmin
-from parasolr.solr.client import ParasolrDict, QueryResponse, SolrClient
+from parasolr.solr.client import (
+    GroupedResponse,
+    ParasolrDict,
+    QueryResponse,
+    SolrClient,
+)
 from parasolr.solr.schema import Schema
 from parasolr.solr.update import Update
 
@@ -169,3 +174,59 @@ class TestSolrClient:
         # test wrap = False
         response = test_client.query(q="*:*", wrap=False)
         assert not isinstance(response, QueryResponse)
+
+        # test grouped response return type
+        response = test_client.query(q="*:*", group="true", **{"group.field": "A"})
+        assert isinstance(response, GroupedResponse)
+
+
+class TestGroupedResponse:
+    def test_init(self):
+
+        response = AttrDict(
+            {
+                "responseHeader": {"params": {"group": "true", "group.field": "A"}},
+                "grouped": {
+                    "A": {
+                        "matches": 4,
+                        "groups": [
+                            {
+                                "groupValue": "foo",
+                                "doclist": {
+                                    "numFound": 1,
+                                    "start": 0,
+                                    "docs": [{"A": "foo", "B": 5, "id": "1"}],
+                                },
+                            }
+                        ],
+                    }
+                },
+                "facet_counts": {
+                    "facet_fields": {"A": ["5", 1, "2", 1, "3", 1]},
+                    "facet_ranges": {"A": {"counts": ["1", 1, "2", 2, "7", 1]}},
+                },
+                "stats": {
+                    "stats_fields": {
+                        "account_start_i": {
+                            "min": 1919.0,
+                            "max": 2018.0,
+                        }
+                    }
+                },
+            }
+        )
+        gr = GroupedResponse(response)
+        # total number found across groups
+        assert gr.numFound == response.grouped.A.matches
+        # can access group information
+        assert gr.grouped.A.groups[0].groupValue == "foo"
+        assert gr.grouped.A.groups[0].doclist.numFound == 1
+
+        # inherited from base response class
+        assert gr.params == response.responseHeader.params
+        assert gr.stats == response.stats
+        assert isinstance(gr.facet_counts["facet_fields"]["A"], OrderedDict)
+        assert isinstance(gr.facet_counts["facet_ranges"]["A"]["counts"], OrderedDict)
+        assert gr.facet_counts["facet_fields"]["A"]["5"] == 1
+        assert gr.facet_counts["facet_ranges"]["A"]["counts"]["2"] == 2
+        assert gr.highlighting == {}

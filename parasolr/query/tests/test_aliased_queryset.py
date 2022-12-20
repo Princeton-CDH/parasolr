@@ -145,6 +145,15 @@ class TestAliasedSolrQuerySet(TestCase):
         self.mysqs.highlight("foo_b")
         mock_highlight.assert_called_with("foo_b")
 
+    @patch("parasolr.query.queryset.SolrQuerySet.group")
+    def test_group(self, mock_group):
+        # args should be unaliased
+        self.mysqs.group("name")
+        mock_group.assert_called_with(self.mysqs.field_aliases["name"])
+        # unknown should be ignored
+        self.mysqs.group("foo_b")
+        mock_group.assert_called_with("foo_b")
+
     @patch("parasolr.query.queryset.SolrQuerySet.get_facets")
     def test_get_facets(self, mock_get_facets):
         sample_facet_result = {
