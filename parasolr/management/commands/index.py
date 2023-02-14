@@ -157,7 +157,9 @@ class Command(BaseCommand):
             for name, model in self.indexables.items():
                 if self.options["index"] in [name, "all"]:
                     # index in chunks and update progress bar
-                    count += self.index(model.items_to_index(), progbar=progbar)
+                    # pass in indexable class to ensure we use prefetching
+                    # and chunk size specific to that class
+                    count += self.index(model, model.items_to_index(), progbar=progbar)
 
         if progbar:
             progbar.finish()
@@ -170,11 +172,11 @@ class Command(BaseCommand):
             # using format for comma-separated numbers
             self.stdout.write("Indexed {:,} item{}".format(count, pluralize(count)))
 
-    def index(self, index_data, progbar=None):
+    def index(self, indexable, index_data, progbar=None):
         """Index an iterable into the configured solr"""
         try:
             # index in chunks and update progress bar if there is one
-            return Indexable.index_items(index_data, progbar=progbar)
+            return indexable.index_items(index_data, progbar=progbar)
         except requests.exceptions.ConnectionError as err:
             # bail out if we error connecting to Solr
             raise CommandError(err)

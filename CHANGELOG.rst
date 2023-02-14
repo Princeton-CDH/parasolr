@@ -3,6 +3,12 @@
 CHANGELOG
 =========
 
+0.9
+---
+
+* New class method `prep_index_chunk` on ``Indexable`` class, to support 
+  prefetching related objects when iterating over Django querysets
+
 0.8.2
 -----
 
