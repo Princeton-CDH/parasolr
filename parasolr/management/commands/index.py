@@ -150,6 +150,8 @@ class Command(BaseCommand):
         # index items requested
         if to_index:
             # list of objects already gathered
+            # items are not guaranteed to be the same subclass of Indexable,
+            # so we don't specify and use the base Indexable class
             count += self.index(to_index, progbar=progbar)
 
         else:
@@ -159,7 +161,9 @@ class Command(BaseCommand):
                     # index in chunks and update progress bar
                     # pass in indexable class to ensure we use prefetching
                     # and chunk size specific to that class
-                    count += self.index(model, model.items_to_index(), progbar=progbar)
+                    count += self.index(
+                        model.items_to_index(), progbar=progbar, indexable=model
+                    )
 
         if progbar:
             progbar.finish()
@@ -172,8 +176,11 @@ class Command(BaseCommand):
             # using format for comma-separated numbers
             self.stdout.write("Indexed {:,} item{}".format(count, pluralize(count)))
 
-    def index(self, indexable, index_data, progbar=None):
+    def index(self, index_data, progbar=None, indexable=None):
         """Index an iterable into the configured solr"""
+        # if indexable subclass is not specified use the base class
+        if indexable is None:
+            indexable = Indexable
         try:
             # index in chunks and update progress bar if there is one
             return indexable.index_items(index_data, progbar=progbar)
