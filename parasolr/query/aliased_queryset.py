@@ -104,7 +104,8 @@ class AliasedSolrQuerySet(SolrQuerySet):
 
     def group(self, field: str, **kwargs) -> "AliasedSolrQuerySet":
         """Extend :meth:`parasolr.query.queryset.SolrQuerySet.group`
-        to support using aliased field names in kwargs."""
+        to support using aliased field names in kwargs. (Note that sorting
+        does not currently support aliased field names)."""
         field = self.field_aliases.get(field, field)
         # TODO: should we also reverse alias for sort option if specified?
         return super().group(field, **kwargs)
