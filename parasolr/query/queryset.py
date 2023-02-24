@@ -82,8 +82,8 @@ class SolrQuerySet:
         query_opts = self.query_opts()
         query_opts.update(**kwargs)
 
-        # TODO: what do we do about the fact that Solr defaults
-        # to 10 rows?
+        # NOTE: still need to work around Solr default of 10 rows
+        # see https://github.com/Princeton-CDH/parasolr/issues/43
 
         # note that we're caching the result with override options here,
         # which may not always be the right thing to do ...
@@ -99,6 +99,7 @@ class SolrQuerySet:
         Query Solr and get the results for the current query and filter
         options. Populates result cache and returns the documents portion
         of the reponse.
+        (Note that this method is not currently compatible with grouping.)
 
         Returns:
             Solr response documents as a list of dictionaries.
@@ -107,9 +108,9 @@ class SolrQuerySet:
         response = self.get_response(**kwargs)
         # if there is a query error, result will not be set
         if response:
-            # TODO: need to handle result doc tranformatiion on grouped response.
-            # intentionally applying to .docs instead of .items to trigger
-            # an error if we try to use on grouped response
+            # NOTE: should probably handle result doc tranformation on grouped responses.
+            # Intentionally applying to .docs instead of .items to trigger
+            # an error if anyone attempts to use this on a grouped response
             return [self.get_result_document(doc) for doc in self._result_cache.docs]
         return []
 

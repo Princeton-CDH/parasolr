@@ -6,10 +6,10 @@ CHANGELOG
 0.9
 ---
 
-* ``SolrQuerySet`` now supports Solr grouping functionality via new `group`
+* ``SolrQuerySet`` now supports Solr grouping via new `group`
   method and `GroupedResponse`
 * New class method `prep_index_chunk` on ``Indexable`` class, to support
-  prefetching related objects when iterating over Django querysets
+  prefetching related objects when iterating over Django querysets for indexing
 * Include django view mixins in sphinx documentation  
 
 0.8.2
