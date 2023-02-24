@@ -84,6 +84,11 @@ Signals
 .. automodule:: parasolr.django.signals
     :members:
 
+Views
+^^^^^
+
+.. automodule:: parasolr.django.views
+    :members:
 
 Manage Commands
 ---------------

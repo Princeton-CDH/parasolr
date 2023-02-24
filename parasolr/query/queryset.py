@@ -37,12 +37,14 @@ class SolrQuerySet:
     filter_qs = []
     field_list = []
     highlight_fields = []
+    group_field = None
     facet_field_list = []
     stats_field_list = []
     range_facet_fields = []
     facet_opts = {}
     stats_opts = {}
     highlight_opts = {}
+    group_opts = {}
     raw_params = {}
 
     #: by default, combine search queries with AND
@@ -59,7 +61,7 @@ class SolrQuerySet:
         # convert search operator into form needed for combining queries
         self._search_op = " %s " % self.default_search_operator
 
-    def get_results(self, **kwargs) -> List[dict]:
+    def get_response(self, **kwargs) -> List[dict]:
         """
         Query Solr and get the results for the current query and filter
         options. Populates result cache and returns the documents portion
@@ -72,16 +74,43 @@ class SolrQuerySet:
         # if query options have changed?
         # For now, always query.
 
+        # if cached and no override query args are specified,
+        # return existing cached result
+        if self._result_cache and not kwargs:
+            return self._result_cache
+
         query_opts = self.query_opts()
         query_opts.update(**kwargs)
-        # TODO: what do we do about the fact that Solr defaults
-        # to 10 rows?
+
+        # NOTE: still need to work around Solr default of 10 rows
+        # see https://github.com/Princeton-CDH/parasolr/issues/43
+
+        # note that we're caching the result with override options here,
+        # which may not always be the right thing to do ...
+        self._result_cache = self.solr.query(**query_opts)
 
         # NOTE: django templates choke on AttrDict because it is
         # callable; using dictionary response instead
-        self._result_cache = self.solr.query(**query_opts)
+
+        return self._result_cache
+
+    def get_results(self, **kwargs) -> List[dict]:
+        """
+        Query Solr and get the results for the current query and filter
+        options. Populates result cache and returns the documents portion
+        of the reponse.
+        (Note that this method is not currently compatible with grouping.)
+
+        Returns:
+            Solr response documents as a list of dictionaries.
+        """
+        # get query response
+        response = self.get_response(**kwargs)
         # if there is a query error, result will not be set
-        if self._result_cache:
+        if response:
+            # NOTE: should probably handle result doc tranformation on grouped responses.
+            # Intentionally applying to .docs instead of .items to trigger
+            # an error if anyone attempts to use this on a grouped response
             return [self.get_result_document(doc) for doc in self._result_cache.docs]
         return []
 
@@ -98,6 +127,14 @@ class SolrQuerySet:
             # highlighting options should be added as-is
             # (prefixes added in highlight methods)
             query_opts.update(self.highlight_opts)
+
+    def _set_group_opts(self, query_opts: Dict) -> None:
+        """Configure grouping atrtibutes on query_opts. Modifies dictionary
+        directly."""
+        if self.group_field:
+            query_opts.update({"group": True, "group.field": self.group_field})
+            # any other group options can be added as-is
+            query_opts.update(self.group_opts)
 
     def _set_faceting_opts(self, query_opts: Dict) -> None:
         """Configure faceting attributes directly on query_opts. Modifies
@@ -145,6 +182,9 @@ class SolrQuerySet:
 
         # highlighting
         self._set_highlighting_opts(query_opts)
+
+        # grouping
+        self._set_group_opts(query_opts)
 
         # faceting
         self._set_faceting_opts(query_opts)
@@ -528,6 +568,24 @@ class SolrQuerySet:
 
         return qs_copy
 
+    def group(self, field: str, **kwargs) -> "SolrQuerySet":
+        """ "Configure grouping. Takes arbitrary Solr group
+        parameters and adds the `group.` prefix to them.  Example use,
+        grouping on a `group_id` field, limiting to three results per group,
+        and sorting group members by an `order` field::
+
+            queryset.group('group_id', limit=3, sort='order asc')
+        """
+        qs_copy = self._clone()
+        # store group field and grouping options
+        # for now, assuming single group field
+        qs_copy.group_field = field
+        qs_copy.group_opts.update(
+            {"group.%s" % opt: value for opt, value in kwargs.items()}
+        )
+
+        return qs_copy
+
     def raw_query_parameters(self, **kwargs) -> "SolrQuerySet":
         """Add abritrary raw parameters to be included in the query
         request, e.g. for variables referenced in join or field queries.
@@ -538,9 +596,7 @@ class SolrQuerySet:
 
     def get_highlighting(self) -> Dict[str, Dict[str, List]]:
         """Return the highlighting portion of the Solr response."""
-        if not self._result_cache:
-            self.get_results()
-        return self._result_cache.highlighting
+        return self.get_response().highlighting
 
     def all(self) -> "SolrQuerySet":
         """Return a new queryset that is a copy of the current one."""
@@ -565,6 +621,7 @@ class SolrQuerySet:
         qs_copy.start = self.start
         qs_copy.stop = self.stop
         qs_copy.highlight_fields = list(self.highlight_fields)
+        qs_copy.group_field = self.group_field
 
         # set copies of list and dict attributes
         qs_copy.search_qs = list(self.search_qs)
@@ -573,6 +630,7 @@ class SolrQuerySet:
         qs_copy.field_list = list(self.field_list)
         qs_copy.range_facet_fields = list(self.range_facet_fields)
         qs_copy.highlight_opts = dict(self.highlight_opts)
+        qs_copy.group_opts = dict(self.group_opts)
         qs_copy.raw_params = dict(self.raw_params)
         qs_copy.facet_field_list = list(self.facet_field_list)
         qs_copy.facet_opts = dict(self.facet_opts)
@@ -613,7 +671,7 @@ class SolrQuerySet:
         # if the result cache is already populated,
         # return the requested index or slice
         if self._result_cache:
-            return self._result_cache.docs[k]
+            return self._result_cache.items[k]
 
         qs_copy = self._clone()
 

@@ -120,6 +120,15 @@ class Indexable:
         except AttributeError:
             raise NotImplementedError
 
+    @classmethod
+    def prep_index_chunk(cls, chunk):
+        """Optional method for any additional processing on chunks
+        of items being indexed. Intended to allow adding prefetching on
+        a chunk when iterating on Django QuerySets; since indexing uses Iterator,
+        prefetching configured in `items_to_index` is ignored."""
+        # default behavior is to do nothing; return chunk unchanged
+        return chunk
+
     def index_id(self):
         """Solr identifier. By default, combines :meth:`index item_type`
         and :attr:`id` with :attr:ID_SEPARATOR`."""
@@ -168,6 +177,7 @@ class Indexable:
         count = 0
         while chunk:
             # call index data method if present; otherwise assume item is dict
+            chunk = cls.prep_index_chunk(chunk)
             cls.solr.update.index(
                 [i.index_data() if hasattr(i, "index_data") else i for i in chunk]
             )
