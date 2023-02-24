@@ -13,6 +13,7 @@ CHANGELOG
 * Include django view mixins in sphinx documentation  
 * Dropped support for python 3.6; added python 3.9
 * Dropped support for Django 2.2; added Django 3.2
+* No longer tested against Solr 6.6
 
 0.8.2
 -----
