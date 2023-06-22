@@ -1,5 +1,3 @@
-default_app_config = "parasolr.apps.ParasolConfig"
-
 __version_info__ = (0, 10, 0, "dev")
 
 # Dot-connect all but the last. Last is dash-connected if not None.
