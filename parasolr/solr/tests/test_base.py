@@ -1,7 +1,7 @@
 from unittest.mock import Mock, patch
 
 import requests
-from attrdict import AttrDict
+from addict import Dict as AttrDict
 
 from parasolr.solr.base import ClientBase
 

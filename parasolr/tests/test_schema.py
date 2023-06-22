@@ -1,7 +1,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from attrdict import AttrDict
+from addict import Dict as AttrDict
 
 from parasolr import schema
 from parasolr.solr import SolrClient
@@ -164,7 +164,6 @@ class TestSchema:
         with patch.object(
             LocalTestSchema, "configure_copy_fields"
         ) as mock_config_cp_fields:
-
             # simulate only standard fields defined
             mocksolr.schema.list_fields.return_value = [
                 AttrDict({"name": "id"}),
