@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: [3.9, 3.10, 3.11]
-        solr: [8.6, 9.2]
-        django: [0, 3.2, "4.0"]
+        python: ["3.9", "3.10", "3.11"]
+        solr: ["8.6", "9.2"]
+        django: [0, "3.2", "4.0"]
     # We use service containers to avoid needing to set up a local copy of
     # mysql or postgres on the test runner instance. This syntax is similar to
     # the spec of a docker-compose file. For more, see:
