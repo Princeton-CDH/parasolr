@@ -25,9 +25,8 @@ jobs:
         ports:
           - 8983:8983
     steps:
-      - name: Copy solr configsets to solr home directory (Solr 8 only)
+      - name: Copy solr configsets to solr home directory (Solr 8+)
         run: "docker exec -d ${{ job.services.solr.id }} cp -r /opt/solr/server/solr/configsets /var/solr/data"
-        if: ${{ matrix.solr == 8.6 }}
 
       - name: Checkout repository
         uses: actions/checkout@v2
