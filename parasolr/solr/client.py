@@ -3,7 +3,7 @@ from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
 import requests
-from attrdict import AttrDict
+from addict import Dict as AttrDict
 
 from parasolr import __version__ as parasol_version
 from parasolr.solr.admin import CoreAdmin
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class ParasolrDict(AttrDict):
-    """A subclass of :class:`attrdict.AttrDict` that can convert itself to a
+    """A subclass of :class:`addict.Dict` that can convert itself to a
     regular dictionary."""
 
     def as_dict(self):
@@ -35,7 +35,7 @@ class ParasolrDict(AttrDict):
         return copy
 
     def __repr__(self):
-        """Print a dict-like :meth:`repr`, without including 'AttrDict'."""
+        """Print a dict-like :meth:`repr`, without including 'addict.Dict'."""
         return "ParasolrDict(%s)" % super(AttrDict, self).__repr__()
 
 

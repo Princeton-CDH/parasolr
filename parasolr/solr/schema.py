@@ -5,7 +5,7 @@ from typing import Any, List, Optional
 from urllib.parse import urljoin
 
 import requests
-from attrdict import AttrDict
+from addict import Dict as AttrDict
 
 from parasolr.solr.client import ClientBase
 

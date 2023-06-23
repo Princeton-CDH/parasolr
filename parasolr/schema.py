@@ -76,9 +76,10 @@ manage command documentation for more details.
 """
 
 import logging
+from collections import defaultdict
 from typing import Any, Optional
 
-from attrdict import AttrDefault
+from addict import Dict as AttrDict
 
 from parasolr.solr.client import SolrClient
 
@@ -247,7 +248,7 @@ class SolrSchema:
         ]
 
     @classmethod
-    def configure_fields(cls, solr: SolrClient) -> AttrDefault:
+    def configure_fields(cls, solr: SolrClient) -> AttrDict:
         """Update the configured Solr instance schema to match
         the configured fields.
 
@@ -266,8 +267,7 @@ class SolrSchema:
         current_fields = [field.name for field in solr.schema.list_fields()]
         configured_field_names = cls.get_field_names()
 
-        # use attrdict instead of defaultdict since we have attrmap
-        stats = AttrDefault(int, {})
+        stats = AttrDict(added=0, replaced=0, deleted=0)
 
         for field_name in configured_field_names:
             field_opts = getattr(cls, field_name)
@@ -310,7 +310,7 @@ class SolrSchema:
         solr_copy_fields = solr.schema.list_copy_fields()
         # create a dictionary lookup of existing copy fields from Solr
         # source field -> list of destination fields
-        cp_fields = AttrDefault(list, {})
+        cp_fields = defaultdict(list)
         for copyfield in solr_copy_fields:
             cp_fields[copyfield.source].append(copyfield.dest)
 
@@ -341,7 +341,7 @@ class SolrSchema:
                 solr.schema.delete_copy_field(cp_field.source, cp_field.dest)
 
     @classmethod
-    def configure_fieldtypes(cls, solr: SolrClient) -> AttrDefault:
+    def configure_fieldtypes(cls, solr: SolrClient) -> AttrDict:
         """Update the configured Solr instance so the schema includes
         the configured field types, if any.
 
@@ -349,17 +349,17 @@ class SolrSchema:
             solr: A configured Solr instance.
 
         Returns:
-            :class:`attrdict.AttrDefault` with counts for updated
+            :class:`addict.Dict` with counts for updated
             and added field types.
         """
 
         configured_field_types = cls.get_field_types()
 
-        stats = AttrDefault(int, {})
+        stats = AttrDict(updated=0, added=0)
 
         # if none are configured, nothing to do
         if not configured_field_types:
-            return stats
+            return AttrDict({})
 
         # convert list return into dictionary keyed on field type name
         current_field_types = {
