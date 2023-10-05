@@ -3,6 +3,13 @@
 CHANGELOG
 =========
 
+0.9.1
+----
+
+* Solr 9 compatible; now tested against Solr 9.2 and 8.6
+* Dropped support for python 3.7; now tested against python 3.9-3.11
+* Now tested against Django 4.0 and 3.2
+
 0.9
 ---
 
