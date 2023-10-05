@@ -57,7 +57,7 @@ configuration and indexing content.
   .. image:: https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336
     :target: https://pycqa.github.io/isort/
 
-Currently tested against Python 3.8 and 3.9, Solr 8.6.2, and Django 3.0-3.2 and without Django.
+Tested against Python 3.9-3.11, Solr 8.6 and 9.2, and Django 3.2-4.0 and without Django.
 
 
 Installation
