@@ -5,7 +5,7 @@ from typing import Any, Optional
 from urllib.parse import urljoin
 
 import requests
-from attrdict import AttrDict
+from addict import Dict as AttrDict
 
 logger = logging.getLogger(__name__)
 

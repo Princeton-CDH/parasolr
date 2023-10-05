@@ -2,7 +2,7 @@ import time
 from collections import OrderedDict
 
 import requests
-from attrdict import AttrDict
+from addict import Dict as AttrDict
 
 from parasolr import __version__ as parasolr_ver
 from parasolr.solr.admin import CoreAdmin
@@ -49,7 +49,6 @@ class TestParasolrDict:
 
 class TestQueryResponse:
     def test_init(self):
-
         response = AttrDict(
             {
                 "responseHeader": {"params": {"foo": "bar"}},
@@ -182,7 +181,6 @@ class TestSolrClient:
 
 class TestGroupedResponse:
     def test_init(self):
-
         response = AttrDict(
             {
                 "responseHeader": {"params": {"group": "true", "group.field": "A"}},
