@@ -46,10 +46,6 @@ configuration and indexing content.
    :target: https://codeclimate.com/github/Princeton-CDH/parasolr/maintainability
    :alt: Maintainability
 
-  .. image:: https://requires.io/github/Princeton-CDH/parasolr/requirements.svg?branch=main
-    :target: https://requires.io/github/Princeton-CDH/parasolr/requirements/?branch=main
-    :alt: Requirements Status
-
   .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
     :alt: code style: Black
