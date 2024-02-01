@@ -20,7 +20,7 @@ jobs:
             solr: 9.2
             django: 4.1
         exclude:
-          # django 5.0 requrires python 3.10 minimum
+          # django 5.0 requires python 3.10 minimum
           - python: 3.9
             django: 5.0
     # We use service containers to avoid needing to set up a local copy of
