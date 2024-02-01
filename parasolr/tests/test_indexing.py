@@ -140,7 +140,7 @@ class TestIndexable:
         # index a queryset
         mockqueryset = MagicMock(spec=QuerySet)
         Indexable.index_items(mockqueryset)
-        mockqueryset.iterator.assert_called_with()
+        mockqueryset.iterator.assert_called_with(chunk_size=Indexable.index_chunk_size)
 
     def test_items_to_index(self, mocksolr):
         # assumes django model manager interface by default
