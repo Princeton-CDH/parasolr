@@ -164,6 +164,9 @@ class Indexable:
 
         # if this is a queryset, use iterator to get it in chunks
         if QuerySet and isinstance(items, QuerySet):
+            # starting in django 4.1, chunk_size is None by default
+            # (previous default was 2000);
+            # chunk size is required when using prefetching
             items = items.iterator(chunk_size=cls.index_chunk_size)
 
         # if this is a normal list, convert it to an iterator
