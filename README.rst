@@ -99,7 +99,7 @@ This git repository uses git flow branching conventions.
 
 Initial setup and installation:
 
-- *Recommmended*: create and activate a Python 3.6 virtualenv::
+- *Recommmended*: create and activate a Python 3.x virtualenv::
 
    python3 -m venv parasolr
    source parasolr/bin/activate
@@ -161,7 +161,7 @@ License
 
 **parasolr** is distributed under the Apache 2.0 License.
 
-©2019 Trustees of Princeton University.  Permission granted via
+©2019-2024 Trustees of Princeton University.  Permission granted via
 Princeton Docket #20-3619 for distribution online under a standard Open Source
 license.  Ownership rights transferred to Rebecca Koeser provided software
 is distributed online via open source.

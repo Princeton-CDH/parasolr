@@ -20,7 +20,7 @@ DEV_REQUIREMENTS = [
     "pre-commit",
 ]
 # django integration is optional
-DJANGO_REQUIREMENTS = ["django>=2.2", "pytest-django>=3.6"]
+DJANGO_REQUIREMENTS = ["django>=3.0", "pytest-django>=3.6"]
 
 setup(
     name="parasolr",
