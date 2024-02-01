@@ -8,6 +8,7 @@ CHANGELOG
 * `IndexableSignalHandler.disconnect` updated to return a count of
   the number of handlers removed, so you can determine whether
   signals were already previously disconnected
+* Now tested against Django 4.1, 4.2, and 5.0
 
 0.9.1
 ----
