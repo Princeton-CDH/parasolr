@@ -164,7 +164,7 @@ class Indexable:
 
         # if this is a queryset, use iterator to get it in chunks
         if QuerySet and isinstance(items, QuerySet):
-            items = items.iterator()
+            items = items.iterator(chunk_size=cls.index_chunk_size)
 
         # if this is a normal list, convert it to an iterator
         # so we don't iterate the same slice over and over
