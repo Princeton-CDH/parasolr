@@ -3,6 +3,11 @@
 CHANGELOG
 =========
 
+0.9.2
+-----
+* bugfix: ``AliasedSolrQuerySet`` now supports aliasing for keyword arguments
+ when calling the `search` method
+
 0.9.1
 ----
 
