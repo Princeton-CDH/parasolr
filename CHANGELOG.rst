@@ -5,6 +5,11 @@ CHANGELOG
 
 0.9.2
 -----
+
+* `IndexableSignalHandler.disconnect` updated to return a count of
+  the number of handlers removed, so you can determine whether
+  signals were already previously disconnected
+* Now tested against Django 4.1, 4.2, and 5.0
 * bugfix: ``AliasedSolrQuerySet`` now supports aliasing for keyword arguments
  when calling the `search` method
 
@@ -22,7 +27,7 @@ CHANGELOG
   method and `GroupedResponse`
 * New class method `prep_index_chunk` on ``Indexable`` class, to support
   prefetching related objects when iterating over Django querysets for indexing
-* Include django view mixins in sphinx documentation  
+* Include django view mixins in sphinx documentation
 * Dropped support for python 3.6; added python 3.9
 * Dropped support for Django 2.2; added Django 3.2
 * No longer tested against Solr 6.6
