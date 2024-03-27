@@ -12,7 +12,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 REQUIREMENTS = ["requests", "addict", "progressbar2"]
 # NOTE: progressbar only needed for django index script; make optional?
-TEST_REQUIREMENTS = ["pytest>5.2", "pytest-cov"]
+TEST_REQUIREMENTS = ["pytest>=7", "pytest-cov"]
 DEV_REQUIREMENTS = [
     "sphinx",
     "sphinxcontrib-napoleon",
