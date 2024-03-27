@@ -46,10 +46,6 @@ configuration and indexing content.
    :target: https://codeclimate.com/github/Princeton-CDH/parasolr/maintainability
    :alt: Maintainability
 
-  .. image:: https://requires.io/github/Princeton-CDH/parasolr/requirements.svg?branch=main
-    :target: https://requires.io/github/Princeton-CDH/parasolr/requirements/?branch=main
-    :alt: Requirements Status
-
   .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
     :alt: code style: Black
@@ -57,7 +53,7 @@ configuration and indexing content.
   .. image:: https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336
     :target: https://pycqa.github.io/isort/
 
-Tested against Python 3.9-3.11, Solr 8.6 and 9.2, and Django 3.2-4.0 and without Django.
+Tested against Python 3.9-3.11, Solr 8.6 and 9.2, and Django 3.2-5.0 and without Django.
 
 
 Installation
@@ -103,7 +99,7 @@ This git repository uses git flow branching conventions.
 
 Initial setup and installation:
 
-- *Recommmended*: create and activate a Python 3.6 virtualenv::
+- *Recommmended*: create and activate a Python 3.x virtualenv::
 
    python3 -m venv parasolr
    source parasolr/bin/activate
@@ -165,7 +161,7 @@ License
 
 **parasolr** is distributed under the Apache 2.0 License.
 
-©2019 Trustees of Princeton University.  Permission granted via
+©2019-2024 Trustees of Princeton University.  Permission granted via
 Princeton Docket #20-3619 for distribution online under a standard Open Source
 license.  Ownership rights transferred to Rebecca Koeser provided software
 is distributed online via open source.

@@ -135,21 +135,30 @@ class IndexableSignalHandler:
 
     @staticmethod
     def disconnect():
-        """disconnect indexing signal handlers"""
+        """disconnect indexing signal handlers; returns a count of
+        the number of signal handlers disconnected"""
+        total = 0
         for model in ModelIndexable.__subclasses__():
             logger.debug("Disconnecting signal handlers for %s", model)
-            models.signals.post_save.disconnect(
+            # disconnect returns true if anything was disconnected
+            disconnected = models.signals.post_save.disconnect(
                 IndexableSignalHandler.handle_save, sender=model
             )
-            models.signals.post_delete.disconnect(
+            if disconnected:
+                total += 1
+            disconnect = models.signals.post_delete.disconnect(
                 IndexableSignalHandler.handle_delete, sender=model
             )
+            if disconnected:
+                total += 1
 
         for m2m_rel in ModelIndexable.m2m:
             logger.debug("Disconnecting m2m signal handler for %s", m2m_rel)
-            models.signals.m2m_changed.disconnect(
+            disconnect = models.signals.m2m_changed.disconnect(
                 IndexableSignalHandler.handle_relation_change, sender=m2m_rel
             )
+            if disconnected:
+                total += 1
 
         for model, options in ModelIndexable.related:
             for signal_name, handler in options.items():
@@ -157,7 +166,11 @@ class IndexableSignalHandler:
                 logger.debug(
                     "Disconnecting %s signal handler for %s", signal_name, model
                 )
-                model_signal.disconnect(handler, sender=model)
+                disconnected = model_signal.disconnect(handler, sender=model)
+                if disconnected:
+                    total += 1
+
+        return total
 
 
 if django:

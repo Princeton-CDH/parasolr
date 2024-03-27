@@ -53,6 +53,20 @@ class TestIndexableSignalHandler:
         pre_del_handlers = [item[1] for item in models.signals.pre_delete.receivers]
         assert ref(test_models.signal_method) in pre_del_handlers
 
+    def test_disconnect(self):
+        # handlers should already be connected based on test module setup
+        count = IndexableSignalHandler.disconnect()
+        # should return a non-zero count of handlers disconnected
+        # (currently 13, but not sure exact number matters)
+        assert count
+
+        # disconnecting a second time should return zero (nothing disconnected)
+        second_count = IndexableSignalHandler.disconnect()
+        assert not second_count
+
+        # reconnect for other tests
+        IndexableSignalHandler.connect()
+
     def test_handle_save(self):
         instance = test_models.IndexItem()
         with patch.object(instance, "index") as mockindex:
@@ -87,7 +101,6 @@ class TestIndexableSignalHandler:
         with patch.object(instance, "index") as mockindex:
             # call directly - supported actions
             for action in ["post_add", "post_remove", "post_clear"]:
-
                 mockindex.reset_mock()
                 IndexableSignalHandler.handle_relation_change(
                     test_models.IndexItem, instance, action

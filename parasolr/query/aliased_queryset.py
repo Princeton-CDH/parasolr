@@ -79,6 +79,12 @@ class AliasedSolrQuerySet(SolrQuerySet):
         field = self.field_aliases.get(field, field)
         return super().facet_field(field, exclude=exclude, **kwargs)
 
+    def search(self, *args, **kwargs) -> "AliasedSolrQuerySet":
+        """Extend :meth:`parasolr.query.queryset.SolrQuerySet.search`
+        to support using aliased field names for keyword argument keys."""
+        kwargs = self._unalias_kwargs_with_lookups(**kwargs)
+        return super().search(*args, **kwargs)
+
     def order_by(self, *args) -> "AliasedSolrQuerySet":
         """Extend :meth:`parasolr.query.queryset.SolrQuerySet.order_by``
         to support using aliased field names in sort arguments."""
