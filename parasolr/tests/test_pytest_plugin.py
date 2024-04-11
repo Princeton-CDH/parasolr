@@ -68,10 +68,6 @@ def test_configure_django_test_solr(testdir):
     solr_test_collection = settings.SOLR_CONNECTIONS["default"]["TEST"]["COLLECTION"]
     solr_commit_within = settings.SOLR_CONNECTIONS["default"]["TEST"]["COMMITWITHIN"]
 
-    # NOTE: can't figure out how to get the plugin test to use
-    # test-local test settings, so testing against project
-    # testsettings for now
-
     # create a temporary pytest test file
     testdir.makepyfile(
         """
@@ -95,6 +91,9 @@ def test_configure_django_test_solr(testdir):
         % (solr_url, solr_test_collection, solr_commit_within)
     )
 
+    # copy local test settings into the test dir
+    testdir.copy_example("testsettings.py")
+
     # run all tests with pytest with all pytest-django plugins turned off
     # result = testdir.runpytest('-p', 'no:django')
     result = testdir.runpytest_subprocess("--capture", "no")
@@ -105,6 +104,10 @@ def test_configure_django_test_solr(testdir):
 @skipif_no_django
 def test_not_configured(testdir):
     """skip without error if not configured."""
+
+    # copy local test settings into the test dir,
+    # or else pytest-django complains about not finding django project
+    testdir.copy_example("testsettings.py")
 
     with override_settings(SOLR_CONNECTIONS=None):
         assert not get_test_solr_config()
@@ -134,11 +137,10 @@ def test_app_not_installed(testdir):
 
 @skipif_no_django
 def test_empty_solr(testdir):
-    """Check empty_solr pytest fixture."""
+    """Check empty_solr pytest fixture."""
 
-    # NOTE: can't figure out how to get the plugin test to use
-    # test-local test settings, so testing against project
-    # testsettings for now
+    # copy local test settings into the test dir
+    testdir.copy_example("testsettings.py")
 
     # create a temporary pytest test file
     testdir.makepyfile(
@@ -200,6 +202,9 @@ def test_get_mock_solr_queryset_subclass():
 
 def test_get_mock_solr_queryset_class_scope(testdir):
     # test class scope logic when using mock solr queryset fixture
+
+    # copy local test settings into the test dir
+    testdir.copy_example("testsettings.py")
 
     # create a temporary pytest test file
     testdir.makepyfile(

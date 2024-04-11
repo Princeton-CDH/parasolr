@@ -12,7 +12,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 REQUIREMENTS = ["requests", "addict", "progressbar2"]
 # NOTE: progressbar only needed for django index script; make optional?
-TEST_REQUIREMENTS = ["pytest>5.2", "pytest-cov"]
+TEST_REQUIREMENTS = ["pytest>=7", "pytest-cov"]
 DEV_REQUIREMENTS = [
     "sphinx",
     "sphinxcontrib-napoleon",
@@ -20,7 +20,7 @@ DEV_REQUIREMENTS = [
     "pre-commit",
 ]
 # django integration is optional
-DJANGO_REQUIREMENTS = ["django>=2.2", "pytest-django>=3.6"]
+DJANGO_REQUIREMENTS = ["django>=3.0", "pytest-django>=3.6"]
 
 setup(
     name="parasolr",
@@ -44,19 +44,22 @@ setup(
     author_email="cdhdevteam@princeton.edu",
     classifiers=[
         "Environment :: Web Environment",
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 4 - Beta",
         "Framework :: Django",
-        "Framework :: Django :: 3.0",
-        "Framework :: Django :: 3.1",
         "Framework :: Django :: 3.2",
+        "Framework :: Django :: 4.0",
+        "Framework :: Django :: 4.1",
+        "Framework :: Django :: 4.2",
+        "Framework :: Django :: 5.0",
         "Framework :: Pytest",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Database",
     ],
