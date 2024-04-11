@@ -12,16 +12,22 @@ on:
   # normal behavior: run when a new release is created
   release:
     types: [published]
-  # allow running manually
+  # allow running manually on main
   workflow_dispatch:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
-  deploy:
-
+  pypi-publish:
+    name: Upload release to PyPI
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/parasolr/
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
 
     steps:
     - uses: actions/checkout@v4
@@ -36,4 +42,4 @@ jobs:
     - name: Build package
       run: python -m build
     - name: Publish package
-      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+      uses: pypa/gh-action-pypi-publish@release/v1
