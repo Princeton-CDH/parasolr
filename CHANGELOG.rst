@@ -5,10 +5,13 @@ CHANGELOG
 
 0.9.2
 -----
+
 * `IndexableSignalHandler.disconnect` updated to return a count of
   the number of handlers removed, so you can determine whether
   signals were already previously disconnected
 * Now tested against Django 4.1, 4.2, and 5.0
+* bugfix: ``AliasedSolrQuerySet`` now supports aliasing for keyword arguments
+ when calling the `search` method
 
 0.9.1
 ----

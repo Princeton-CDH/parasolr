@@ -78,6 +78,20 @@ class TestAliasedSolrQuerySet(TestCase):
         self.mysqs.filter("foo:bar", name="Jane", tag="baz")
         mock_filter.assert_called_with("foo:bar", name_t="Jane", tag="baz")
 
+    @patch("parasolr.query.queryset.SolrQuerySet.search")
+    def test_search(self, mock_search):
+        # keyworg arg should be unaliased
+        self.mysqs.search(name="Jane")
+        mock_search.assert_called_with(name_t="Jane")
+
+        # keyworg arg with lookup should also be unaliased
+        self.mysqs.search(name__in=["Jane", "Judy"])
+        mock_search.assert_called_with(name_t__in=["Jane", "Judy"])
+
+        # unknown field should be ignored
+        self.mysqs.search(tuesday="wednesday")
+        mock_search.assert_called_with(tuesday="wednesday")
+
     @patch("parasolr.query.queryset.SolrQuerySet.facet")
     def test_facet(self, mock_filter):
         # arg should be unaliased
@@ -205,7 +219,6 @@ class TestAliasedSolrQuerySet(TestCase):
 
     @patch("parasolr.query.queryset.SolrQuerySet.get_stats")
     def test_get_stats(self, mock_get_stats):
-
         sample_stats = {
             # In setup for tests, year_i is aliased to year and
             # start_i is unaliased
